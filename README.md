@@ -53,9 +53,11 @@ mrsmsas-jk-2027/
 
 | Peranan | Kebenaran |
 |---|---|
-| Pentadbir Sistem | Semua: staf, jawatan & merit, tetapan, pengguna, salin/padam tahun, import, log audit |
-| Pengurus JK | Urus jawatankuasa dan pelantikan (tambah/sunting/ganti/buang), lihat laporan |
-| Pelihat | Baca sahaja; emel/telefon/catatan staf disembunyikan |
+| System Admin | Semua: staf, jawatan & merit, tetapan, pengguna, salin/padam tahun, import, log audit |
+| Editor | Urus jawatankuasa dan pelantikan (tambah/sunting/ganti/buang), lihat laporan |
+| Viewer | Baca sahaja; emel/telefon/catatan staf disembunyikan |
+
+(Kod dalaman dalam helaian `Pengguna` ialah `PENTADBIR` = System Admin, `PENGURUS` = Editor, `PELIHAT` = Viewer — jangan ubah kod ini.)
 
 Semua semakan dibuat di **pelayan** (`LALUAN_` dalam `Code.gs`); menyembunyikan butang di UI hanyalah kemudahan.
 

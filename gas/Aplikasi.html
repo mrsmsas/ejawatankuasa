@@ -55,7 +55,7 @@ function keLogMasuk(mesej) {
 async function masukApl(data) {
   S.token = data.token; simpanToken(S.token); S.pengguna = data.pengguna;
   $('#logmasuk').classList.add('tersembunyi'); $('#apl').classList.remove('tersembunyi');
-  $('#infoPengguna').textContent = S.pengguna.nama + ' (' + { PENTADBIR: 'Pentadbir', PENGURUS: 'Pengurus JK', PELIHAT: 'Pelihat' }[S.pengguna.peranan] + ')';
+  $('#infoPengguna').textContent = S.pengguna.nama + ' (' + { PENTADBIR: 'System Admin', PENGURUS: 'Editor', PELIHAT: 'Viewer' }[S.pengguna.peranan] + ')';
   await muatAsas(); S.paparan = 'papan'; S.param = null; render();
 }
 function dialogTukarKata() {

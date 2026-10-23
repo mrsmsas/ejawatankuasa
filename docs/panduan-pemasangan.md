@@ -11,7 +11,7 @@
 4. **Cipta jadual dan data.** Pilih fungsi `setupAwal` ▸ **Run** ▸ benarkan kebenaran. Lihat *Execution log*: ia memaparkan **emel pentadbir** dan **kata laluan sementara**. Catatkannya.
    - `setupAwal()` selamat dijalankan semula: ia tidak menimpa helaian yang sudah berisi.
 5. **Terbitkan.** *Deploy ▸ New deployment ▸ Web app*: *Execute as* = **Me**, *Who has access* = **Anyone**. (Pengesahan dibuat oleh sistem sendiri melalui emel + kata laluan; sesiapa tanpa akaun sistem tidak dapat melihat sebarang data.) Salin URL `…/exec`.
-6. **Log masuk** dengan akaun pentadbir, tukar kata laluan (butang *Kata laluan*), kemudian *Pengguna ▸ Pengguna Baharu* untuk mencipta akaun Pengurus JK dan Pelihat.
+6. **Log masuk** dengan akaun pentadbir, tukar kata laluan (butang *Kata laluan*), kemudian *Pengguna ▸ Pengguna Baharu* untuk mencipta akaun Editor dan Viewer.
 7. **Semak data** (lihat §C), kemudian edit apa yang perlu.
 
 > Selepas mengubah kod: *Deploy ▸ Manage deployments ▸ Edit ▸ New version* supaya URL yang sama dikemas kini.

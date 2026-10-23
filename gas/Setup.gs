@@ -34,7 +34,7 @@ function setupAwal() {
   if (!ada('Pengguna')) {
     var emel = Session.getEffectiveUser().getEmail(), kata = Utilities.getUuid().replace(/-/g, '').substring(0, 12);
     var garam = Utilities.getUuid();
-    tambah_('Pengguna', [{ emel: emel, nama: 'Pentadbir Sistem', peranan: 'PENTADBIR', aktif: true, garam: garam, hash: hash_(garam, kata) }]);
+    tambah_('Pengguna', [{ emel: emel, nama: 'System Admin', peranan: 'PENTADBIR', aktif: true, garam: garam, hash: hash_(garam, kata) }]);
     laporan.push('PENTADBIR PERTAMA — emel: ' + emel + ' | kata laluan sementara: ' + kata + ' (tukar selepas log masuk)');
   }
   var ringkas = laporan.join('\n'); Logger.log(ringkas); return ringkas;

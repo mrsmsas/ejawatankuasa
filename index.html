@@ -747,14 +747,14 @@ async function paparImport() {
 /* ===== Pengguna ===== */
 async function paparPengguna() {
   var data = await panggil('senaraiPengguna');
-  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Pengguna & Akses'), h('p', null, 'Pentadbir: akses penuh · Pengurus JK: urus pelantikan · Pelihat: baca sahaja (maklumat hubungan staf disembunyikan).')),
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Pengguna & Akses'), h('p', null, 'System Admin: akses penuh · Editor: urus pelantikan jawatankuasa · Viewer: baca sahaja (maklumat hubungan staf disembunyikan).')),
     h('button', { class: 'btn utama', onclick: function () { borangPengguna(null); } }, '＋ Pengguna Baharu')),
-    h('div', { class: 'kad' }, jadual({ data: data, onKlik: borangPengguna, cari: false, lajur: [{ kunci: 'emel', label: 'Emel' }, { kunci: 'nama', label: 'Nama' }, { kunci: 'peranan', label: 'Peranan', papar: function (r) { return lencana({ PENTADBIR: 'Pentadbir Sistem', PENGURUS: 'Pengurus JK', PELIHAT: 'Pelihat' }[r.peranan], r.peranan === 'PENTADBIR' ? 'tinggi' : 'neutral'); } },
+    h('div', { class: 'kad' }, jadual({ data: data, onKlik: borangPengguna, cari: false, lajur: [{ kunci: 'emel', label: 'Emel' }, { kunci: 'nama', label: 'Nama' }, { kunci: 'peranan', label: 'Peranan', papar: function (r) { return lencana({ PENTADBIR: 'System Admin', PENGURUS: 'Editor', PELIHAT: 'Viewer' }[r.peranan], r.peranan === 'PENTADBIR' ? 'tinggi' : 'neutral'); } },
       { kunci: 'aktif', label: 'Status', papar: function (r) { return lencana(r.aktif ? 'Aktif' : 'Dinyahaktifkan', r.aktif ? 'aktif' : 'neutral'); } }] })));
 }
 function borangPengguna(p) {
   var baharu = !p; p = p || { peranan: 'PELIHAT', aktif: true };
-  var f = { emel: h('input', { type: 'email', value: p.emel || '', disabled: !baharu }), nama: h('input', { type: 'text', value: p.nama || '' }), per: pilihSelect([{ nilai: 'PENTADBIR', label: 'Pentadbir Sistem' }, { nilai: 'PENGURUS', label: 'Pengurus Jawatankuasa' }, { nilai: 'PELIHAT', label: 'Pelihat (baca sahaja)' }], p.peranan),
+  var f = { emel: h('input', { type: 'email', value: p.emel || '', disabled: !baharu }), nama: h('input', { type: 'text', value: p.nama || '' }), per: pilihSelect([{ nilai: 'PENTADBIR', label: 'System Admin (akses penuh)' }, { nilai: 'PENGURUS', label: 'Editor (urus pelantikan)' }, { nilai: 'PELIHAT', label: 'Viewer (baca sahaja)' }], p.peranan),
     kata: h('input', { type: 'password', autocomplete: 'new-password', placeholder: baharu ? 'Sekurang-kurangnya 8 aksara' : 'Kosongkan jika tidak mahu tukar' }), aktif: h('input', { type: 'checkbox', checked: p.aktif }) };
   modal({ tajuk: baharu ? 'Pengguna Baharu' : 'Sunting Pengguna', isi: h('div', null, medan('Emel *', f.emel), medan('Nama', f.nama), medan('Peranan', f.per), medan(baharu ? 'Kata laluan awal *' : 'Tetapkan kata laluan baharu', f.kata), h('label', null, f.aktif, ' Akaun aktif')),
     butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () { toast((await panggil('simpanPengguna', { emel: f.emel.value, nama: f.nama.value, peranan: f.per.value, kataLaluan: f.kata.value, aktif: f.aktif.checked }, { penuh: true })).message, 'berjaya'); render(); }) }] });
@@ -839,7 +839,7 @@ function keLogMasuk(mesej) {
 async function masukApl(data) {
   S.token = data.token; simpanToken(S.token); S.pengguna = data.pengguna;
   $('#logmasuk').classList.add('tersembunyi'); $('#apl').classList.remove('tersembunyi');
-  $('#infoPengguna').textContent = S.pengguna.nama + ' (' + { PENTADBIR: 'Pentadbir', PENGURUS: 'Pengurus JK', PELIHAT: 'Pelihat' }[S.pengguna.peranan] + ')';
+  $('#infoPengguna').textContent = S.pengguna.nama + ' (' + { PENTADBIR: 'System Admin', PENGURUS: 'Editor', PELIHAT: 'Viewer' }[S.pengguna.peranan] + ')';
   await muatAsas(); S.paparan = 'papan'; S.param = null; render();
 }
 function dialogTukarKata() {
