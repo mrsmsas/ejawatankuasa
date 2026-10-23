@@ -1,4 +1,4 @@
-﻿# Sistem Pengurusan Jawatankuasa MRSM Sultan Azlan Shah 2027
+﻿# Sistem Pengurusan Jawatankuasa MRSM Sultan Azlan Shah
 
 Sistem web (Bahasa Melayu) untuk mengurus jawatankuasa, pelantikan staf dan analisis beban kerja berasaskan **merit berpemberat**.
 
@@ -65,6 +65,7 @@ Semua semakan dibuat di **pelayan** (`LALUAN_` dalam `Code.gs`); menyembunyikan 
 
 - 125 jawatankuasa/unit, 1,151 pelantikan, 94 staf (NAMA STAF) + 9 jawatan ex-officio + 1 guru tiada dalam senarai (`T001`) + 17 pemegang tempat.
 - Data 2026 dan 2027 dimuatkan sebagai dua set berasingan (2027 ialah salinan 2026 untuk anda ubah).
+- **Sistem ini umum untuk mana-mana tahun.** Tahun dipilih dari menu di bahagian atas; tahun baharu dicipta melalui *Import / Eksport ▸ Peralihan Tahun* (salin struktur dari tahun lain tanpa menimpa). Merit, laporan dan sejarah setiap tahun disimpan berasingan.
 - Jana semula: `node tools/jana-benih.js` (membaca `data/_jkterkini-dump.txt` dan `data/nama-staf.csv`).
 
 ## Pemasangan
@@ -87,5 +88,6 @@ Senarai semak penuh: [docs/senarai-semak-ujian.md](docs/senarai-semak-ujian.md).
 - Chart.js dimuat dari CDN; tanpa internet, jadual tetap berfungsi tetapi carta memaparkan mesej.
 - Import hanya untuk staf (CSV). Import pelantikan secara pukal belum disediakan — gunakan *Peralihan Tahun* atau antara muka.
 - Kategori jawatankuasa (Pentadbiran, Akademik, Hal Ehwal Pelajar & Asrama, Kokurikulum, Program & Majlis) ditentukan oleh blok dalam JK TERKINI; kod (A01…E36) dijana baharu dan bukan kod 2026 (A01–E33) — semak dan ubah mengikut keperluan.
+
 
 

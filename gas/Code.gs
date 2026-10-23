@@ -1,4 +1,4 @@
-// Sistem Pengurusan Jawatankuasa MRSM Sultan Azlan Shah 2027 — Backend Google Apps Script.
+// Sistem Pengurusan Jawatankuasa MRSM Sultan Azlan Shah (pelbagai tahun) — Backend Google Apps Script.
 // Antara muka dihidangkan oleh Apps Script sendiri (doGet) supaya pengesahan dilakukan di pelayan.
 
 var SKEMA = {
@@ -14,7 +14,7 @@ var SKEMA = {
 var TEKS_ = ['staffId', 'asgId', 'jkId', 'posisiId', 'kod', 'telefon', 'emel', 'tarikhEfektif', 'tarikhLantik'];
 var PERANAN = { PENTADBIR: 3, PENGURUS: 2, PELIHAT: 1 };
 var TETAPAN_ASAL = {
-  tahunAktif: '2027', ambangTinggi: '130', ambangRendah: '50',
+  tahunAktif: '', ambangTinggi: '130', ambangRendah: '50',
   posisiWajib: 'Pengerusi|Penyelaras|Presiden|Ketua Jabatan/Unit|Guru Penasihat',
   sasaranMin_GURU: '', sasaranMax_GURU: '', sasaranMin_SOKONGAN: '', sasaranMax_SOKONGAN: ''
 };
@@ -22,7 +22,7 @@ var TETAPAN_ASAL = {
 // ---------- Titik masuk ----------
 function doGet() {
   return HtmlService.createTemplateFromFile('Index').evaluate()
-    .setTitle('Sistem JK MRSM SAS 2027')
+    .setTitle('Sistem JK MRSM SAS')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -177,7 +177,13 @@ function tetapan_() {
 function semuaData_() {
   return { staf: baca_('Staf'), jawatankuasa: baca_('Jawatankuasa'), posisi: baca_('Posisi'), tugasan: baca_('Tugasan'), tetapanMerit: baca_('TetapanMerit') };
 }
-function tahunAktif_(a) { return Number(a && a.tahun) || Number(tetapan_().tahunAktif) || 2027; }
+// Tahun diminta -> tahun lalai dalam Tetapan -> tahun terkini dalam data -> tahun semasa
+function tahunAktif_(a) {
+  var t = Number(a && a.tahun) || Number(tetapan_().tahunAktif);
+  if (t) return t;
+  var semua = baca_('Jawatankuasa').map(function (j) { return Number(j.tahun); }).filter(Boolean);
+  return semua.length ? Math.max.apply(null, semua) : new Date().getFullYear();
+}
 function senaraiTahun_(d) {
   var t = {}; d.jawatankuasa.forEach(function (j) { t[j.tahun] = 1; }); return Object.keys(t).map(Number).sort();
 }
@@ -461,7 +467,8 @@ function simpanTetapan_(pg, a) {
   var kebenaran = Object.keys(TETAPAN_ASAL), diubah = {};
   Object.keys(a.tetapan || {}).forEach(function (k) {
     if (kebenaran.indexOf(k) < 0) return; var v = bersih_(a.tetapan[k], 200);
-    if (['ambangTinggi', 'ambangRendah', 'tahunAktif'].indexOf(k) >= 0 && (isNaN(Number(v)) || v === '')) tolak_('Nilai ' + k + ' mesti nombor.');
+    if (['ambangTinggi', 'ambangRendah'].indexOf(k) >= 0 && (isNaN(Number(v)) || v === '')) tolak_('Nilai ' + k + ' mesti nombor.');
+    if (k === 'tahunAktif' && v !== '' && (isNaN(Number(v)) || Number(v) < 2000 || Number(v) > 2100)) tolak_('Tahun lalai mesti nombor 2000–2100, atau kosong untuk tahun terkini.');
     if (/^sasaran/.test(k) && v !== '' && isNaN(Number(v))) tolak_('Sasaran mesti nombor atau kosong.');
     diubah[k] = lindungFormula_(v);
   });

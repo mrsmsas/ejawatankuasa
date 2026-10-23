@@ -101,7 +101,7 @@ async function paparTetapan() {
   var buat = function (k, label, bantuan, jenis) { f[k] = h('input', { type: jenis || 'text', value: t[k] === undefined ? '' : t[k] }); return medan(label, f[k], bantuan); };
   return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Tetapan Sistem'), h('p', null, 'Semua nilai boleh diubah tanpa menyunting kod. Nilai merit jawatan diurus di halaman Jawatan & Merit.'))),
     h('div', { class: 'kad', style: 'max-width:720px' },
-      buat('tahunAktif', 'Tahun aktif lalai', '', 'number'), buat('ambangTinggi', 'Ambang beban tinggi (% daripada purata kategori)', 'Cth 130 = melebihi 130% daripada purata dikira beban tinggi.', 'number'),
+      buat('tahunAktif', 'Tahun lalai semasa log masuk', 'Kosongkan untuk sentiasa membuka tahun terkini dalam data. Anda juga boleh menukar tahun dari menu di bahagian atas.', 'number'), buat('ambangTinggi', 'Ambang beban tinggi (% daripada purata kategori)', 'Cth 130 = melebihi 130% daripada purata dikira beban tinggi.', 'number'),
       buat('ambangRendah', 'Ambang beban rendah (% daripada purata kategori)', '', 'number'),
       buat('sasaranMin_GURU', 'Sasaran merit minimum — GURU', 'Kosong = gunakan ambang peratusan.', 'number'), buat('sasaranMax_GURU', 'Sasaran merit maksimum — GURU', '', 'number'),
       buat('sasaranMin_SOKONGAN', 'Sasaran merit minimum — SOKONGAN', '', 'number'), buat('sasaranMax_SOKONGAN', 'Sasaran merit maksimum — SOKONGAN', '', 'number'),
