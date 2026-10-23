@@ -8,17 +8,20 @@ Data jawatankuasa dan nama dalam sistem ini diambil **terus daripada sheet `JK T
 
 | Lapisan | Teknologi |
 |---|---|
-| Antara muka | HTML/CSS/JavaScript, dihidangkan oleh **Google Apps Script itu sendiri** (`doGet`) |
-| Backend | Google Apps Script (`gas/Code.gs`, `gas/Logik.gs`, `gas/Setup.gs`) |
-| Pangkalan data | Google Sheets (dikurung dalam fail DB peribadi) |
+| Antara muka | HTML/CSS/JavaScript satu fail (`index.html`), dihoskan di **GitHub Pages** (`https://mrsmsas.github.io/ejawatankuasa/`) — tiada notis "created by a Google Apps Script user" |
+| Backend (API) | Google Apps Script `doPost` — JSON, token sesi, kebenaran disemak di pelayan (`gas/Code.gs`, `Logik.gs`, `Setup.gs`) |
+| Pangkalan data | Google Sheets peribadi |
 | Carta | Chart.js (cdnjs) |
 
-**Mengapa bukan GitHub Pages?** Aplikasi web Apps Script tidak boleh mengesahkan pemanggil merentas domain dengan boleh dipercayai (CORS, pengepala khas dan identiti Google tidak dijamin). Menghidangkan UI dari Apps Script menjadikan semua kebenaran dikuatkuasakan di pelayan. GitHub hanya digunakan untuk menyimpan kod dan versi (`git`) — repo boleh peribadi.
+**Bagaimana ia selamat walaupun antara muka awam?** Halaman di GitHub hanya kod paparan; tiada data. Semua data hanya dipulangkan oleh API selepas log masuk (emel + kata laluan bergaram, token sesi 6 jam), dan **setiap tindakan disemak peranannya di pelayan**. Kunci/rahsia tidak ada dalam kod. Apps Script juga masih boleh menghidangkan antara muka sendiri (`doGet`) sebagai sandaran.
+
+**Menjana semula `index.html` selepas mengubah fail dalam `gas/`:** `node tools/bina-web.js` (kemudian `clasp push`, dan `clasp deploy --deploymentId <ID>` untuk mengekalkan URL API yang sama).
 
 ## Struktur projek
 
 ```
 mrsmsas-jk-2027/
+├── index.html              ← antara muka untuk GitHub Pages (dijana oleh tools/bina-web.js)
 ├── gas/                    ← SEMUA yang disalin ke projek Apps Script
 │   ├── Code.gs             API, pengesahan, kebenaran, audit, penulisan data
 │   ├── Logik.gs            Kiraan merit & peraturan integriti (tulen, diuji)
@@ -32,7 +35,7 @@ mrsmsas-jk-2027/
 │   ├── Aplikasi.html       Penghalaan, log masuk, permulaan
 │   └── appsscript.json     Manifest
 ├── data/                   nama-staf.csv, benih.json, _jkterkini-dump.txt (sumber penjanaan)
-├── tools/                  jana-benih.js, ujian.js, pelayan-ujian.js
+├── tools/                  bina-web.js, jana-benih.js, ujian.js, pelayan-ujian.js
 └── docs/                   panduan-pemasangan.md, senarai-semak-ujian.md, analisis-spreadsheet-2026.md
 ```
 
@@ -82,4 +85,5 @@ Senarai semak penuh: [docs/senarai-semak-ujian.md](docs/senarai-semak-ujian.md).
 - Chart.js dimuat dari CDN; tanpa internet, jadual tetap berfungsi tetapi carta memaparkan mesej.
 - Import hanya untuk staf (CSV). Import pelantikan secara pukal belum disediakan — gunakan *Peralihan Tahun* atau antara muka.
 - Kategori jawatankuasa (Pentadbiran, Akademik, Hal Ehwal Pelajar & Asrama, Kokurikulum, Program & Majlis) ditentukan oleh blok dalam JK TERKINI; kod (A01…E36) dijana baharu dan bukan kod 2026 (A01–E33) — semak dan ubah mengikut keperluan.
+
 

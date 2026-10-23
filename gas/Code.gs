@@ -26,6 +26,20 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
+// API JSON untuk antara muka yang dihoskan di GitHub Pages (permintaan teks biasa => tiada preflight CORS).
+// Pengesahan tetap melalui token sesi + semakan peranan di pelayan (api()).
+function doPost(e) {
+  var hasil;
+  try {
+    var teks = (e && e.postData && e.postData.contents) || '';
+    if (teks.length > 600000) hasil = gagal_('Permintaan terlalu besar.');
+    else {
+      var p = JSON.parse(teks);
+      hasil = (p && typeof p.fn === 'string') ? api({ token: p.token, fn: p.fn, args: p.args }) : gagal_('Permintaan tidak sah.');
+    }
+  } catch (err) { hasil = gagal_('Permintaan tidak sah.'); }
+  return ContentService.createTextOutput(JSON.stringify(hasil)).setMimeType(ContentService.MimeType.JSON);
+}
 function include(nama) { return HtmlService.createHtmlOutputFromFile(nama).getContent(); }
 
 // Satu pintu masuk API. permintaan = {token, fn, args}
