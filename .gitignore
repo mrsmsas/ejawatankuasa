@@ -1,0 +1,13 @@
+node_modules/
+.clasp.json
+.clasprc.json
+*.log
+.DS_Store
+Thumbs.db
+NAMA STAF.gsheet
+
+# Data peribadi staf (nama, No. Gaji, emel) — JANGAN dimuat naik ke GitHub.
+# Fail ini hanya wujud secara tempatan dan dalam Google Apps Script anda.
+data/
+gas/BenihData.gs
+*.gsheet

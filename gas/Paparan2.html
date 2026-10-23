@@ -1,0 +1,118 @@
+<script>
+/* ===== Analisis beban kerja ===== */
+async function paparAnalisis() {
+  var d = await panggil('dashboard', { tahun: S.tahun, tapis: {} }), tt = S.asas.tetapan;
+  var senarai = function (status) { return d.ranking.filter(function (r) { return r.status === status; }); };
+  var lajur = [{ kunci: 'kedudukan', label: '#', nombor: true }, { kunci: 'nama', label: 'Nama' }, { kunci: 'kategori', label: 'Kategori' }, { kunci: 'bil', label: 'Tugasan', nombor: true }, { kunci: 'total', label: 'Merit', nombor: true, papar: function (r) { return h('b', null, nf(r.total)); } }];
+  var klik = function (r) { pergi('profil', r.staffId); };
+  var tiada = d.ranking.filter(function (r) { return r.bil === 0; });
+  var sasaranTeks = ['GURU', 'SOKONGAN'].map(function (k) { var a = tt['sasaranMin_' + k], b = tt['sasaranMax_' + k]; return k + ': ' + ((a !== '' || b !== '') ? (a || '0') + '–' + (b || '∞') + ' mata' : 'ikut % purata'); }).join(' · ');
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Analisis Beban Kerja ' + S.tahun), h('p', null, 'Ambang: tinggi > ' + tt.ambangTinggi + '% dan rendah < ' + tt.ambangRendah + '% daripada purata kategori. ' + sasaranTeks + '.')),
+    h('button', { class: 'btn tiada-cetak', onclick: function () { window.print(); } }, '🖨 Cetak')),
+    h('div', { class: 'info-kotak' }, 'Jumlah merit tidak perlu sama rata; peranan berbeza wajar mempunyai jumlah berbeza. Senarai di bawah ialah petunjuk untuk semakan pentadbir — bukan pelantikan automatik.'),
+    h('div', { class: 'grid g-2' },
+      h('div', { class: 'kad' }, h('h2', null, 'Beban Tinggi (' + senarai('TINGGI').length + ')'), jadual({ data: senarai('TINGGI'), lajur: lajur, onKlik: klik, saiz: 15, cari: false, kosong: 'Tiada staf melebihi ambang.' })),
+      h('div', { class: 'kad' }, h('h2', null, 'Beban Rendah — Sesuai Menerima Tanggungjawab Tambahan (' + senarai('RENDAH').length + ')'), jadual({ data: senarai('RENDAH').slice().reverse(), lajur: lajur, onKlik: klik, saiz: 15, cari: false, kosong: 'Tiada staf di bawah ambang.' })),
+      h('div', { class: 'kad' }, h('h2', null, 'Tiada Sebarang Tugasan (' + tiada.length + ')'), jadual({ data: tiada, lajur: lajur.slice(1, 3), onKlik: klik, saiz: 15, cari: false, kosong: 'Semua staf mempunyai sekurang-kurangnya satu tugasan.' })),
+      kadCarta('Purata Merit mengikut Jabatan', function () { return d.jabatan.length ? { type: 'bar', data: { labels: d.jabatan.map(function (x) { return x.nama; }), datasets: [{ label: 'Purata', data: d.jabatan.map(function (x) { return Math.round(x.purata * 10) / 10; }), backgroundColor: WARNA.utama }, { label: 'Jumlah staf', data: d.jabatan.map(function (x) { return x.bil; }), backgroundColor: WARNA.kelabu }] } } : null; })));
+}
+
+/* ===== Jawatan & merit ===== */
+async function paparPosisi() {
+  var data = await panggil('senaraiPosisi', { tahun: S.tahun }), admin = boleh('PENTADBIR');
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Jawatan & Nilai Merit'), h('p', null, 'Nilai merit ditetapkan bagi tahun ' + S.tahun + '. Mengubah nilai akan mengira semula merit semua pemegang jawatan secara automatik; tahun lain tidak terjejas.')),
+    admin ? h('button', { class: 'btn utama', onclick: function () { borangPosisi(null); } }, '＋ Jawatan Baharu') : null),
+    h('div', { class: 'kad' }, jadual({ data: data, saiz: 50, isihAsal: 'urutan', arahAsal: 'asc', onKlik: admin ? function (r) { borangPosisi(r); } : null, lajur: [
+      { kunci: 'urutan', label: 'Urutan', nombor: true }, { kunci: 'nama', label: 'Jawatan' }, { kunci: 'meritTahun', label: 'Merit ' + S.tahun, nombor: true, papar: function (r) { return h('b', null, r.meritTahun); } },
+      { kunci: 'tahap', label: 'Tahap tanggungjawab' }, { kunci: 'diguna', label: 'Digunakan', nombor: true },
+      { kunci: 'pelbagaPemegang', label: 'Ramai pemegang / JK', papar: function (r) { return r.pelbagaPemegang === true || r.pelbagaPemegang === 'TRUE' ? 'Ya' : 'Seorang'; } },
+      { kunci: 'hadPerStaf', label: 'Had/staf', papar: function (r) { return r.hadPerStaf || '—'; } },
+      { kunci: 'aktif', label: 'Status', papar: function (r) { return lencana(r.aktif === true || r.aktif === 'TRUE' ? 'Aktif' : 'Tidak aktif', r.aktif === true || r.aktif === 'TRUE' ? 'aktif' : 'neutral'); } }] })));
+}
+function borangPosisi(p) {
+  var baharu = !p; p = p || { merit: 5, tahap: 'Sederhana', pelbagaPemegang: true, aktif: true, urutan: 50, meritTahun: 5 };
+  var benarTrue = function (v) { return v === true || v === 'TRUE'; };
+  var f = { nama: h('input', { type: 'text', value: p.nama || '', maxlength: 100 }), merit: h('input', { type: 'number', min: 0, max: 1000, step: 0.5, value: p.meritTahun }), tahap: pilihSelect(['Tinggi', 'Sederhana', 'Rendah'], p.tahap),
+    ket: h('textarea', { maxlength: 300 }, p.keterangan || ''), urut: h('input', { type: 'number', min: 1, value: p.urutan }), ramai: h('input', { type: 'checkbox', checked: benarTrue(p.pelbagaPemegang) }),
+    beberapa: pilihSelect([{ nilai: 'ya', label: 'Ya' }, { nilai: 'tidak', label: 'Tidak' }], p.bolehBeberapaJK === '' || p.bolehBeberapaJK === undefined ? '' : (benarTrue(p.bolehBeberapaJK) ? 'ya' : 'tidak'), 'Tiada sekatan'),
+    had: h('input', { type: 'number', min: 1, value: p.hadPerStaf || '', placeholder: 'Tiada had' }), aktif: h('input', { type: 'checkbox', checked: benarTrue(p.aktif) }) };
+  modal({ tajuk: baharu ? 'Jawatan Baharu' : 'Sunting Jawatan', isi: h('div', null, medan('Nama jawatan *', f.nama), medan('Nilai merit tahun ' + S.tahun + ' *', f.merit), medan('Tahap tanggungjawab', f.tahap), medan('Keterangan', f.ket), medan('Urutan paparan', f.urut),
+    h('label', null, f.ramai, ' Boleh lebih seorang pemegang dalam satu jawatankuasa'), h('br'), medan('Staf boleh pegang jawatan ini dalam banyak JK?', f.beberapa), medan('Had bilangan jawatan ini bagi seorang staf', f.had), h('label', null, f.aktif, ' Aktif')),
+    butang: [{ label: 'Batal' }, !baharu && p.diguna === 0 ? { label: 'Padam', kelas: 'bahaya', onClick: ujiTindakan(async function () { if (!(await sahkan('Padam jawatan "' + p.nama + '"?', { bahaya: true, label: 'Padam' }))) return false; toast((await panggil('padamPosisi', { posisiId: p.posisiId }, { penuh: true })).message, 'berjaya'); await muatAsas(); render(); }) } : null,
+      { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () {
+        var r = await panggil('simpanPosisi', { tahun: S.tahun, posisi: { posisiId: p.posisiId, nama: f.nama.value, merit: f.merit.value, tahap: f.tahap.value, keterangan: f.ket.value, urutan: f.urut.value, pelbagaPemegang: f.ramai.checked,
+          bolehBeberapaJK: f.beberapa.value === '' ? '' : f.beberapa.value === 'ya', hadPerStaf: f.had.value, aktif: f.aktif.checked } }, { penuh: true });
+        toast(r.message, 'berjaya'); await muatAsas(); render(); }) }].filter(Boolean) });
+}
+
+/* ===== Import / Eksport / Peralihan tahun ===== */
+async function paparImport() {
+  var admin = boleh('PENTADBIR'), kotakHasil = h('div');
+  var eksp = function (label, fn) { return h('button', { class: 'btn', onclick: ujiTindakan(fn) }, '⬇ ' + label); };
+  var kad = h('div', { class: 'grid g-2' },
+    h('div', { class: 'kad' }, h('h2', null, 'Eksport Laporan (CSV, serasi Excel)'), h('p', { class: 'diam' }, 'Tahun ' + S.tahun + '. Gunakan "Cetak" pada setiap halaman untuk laporan bercetak.'),
+      h('div', { class: 'baris-alat' },
+        eksp('Laporan merit staf', async function () { var d = await panggil('senaraiStaf', { tahun: S.tahun }); eksportCSV('laporan-merit-staf-' + S.tahun + '.csv', ['ID', 'Nama', 'Jawatan', 'Jabatan', 'Kategori', 'Bil tugasan', 'Jumlah merit', 'Kedudukan', 'Beban', 'Status'], d.map(function (x) { return [x.staffId, x.nama, x.jawatan, x.jabatan, x.kategori, x.bil, x.total, x.kedudukan || '', x.beban, x.status]; })); }),
+        eksp('Senarai jawatankuasa', async function () { var d = await panggil('senaraiJK', { tahun: S.tahun }); eksportCSV('senarai-jawatankuasa-' + S.tahun + '.csv', ['Kod', 'Jawatankuasa', 'Kategori', 'Pemimpin', 'Bil ahli', 'Merit JK', 'Status', 'Lengkap'], d.map(function (x) { return [x.kod, x.nama, x.kategori, x.pemimpin, x.bil, x.merit, x.status, x.lengkap ? 'Ya' : 'Tidak']; })); }),
+        eksp('Semua pelantikan', async function () { var d = await panggil('eksportTugasan', { tahun: S.tahun }); eksportCSV('pelantikan-jk-' + S.tahun + '.csv', ['Kod JK', 'Jawatankuasa', 'Kategori', 'ID staf', 'Nama', 'Jawatan', 'Kualifikasi', 'Merit', 'Status'], d); }),
+        eksp('Ringkasan beban kerja', async function () { var d = await panggil('dashboard', { tahun: S.tahun, tapis: {} }); eksportCSV('ringkasan-beban-' + S.tahun + '.csv', ['Kedudukan', 'Nama', 'Kategori', 'Jabatan', 'Tugasan', 'Merit', 'Status'], d.ranking.map(function (r) { return [r.kedudukan, r.nama, r.kategori, r.jabatan, r.bil, r.total, r.status]; })); }))));
+  if (admin) {
+    var fail = h('input', { type: 'file', accept: '.csv,text/csv' }), baris = [];
+    var semak = ujiTindakan(async function () {
+      var f = fail.files[0]; if (!f) { toast('Pilih fail CSV dahulu.', 'ralat'); return; }
+      if (f.size > 1000000) { toast('Fail terlalu besar (maks 1 MB).', 'ralat'); return; }
+      var teks = await f.text(); baris = huraiCSV(teks).map(function (r) { return { staffId: r.staffId || r.ID || r['NO GAJI'] || '', nama: r.nama || r.NAMA || '', jawatan: r.jawatan || r.JAWATAN || '', emel: r.emel || r.EMEL || '', telefon: r.telefon || r['NO TELEFON'] || '', jabatan: r.jabatan || '', kategori: (r.kategori || 'GURU').toUpperCase(), status: 'AKTIF', catatan: '' }; });
+      if (!baris.length) { toast('Tiada baris dijumpai dalam fail.', 'ralat'); return; }
+      var h2 = await panggil('semakImport', { baris: baris }); kosongkan(kotakHasil);
+      kotakHasil.appendChild(h('div', { class: h2.tidakSah ? 'amaran-kotak' : 'info-kotak' }, h2.sah + ' baris sah, ' + h2.tidakSah + ' baris bermasalah. Rekod sedia ada TIDAK akan ditimpa; hanya baris sah ditambah sebagai staf baharu.'));
+      kotakHasil.appendChild(jadual({ data: h2.hasil, saiz: 15, cari: false, lajur: [{ kunci: 'baris', label: 'Baris', nombor: true }, { kunci: 'data', label: 'Staf', papar: function (r) { return r.data.staffId + ' · ' + r.data.nama; } },
+        { kunci: 'sah', label: 'Semakan', papar: function (r) { return h('span', null, r.sah ? lencana('Sah', 'aktif') : lencana('Ditolak', 'tinggi'), ' ', r.ralat.concat(r.amaran).join('; ')); } }] }));
+      if (h2.sah) kotakHasil.appendChild(h('button', { class: 'btn utama', style: 'margin-top:.6rem', onclick: ujiTindakan(async function () { var ok = await sahkan('Import ' + h2.sah + ' staf baharu?', { label: 'Import' }); if (!ok) return; toast((await panggil('lulusImport', { baris: baris }, { penuh: true })).message, 'berjaya'); await muatAsas(); kosongkan(kotakHasil); }) }, 'Import ' + h2.sah + ' baris sah'));
+    });
+    kad.appendChild(h('div', { class: 'kad' }, h('h2', null, 'Import Staf (peringkat semakan)'), h('p', { class: 'diam' }, 'CSV dengan lajur: staffId, nama, jawatan, emel, telefon, jabatan, kategori (GURU/SOKONGAN). Sistem menyemak ID pendua, nama menyerupai dan emel sebelum menyimpan.'),
+      h('div', { class: 'baris-alat' }, fail, h('button', { class: 'btn', onclick: semak }, 'Semak fail'), h('button', { class: 'btn kecil', onclick: function () { eksportCSV('templat-import-staf.csv', ['staffId', 'nama', 'jawatan', 'emel', 'telefon', 'jabatan', 'kategori'], [['123456', 'NAMA CONTOH BIN ABU', 'GURU MARA', 'contoh@mara.gov.my', '', 'Akademik', 'GURU']]); } }, 'Muat turun templat')), kotakHasil));
+    var dari = pilihSelect(S.asas.tahun, S.asas.tahun[S.asas.tahun.length - 1]), ke = h('input', { type: 'number', value: S.tahun + 1, min: 2000, max: 2100 });
+    kad.appendChild(h('div', { class: 'kad' }, h('h2', null, 'Peralihan Tahun'), h('p', { class: 'diam' }, 'Salin struktur jawatankuasa, pelantikan aktif dan nilai merit ke tahun baharu. Tidak dibenarkan jika tahun sasaran sudah mempunyai data — data sedia ada tidak akan ditimpa. Data tahun lama kekal untuk sejarah.'),
+      h('div', { class: 'baris-alat' }, h('label', null, 'Dari ', dari), h('label', null, 'Ke ', ke), h('button', { class: 'btn utama', onclick: ujiTindakan(async function () {
+        if (!(await sahkan('Salin data ' + dari.value + ' ke ' + ke.value + '?', { label: 'Salin' }))) return; var r = await panggil('salinTahun', { dari: Number(dari.value), ke: Number(ke.value) }, { penuh: true }); toast(r.message, 'berjaya'); await muatAsas(); render(); }) }, 'Salin tahun'))));
+  }
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Import, Eksport & Peralihan Tahun'))), kad);
+}
+
+/* ===== Pengguna ===== */
+async function paparPengguna() {
+  var data = await panggil('senaraiPengguna');
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Pengguna & Akses'), h('p', null, 'Pentadbir: akses penuh · Pengurus JK: urus pelantikan · Pelihat: baca sahaja (maklumat hubungan staf disembunyikan).')),
+    h('button', { class: 'btn utama', onclick: function () { borangPengguna(null); } }, '＋ Pengguna Baharu')),
+    h('div', { class: 'kad' }, jadual({ data: data, onKlik: borangPengguna, cari: false, lajur: [{ kunci: 'emel', label: 'Emel' }, { kunci: 'nama', label: 'Nama' }, { kunci: 'peranan', label: 'Peranan', papar: function (r) { return lencana({ PENTADBIR: 'Pentadbir Sistem', PENGURUS: 'Pengurus JK', PELIHAT: 'Pelihat' }[r.peranan], r.peranan === 'PENTADBIR' ? 'tinggi' : 'neutral'); } },
+      { kunci: 'aktif', label: 'Status', papar: function (r) { return lencana(r.aktif ? 'Aktif' : 'Dinyahaktifkan', r.aktif ? 'aktif' : 'neutral'); } }] })));
+}
+function borangPengguna(p) {
+  var baharu = !p; p = p || { peranan: 'PELIHAT', aktif: true };
+  var f = { emel: h('input', { type: 'email', value: p.emel || '', disabled: !baharu }), nama: h('input', { type: 'text', value: p.nama || '' }), per: pilihSelect([{ nilai: 'PENTADBIR', label: 'Pentadbir Sistem' }, { nilai: 'PENGURUS', label: 'Pengurus Jawatankuasa' }, { nilai: 'PELIHAT', label: 'Pelihat (baca sahaja)' }], p.peranan),
+    kata: h('input', { type: 'password', autocomplete: 'new-password', placeholder: baharu ? 'Sekurang-kurangnya 8 aksara' : 'Kosongkan jika tidak mahu tukar' }), aktif: h('input', { type: 'checkbox', checked: p.aktif }) };
+  modal({ tajuk: baharu ? 'Pengguna Baharu' : 'Sunting Pengguna', isi: h('div', null, medan('Emel *', f.emel), medan('Nama', f.nama), medan('Peranan', f.per), medan(baharu ? 'Kata laluan awal *' : 'Tetapkan kata laluan baharu', f.kata), h('label', null, f.aktif, ' Akaun aktif')),
+    butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () { toast((await panggil('simpanPengguna', { emel: f.emel.value, nama: f.nama.value, peranan: f.per.value, kataLaluan: f.kata.value, aktif: f.aktif.checked }, { penuh: true })).message, 'berjaya'); render(); }) }] });
+}
+
+/* ===== Tetapan ===== */
+async function paparTetapan() {
+  var t = S.asas.tetapan, f = {};
+  var buat = function (k, label, bantuan, jenis) { f[k] = h('input', { type: jenis || 'text', value: t[k] === undefined ? '' : t[k] }); return medan(label, f[k], bantuan); };
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Tetapan Sistem'), h('p', null, 'Semua nilai boleh diubah tanpa menyunting kod. Nilai merit jawatan diurus di halaman Jawatan & Merit.'))),
+    h('div', { class: 'kad', style: 'max-width:720px' },
+      buat('tahunAktif', 'Tahun aktif lalai', '', 'number'), buat('ambangTinggi', 'Ambang beban tinggi (% daripada purata kategori)', 'Cth 130 = melebihi 130% daripada purata dikira beban tinggi.', 'number'),
+      buat('ambangRendah', 'Ambang beban rendah (% daripada purata kategori)', '', 'number'),
+      buat('sasaranMin_GURU', 'Sasaran merit minimum — GURU', 'Kosong = gunakan ambang peratusan.', 'number'), buat('sasaranMax_GURU', 'Sasaran merit maksimum — GURU', '', 'number'),
+      buat('sasaranMin_SOKONGAN', 'Sasaran merit minimum — SOKONGAN', '', 'number'), buat('sasaranMax_SOKONGAN', 'Sasaran merit maksimum — SOKONGAN', '', 'number'),
+      buat('posisiWajib', 'Jawatan wajib bagi kelengkapan JK', 'Pisahkan dengan koma; gunakan | untuk alternatif. Cth: Pengerusi|Penyelaras,Setiausaha'),
+      h('button', { class: 'btn utama', onclick: ujiTindakan(async function () { var o = {}; Object.keys(f).forEach(function (k) { o[k] = f[k].value; }); toast((await panggil('simpanTetapan', { tetapan: o }, { penuh: true })).message, 'berjaya'); await muatAsas(); }) }, 'Simpan tetapan')));
+}
+
+/* ===== Log audit ===== */
+async function paparAudit() {
+  var data = await panggil('bacaAudit');
+  return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Log Audit'), h('p', null, '200 tindakan terkini.'))),
+    h('div', { class: 'kad' }, jadual({ data: data, saiz: 25, isih: false, lajur: [{ kunci: 'masa', label: 'Masa' }, { kunci: 'pengguna', label: 'Pengguna' }, { kunci: 'tindakan', label: 'Tindakan' }, { kunci: 'entiti', label: 'Entiti' }, { kunci: 'idEntiti', label: 'ID' }, { kunci: 'butir', label: 'Butiran', isih: false }] })));
+}
+</script>

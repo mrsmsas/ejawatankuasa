@@ -1,0 +1,85 @@
+<script>
+/* ===== Menu & penghalaan ===== */
+var MENU = [
+  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PELIHAT' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
+  { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PELIHAT' },
+  { sep: 'Konfigurasi' }, { id: 'posisi', ikon: '🏷', label: 'Jawatan & Merit', min: 'PELIHAT' }, { id: 'import', ikon: '⇅', label: 'Import / Eksport', min: 'PELIHAT' },
+  { sep: 'Pentadbiran' }, { id: 'pengguna', ikon: '🔑', label: 'Pengguna', min: 'PENTADBIR' }, { id: 'tetapan', ikon: '⚙', label: 'Tetapan', min: 'PENTADBIR' }, { id: 'audit', ikon: '📜', label: 'Log Audit', min: 'PENTADBIR' }
+];
+var PAPARAN = {
+  papan: [function () { return paparPapan(); }, 'Papan Pemuka'], jk: [function (p) { return p ? paparJKButiran(p) : paparJK(); }, 'Jawatankuasa'], staf: [function () { return paparStaf(); }, 'Staf & Guru'],
+  profil: [function (p) { return paparProfil(p); }, 'Profil Merit Staf'], analisis: [function () { return paparAnalisis(); }, 'Analisis Beban'], posisi: [function () { return paparPosisi(); }, 'Jawatan & Merit'],
+  import: [function () { return paparImport(); }, 'Import / Eksport'], pengguna: [function () { return paparPengguna(); }, 'Pengguna'], tetapan: [function () { return paparTetapan(); }, 'Tetapan'], audit: [function () { return paparAudit(); }, 'Log Audit']
+};
+function lukisMenu() {
+  var nav = kosongkan($('#menu')), sepAktif = null;
+  MENU.forEach(function (m) {
+    if (m.sep) { sepAktif = h('div', { class: 'pemisah' }, m.sep); return; }
+    if (!boleh(m.min)) return;
+    if (sepAktif) { nav.appendChild(sepAktif); sepAktif = null; }
+    var asal = S.paparan === 'profil' ? 'staf' : S.paparan;
+    nav.appendChild(h('button', { class: m.id === asal ? 'aktif' : '', 'aria-current': m.id === asal ? 'page' : null, onclick: function () { pergi(m.id); document.body.classList.remove('sisi-buka'); } }, h('span', { class: 'ikon' }, m.ikon), h('span', { class: 'label' }, m.label)));
+  });
+}
+function pergi(paparan, param) { S.paparan = paparan; S.param = param || null; render(); window.scrollTo(0, 0); }
+var jenisRender = 0;
+async function render() {
+  var no = ++jenisRender, k = $('#kandungan'); lupusCarta(); lukisMenu();
+  $('#tajukAtas').textContent = (PAPARAN[S.paparan] || ['', ''])[1];
+  try {
+    var node = await PAPARAN[S.paparan][0](S.param);
+    if (no !== jenisRender) return;            // pengguna sudah berpindah halaman
+    kosongkan(k).appendChild(node);
+    // Carta yang dibina dalam setTimeout kadCarta tetap berjalan selepas node dilampirkan
+  } catch (e) {
+    if (no !== jenisRender) return;
+    if (!e || !e.dikendali) { console.error(e); toast('Ralat memuatkan halaman.', 'ralat'); }
+    kosongkan(k).appendChild(h('div', { class: 'kad kosong' }, 'Halaman tidak dapat dimuatkan. ', h('button', { class: 'btn', onclick: render }, 'Cuba lagi')));
+  }
+}
+
+/* ===== Data asas ===== */
+async function muatAsas() {
+  S.asas = await panggil('muatAsas');
+  if (!S.tahun || S.asas.tahun.indexOf(S.tahun) < 0) S.tahun = S.asas.tahun.indexOf(S.asas.tahunAktif) >= 0 ? S.asas.tahunAktif : S.asas.tahun[S.asas.tahun.length - 1];
+  var sel = kosongkan($('#pilihTahun'));
+  S.asas.tahun.forEach(function (t) { sel.appendChild(h('option', { value: t, selected: t === S.tahun }, t)); });
+}
+
+/* ===== Log masuk / keluar ===== */
+function keLogMasuk(mesej) {
+  S.token = null; simpanToken(null); S.pengguna = null; lupusCarta();
+  $('#apl').classList.add('tersembunyi'); $('#logmasuk').classList.remove('tersembunyi');
+  var r = $('#logRalat'); if (mesej) { r.textContent = mesej; r.classList.remove('tersembunyi'); } else r.classList.add('tersembunyi');
+}
+async function masukApl(data) {
+  S.token = data.token; simpanToken(S.token); S.pengguna = data.pengguna;
+  $('#logmasuk').classList.add('tersembunyi'); $('#apl').classList.remove('tersembunyi');
+  $('#infoPengguna').textContent = S.pengguna.nama + ' (' + { PENTADBIR: 'Pentadbir', PENGURUS: 'Pengurus JK', PELIHAT: 'Pelihat' }[S.pengguna.peranan] + ')';
+  await muatAsas(); S.paparan = 'papan'; S.param = null; render();
+}
+function dialogTukarKata() {
+  var l = h('input', { type: 'password', autocomplete: 'current-password' }), b = h('input', { type: 'password', autocomplete: 'new-password' }), b2 = h('input', { type: 'password', autocomplete: 'new-password' });
+  modal({ tajuk: 'Tukar Kata Laluan', isi: h('div', null, medan('Kata laluan semasa', l), medan('Kata laluan baharu (min. 8 aksara)', b), medan('Ulang kata laluan baharu', b2)),
+    butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () {
+      if (b.value !== b2.value) { toast('Kata laluan baharu tidak sepadan.', 'ralat'); return false; }
+      toast((await panggil('tukarKata', { lama: l.value, baru: b.value }, { penuh: true })).message, 'berjaya'); }) }] });
+}
+
+/* ===== Permulaan ===== */
+document.addEventListener('DOMContentLoaded', function () {
+  $('#btnSisi').addEventListener('click', function () { if (window.innerWidth <= 860) document.body.classList.toggle('sisi-buka'); else document.body.classList.toggle('sisi-kecil'); });
+  $('#pilihTahun').addEventListener('change', function (e) { S.tahun = Number(e.target.value); render(); });
+  $('#btnKeluar').addEventListener('click', ujiTindakan(async function () { try { await panggil('logout', {}, { senyap: true }); } catch (e) {} keLogMasuk(); }));
+  $('#btnTukarKata').addEventListener('click', dialogTukarKata);
+  $('#borangLog').addEventListener('submit', function (e) {
+    e.preventDefault(); var r = $('#logRalat'); r.classList.add('tersembunyi');
+    panggil('login', { emel: $('#logEmel').value, kataLaluan: $('#logKata').value }, { senyap: true })
+      .then(function (d) { $('#logKata').value = ''; return masukApl(d); })
+      .catch(function (err) { r.textContent = err && err.message || 'Log masuk gagal.'; r.classList.remove('tersembunyi'); });
+  });
+  // Cuba sesi sedia ada atau akaun Google yang dikenali pelayan
+  S.token = bacaToken();
+  panggil('sesi', {}, { senyap: true }).then(masukApl).catch(function () { keLogMasuk(); });
+});
+</script>

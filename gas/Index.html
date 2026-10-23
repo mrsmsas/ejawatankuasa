@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistem JK MRSM SAS 2027</title>
+  <?!= include('Gaya') ?>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="memuat"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="lapis" role="dialog" aria-modal="true"></div>
+
+  <section id="logmasuk" class="tersembunyi">
+    <div class="kad">
+      <h1>Sistem Jawatankuasa Kerja</h1>
+      <p class="diam">MRSM Sultan Azlan Shah · Tahun 2027</p>
+      <form id="borangLog" autocomplete="on">
+        <label class="medan"><span>Emel</span><input type="email" id="logEmel" required autocomplete="username"></label>
+        <label class="medan"><span>Kata laluan</span><input type="password" id="logKata" required autocomplete="current-password"></label>
+        <div id="logRalat" class="ralat-kotak tersembunyi"></div>
+        <button class="btn utama" style="width:100%;justify-content:center" type="submit">Log masuk</button>
+      </form>
+    </div>
+  </section>
+
+  <div id="apl" class="tersembunyi">
+    <aside id="sisi" aria-label="Menu utama">
+      <div class="jenama"><div class="logo">JK</div><span class="teks">MRSM SAS<br><small style="font-weight:400;opacity:.7">Pengurusan JK 2027</small></span></div>
+      <nav id="menu"></nav>
+    </aside>
+    <div id="utama">
+      <header id="atas">
+        <button class="btn" id="btnSisi" aria-label="Buka/tutup menu">☰</button>
+        <strong id="tajukAtas"></strong>
+        <span class="ruang"></span>
+        <label class="diam">Tahun
+          <select id="pilihTahun" aria-label="Pilih tahun"></select></label>
+        <span id="infoPengguna" class="diam"></span>
+        <button class="btn kecil" id="btnTukarKata">Kata laluan</button>
+        <button class="btn kecil" id="btnKeluar">Log keluar</button>
+      </header>
+      <main id="kandungan"></main>
+    </div>
+  </div>
+  <?!= include('Komponen') ?>
+  <?!= include('Paparan1') ?>
+  <?!= include('Paparan2') ?>
+  <?!= include('Aplikasi') ?>
+</body>
+</html>

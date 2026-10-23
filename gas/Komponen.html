@@ -1,0 +1,218 @@
+<script>
+'use strict';
+/* ===== Keadaan global ===== */
+var S = { token: null, pengguna: null, asas: null, tahun: 2027, paparan: 'papan', param: null, carta: [], beban: 0 };
+var TARAF = { PENTADBIR: 3, PENGURUS: 2, PELIHAT: 1 };
+function boleh(min) { return S.pengguna && TARAF[S.pengguna.peranan] >= TARAF[min]; }
+function simpanToken(t) { try { if (t) sessionStorage.setItem('jk_token', t); else sessionStorage.removeItem('jk_token'); } catch (e) {} }
+function bacaToken() { try { return sessionStorage.getItem('jk_token'); } catch (e) { return null; } }
+
+/* ===== DOM ===== */
+function h(tag, attr) {
+  var e = document.createElement(tag), anak = Array.prototype.slice.call(arguments, 2);
+  if (attr) Object.keys(attr).forEach(function (k) {
+    var v = attr[k]; if (v === null || v === undefined || v === false) return;
+    if (k === 'class') e.className = v;
+    else if (k.indexOf('on') === 0 && typeof v === 'function') e.addEventListener(k.substring(2), v);
+    else if (k === 'value') e.value = v;
+    else if (k === 'checked' || k === 'disabled' || k === 'selected') e[k] = !!v;
+    else e.setAttribute(k, v === true ? '' : v);
+  });
+  (function tambah(a) { a.forEach(function (c) { if (Array.isArray(c)) return tambah(c); if (c === null || c === undefined || c === false) return; e.appendChild(c.nodeType ? c : document.createTextNode(String(c))); }); })(anak);
+  return e;
+}
+function $(s, r) { return (r || document).querySelector(s); }
+function kosongkan(e) { while (e.firstChild) e.removeChild(e.firstChild); return e; }
+function nf(n, d) { return (Number(n) || 0).toLocaleString('ms-MY', { maximumFractionDigits: d === undefined ? 0 : d, minimumFractionDigits: d || 0 }); }
+function lencana(teks, jenis) { return h('span', { class: 'lencana ' + (jenis || 'neutral') }, teks); }
+function lencanaBeban(b) { return b ? lencana({ TINGGI: 'Beban tinggi', RENDAH: 'Beban rendah', SEIMBANG: 'Seimbang' }[b] || b, b.toLowerCase()) : h('span', { class: 'diam' }, '—'); }
+
+/* ===== Notifikasi & pemuatan ===== */
+function toast(mesej, jenis) {
+  var t = h('div', { class: 'toast ' + (jenis || 'info') }, mesej); $('#toast').appendChild(t);
+  setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, jenis === 'ralat' ? 7000 : 3500);
+}
+function beban(d) { S.beban = Math.max(0, S.beban + d); $('#memuat').classList.toggle('buka', S.beban > 0); }
+
+/* ===== Panggilan API ===== */
+function panggil(fn, args, pilihan) {
+  pilihan = pilihan || {};
+  return new Promise(function (res, rej) {
+    beban(1);
+    google.script.run
+      .withSuccessHandler(function (r) {
+        beban(-1);
+        if (!r) { toast('Tiada jawapan daripada pelayan.', 'ralat'); return rej(new Error('kosong')); }
+        if (r.success) return res(pilihan.penuh ? r : r.data);
+        if (r.code === 'TAMAT_SESI') { keLogMasuk('Sesi anda telah tamat. Sila log masuk semula.'); return rej(Object.assign(new Error(r.message), { dikendali: true })); }
+        if (!pilihan.senyap) toast(r.message, 'ralat');
+        var e = new Error(r.message); e.kod = r.code; e.dikendali = true; rej(e);
+      })
+      .withFailureHandler(function (e) { beban(-1); toast('Sambungan ke pelayan gagal. Semak internet dan cuba lagi.', 'ralat'); var x = new Error(String(e && e.message || e)); x.dikendali = true; rej(x); })
+      .api({ token: S.token, fn: fn, args: args || {} });
+  });
+}
+function ujiTindakan(fn) { return function () { var a = arguments; return Promise.resolve().then(function () { return fn.apply(null, a); }).catch(function (e) { if (!e || !e.dikendali) { console.error(e); toast('Ralat tidak dijangka: ' + (e && e.message), 'ralat'); } }); }; }
+
+/* ===== Modal & pengesahan ===== */
+function modal(opt) {
+  var lapis = $('#lapis'), tutupFn;
+  var kotak = h('div', { class: 'modal' + (opt.lebar ? ' lebar' : '') });
+  var kepala = h('header', null, h('h2', { style: 'margin:0' }, opt.tajuk), h('button', { class: 'btn kecil', 'aria-label': 'Tutup', onclick: function () { tutup(); } }, '✕'));
+  var isi = h('div', { class: 'isi' }, opt.isi);
+  var kaki = h('footer', null);
+  (opt.butang || []).forEach(function (b) {
+    var btn = h('button', { class: 'btn ' + (b.kelas || ''), type: 'button' }, b.label);
+    btn.addEventListener('click', function () {
+      if (!b.onClick) return tutup();
+      btn.disabled = true;
+      Promise.resolve(b.onClick(btn)).then(function (r) { btn.disabled = false; if (r !== false) tutup(); }).catch(function () { btn.disabled = false; });
+    });
+    kaki.appendChild(btn);
+  });
+  kotak.appendChild(kepala); kotak.appendChild(isi); if ((opt.butang || []).length) kotak.appendChild(kaki);
+  kosongkan(lapis).appendChild(kotak); lapis.classList.add('buka'); lapis.scrollTop = 0;
+  var esc = function (e) { if (e.key === 'Escape') tutup(); };
+  document.addEventListener('keydown', esc);
+  function tutup() { lapis.classList.remove('buka'); kosongkan(lapis); document.removeEventListener('keydown', esc); if (opt.apabilaTutup) opt.apabilaTutup(); }
+  tutupFn = tutup; var pertama = kotak.querySelector('input,select,textarea'); if (pertama && !opt.tiadaFokus) pertama.focus();
+  return tutupFn;
+}
+function sahkan(mesej, opt) {
+  opt = opt || {};
+  return new Promise(function (res) {
+    var selesai = false, t = modal({ tajuk: opt.tajuk || 'Pengesahan', isi: h('p', null, mesej), tiadaFokus: true,
+      apabilaTutup: function () { if (!selesai) { selesai = true; res(false); } },
+      butang: [{ label: 'Batal' }, { label: opt.label || 'Ya, teruskan', kelas: opt.bahaya ? 'bahaya pepejal' : 'utama', onClick: function () { selesai = true; res(true); } }] });
+  });
+}
+
+/* ===== Combobox boleh cari ===== */
+function combobox(opt) {
+  // opt: {pilihan:[{nilai,label,sub}], nilai, placeholder, onPilih(nilai,item), kosongBoleh}
+  var nilai = opt.nilai || '', pilihan = opt.pilihan, fokus = -1;
+  var input = h('input', { type: 'text', placeholder: opt.placeholder || 'Taip untuk mencari…', 'aria-label': opt.placeholder || 'Cari', autocomplete: 'off' });
+  var senarai = h('ul', { class: 'tersembunyi', role: 'listbox' });
+  var kotak = h('div', { class: 'cb' }, input, senarai);
+  function labelDari(n) { var p = pilihan.filter(function (x) { return String(x.nilai) === String(n); })[0]; return p ? p.label : ''; }
+  input.value = labelDari(nilai);
+  function lukis() {
+    var q = input.value.trim().toLowerCase(); kosongkan(senarai);
+    var padan = pilihan.filter(function (p) { return !q || (p.label + ' ' + (p.sub || '') + ' ' + p.nilai).toLowerCase().indexOf(q) >= 0; }).slice(0, 60);
+    if (!padan.length) senarai.appendChild(h('li', { class: 'diam' }, 'Tiada padanan'));
+    padan.forEach(function (p, i) {
+      senarai.appendChild(h('li', { class: i === fokus ? 'fokus' : '', role: 'option', onmousedown: function (e) { e.preventDefault(); pilih(p); } }, p.label, p.sub ? h('small', null, '  ' + p.sub) : null));
+    });
+    senarai._padan = padan; senarai.classList.remove('tersembunyi');
+  }
+  function pilih(p) { nilai = p.nilai; input.value = p.label; senarai.classList.add('tersembunyi'); if (opt.onPilih) opt.onPilih(nilai, p); }
+  input.addEventListener('input', function () { fokus = -1; if (!input.value && opt.kosongBoleh) { nilai = ''; if (opt.onPilih) opt.onPilih('', null); } lukis(); });
+  input.addEventListener('focus', function () { input.select(); lukis(); });
+  input.addEventListener('blur', function () { setTimeout(function () { senarai.classList.add('tersembunyi'); input.value = labelDari(nilai); }, 120); });
+  input.addEventListener('keydown', function (e) {
+    var p = senarai._padan || [];
+    if (e.key === 'ArrowDown') { fokus = Math.min(fokus + 1, p.length - 1); lukis(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { fokus = Math.max(fokus - 1, 0); lukis(); e.preventDefault(); }
+    else if (e.key === 'Enter' && p[fokus >= 0 ? fokus : 0]) { pilih(p[fokus >= 0 ? fokus : 0]); e.preventDefault(); }
+  });
+  Object.defineProperty(kotak, 'nilai', { get: function () { return nilai; }, set: function (v) { nilai = v; input.value = labelDari(v); } });
+  return kotak;
+}
+function medan(label, kawalan, bantuan) { return h('label', { class: 'medan' }, h('span', null, label), kawalan, bantuan ? h('small', { class: 'diam' }, bantuan) : null); }
+function pilihSelect(pilihan, nilai, kosong) {
+  var s = h('select', null, kosong !== undefined ? h('option', { value: '' }, kosong) : null,
+    pilihan.map(function (p) { var o = typeof p === 'object' ? p : { nilai: p, label: p }; return h('option', { value: o.nilai, selected: String(o.nilai) === String(nilai) }, o.label); }));
+  return s;
+}
+
+/* ===== Jadual (cari, isih, halaman) ===== */
+function jadual(opt) {
+  // opt: {lajur:[{kunci,label,nombor,papar(r)->node,isih:true,nilaiCari(r)}], data, saiz, cari, onKlik, kosong, tapis(r)->bool, namaFail}
+  var keadaan = { q: '', isih: opt.isihAsal || null, arah: opt.arahAsal || 'desc', hlm: 0 }, saiz = opt.saiz || 25;
+  var akar = h('div'), kotakCari = null;
+  if (opt.cari !== false) {
+    kotakCari = h('input', { type: 'text', placeholder: 'Cari…', 'aria-label': 'Cari dalam jadual', style: 'min-width:220px' });
+    kotakCari.addEventListener('input', function () { keadaan.q = kotakCari.value.toLowerCase(); keadaan.hlm = 0; lukis(); });
+    akar.appendChild(h('div', { class: 'baris-alat tiada-cetak' }, kotakCari, opt.alat || null));
+  }
+  var badan = h('div'); akar.appendChild(badan);
+  function sasar() {
+    var d = opt.data.filter(function (r) { return !opt.tapis || opt.tapis(r); });
+    if (keadaan.q) d = d.filter(function (r) { return opt.lajur.some(function (l) { var v = l.nilaiCari ? l.nilaiCari(r) : r[l.kunci]; return v !== undefined && v !== null && String(v).toLowerCase().indexOf(keadaan.q) >= 0; }); });
+    if (keadaan.isih) { var l = opt.lajur.filter(function (x) { return x.kunci === keadaan.isih; })[0], dir = keadaan.arah === 'asc' ? 1 : -1;
+      d = d.slice().sort(function (a, b) { var x = l && l.nilaiIsih ? l.nilaiIsih(a) : a[keadaan.isih], y = l && l.nilaiIsih ? l.nilaiIsih(b) : b[keadaan.isih];
+        if (x === null || x === undefined || x === '') return 1; if (y === null || y === undefined || y === '') return -1;
+        return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'ms')) * dir; }); }
+    return d;
+  }
+  function lukis() {
+    var d = sasar(), jum = d.length, hlmMaks = Math.max(0, Math.ceil(jum / saiz) - 1); keadaan.hlm = Math.min(keadaan.hlm, hlmMaks);
+    var potong = d.slice(keadaan.hlm * saiz, keadaan.hlm * saiz + saiz);
+    kosongkan(badan);
+    if (!jum) { badan.appendChild(h('div', { class: 'kosong' }, opt.kosong || 'Tiada rekod untuk dipaparkan.')); return; }
+    var thead = h('tr', null, opt.lajur.map(function (l) {
+      var aktif = keadaan.isih === l.kunci;
+      return h('th', { class: (l.nombor ? 'nombor ' : '') + (l.isih !== false ? 'boleh' : ''), 'aria-sort': aktif ? (keadaan.arah === 'asc' ? 'ascending' : 'descending') : 'none',
+        onclick: l.isih === false ? null : function () { keadaan.arah = (aktif && keadaan.arah === 'desc') ? 'asc' : 'desc'; if (!aktif && !l.nombor) keadaan.arah = 'asc'; keadaan.isih = l.kunci; lukis(); } },
+        l.label + (aktif ? (keadaan.arah === 'asc' ? ' ▲' : ' ▼') : ''));
+    }));
+    var tbody = h('tbody', null, potong.map(function (r) {
+      return h('tr', { class: opt.onKlik ? 'klik' : '', onclick: opt.onKlik ? function () { opt.onKlik(r); } : null },
+        opt.lajur.map(function (l) { return h('td', { class: l.nombor ? 'nombor' : '' }, l.papar ? l.papar(r) : (r[l.kunci] === undefined || r[l.kunci] === null ? '' : String(r[l.kunci]))); }));
+    }));
+    badan.appendChild(h('div', { class: 'bungkus-jadual' }, h('table', null, h('thead', null, thead), tbody)));
+    badan.appendChild(h('div', { class: 'halaman tiada-cetak' }, h('span', null, 'Memaparkan ' + nf(keadaan.hlm * saiz + 1) + '–' + nf(Math.min(jum, keadaan.hlm * saiz + saiz)) + ' daripada ' + nf(jum)),
+      h('span', null, h('button', { class: 'btn kecil', disabled: keadaan.hlm === 0, onclick: function () { keadaan.hlm--; lukis(); } }, '‹ Sebelum'), ' Halaman ' + (keadaan.hlm + 1) + '/' + (hlmMaks + 1) + ' ',
+        h('button', { class: 'btn kecil', disabled: keadaan.hlm >= hlmMaks, onclick: function () { keadaan.hlm++; lukis(); } }, 'Seterusnya ›'))));
+  }
+  akar.segarkan = function (dataBaru) { if (dataBaru) opt.data = dataBaru; lukis(); };
+  akar.dataTapis = sasar; lukis(); return akar;
+}
+
+/* ===== Carta ===== */
+function lupusCarta() { S.carta.forEach(function (c) { try { c.destroy(); } catch (e) {} }); S.carta = []; }
+var WARNA = { utama: '#0f5a52', emas: '#c8942c', merah: '#b3261e', biru: '#1f5fa8', kelabu: '#9aa8a8', hijauMuda: '#5aa897' };
+function kadCarta(tajuk, bina, opt) {
+  opt = opt || {};
+  var kanvas = h('canvas', { role: 'img', 'aria-label': tajuk }), kotak = h('div', { class: 'carta' + (opt.tinggi ? ' tinggi' : '') }, kanvas);
+  var kad = h('div', { class: 'kad' }, h('h2', null, tajuk), kotak);
+  setTimeout(function () {
+    var cfg = bina(); if (!cfg) { kosongkan(kotak).appendChild(h('div', { class: 'kosong' }, opt.kosong || 'Tiada data untuk dipaparkan.')); return; }
+    if (typeof Chart === 'undefined') { kosongkan(kotak).appendChild(h('div', { class: 'kosong' }, 'Pustaka carta tidak dapat dimuatkan (semak sambungan internet).')); return; }
+    cfg.options = Object.assign({ responsive: true, maintainAspectRatio: false }, cfg.options || {});
+    S.carta.push(new Chart(kanvas, cfg));
+  }, 0);
+  return kad;
+}
+
+/* ===== Eksport CSV (Excel serasi, UTF-8 BOM) ===== */
+function csvSel(v) {
+  var s = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;          // elak suntikan formula
+  return /[",\n\r;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function eksportCSV(nama, tajuk, baris) {
+  var teks = '﻿' + [tajuk.map(csvSel).join(',')].concat(baris.map(function (r) { return r.map(csvSel).join(','); })).join('\r\n');
+  var a = h('a', { href: URL.createObjectURL(new Blob([teks], { type: 'text/csv;charset=utf-8' })), download: nama });
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  toast('Fail ' + nama + ' dimuat turun.', 'berjaya');
+}
+/* Penghurai CSV ringkas (sokong petikan dan koma/titik bertanda) — pulangkan array objek mengikut baris pengepala */
+function huraiCSV(teks) {
+  teks = teks.replace(/^﻿/, '');
+  var sep = (teks.split('\n')[0].match(/;/g) || []).length > (teks.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+  var baris = [], r = [], s = '', petik = false;
+  for (var i = 0; i < teks.length; i++) {
+    var c = teks[i];
+    if (petik) { if (c === '"') { if (teks[i + 1] === '"') { s += '"'; i++; } else petik = false; } else s += c; }
+    else if (c === '"') petik = true;
+    else if (c === sep) { r.push(s); s = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && teks[i + 1] === '\n') i++; r.push(s); s = ''; if (r.some(function (x) { return x !== ''; })) baris.push(r); r = []; }
+    else s += c;
+  }
+  r.push(s); if (r.some(function (x) { return x !== ''; })) baris.push(r);
+  if (!baris.length) return [];
+  var kepala = baris[0].map(function (k) { return k.trim(); });
+  return baris.slice(1).map(function (b) { var o = {}; kepala.forEach(function (k, i) { o[k] = (b[i] || '').trim(); }); return o; });
+}
+</script>
