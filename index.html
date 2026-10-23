@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sistem JK MRSM SAS 2027</title>
+  <link rel="icon" type="image/png" href="logo-mrsm-sas.png">
   <style>
 :root{
   --hijau:#0f5a52;--hijau-2:#0b3f3a;--hijau-muda:#e3f1ee;--emas:#c8942c;
@@ -106,6 +107,9 @@ tr.klik{cursor:pointer}
 /* Log masuk */
 #logmasuk{min-height:100vh;display:grid;place-items:center;padding:1rem;background:linear-gradient(135deg,var(--hijau-2),var(--hijau))}
 #logmasuk .kad{width:min(400px,100%);padding:1.6rem}
+.kepala-log{text-align:center;margin-bottom:1rem}
+.logo-log{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto .5rem}
+.logo-sisi{width:42px;height:42px;object-fit:contain;flex-shrink:0;background:#fff;border-radius:8px;padding:2px}
 .bar-beban{height:8px;border-radius:99px;background:#e5ecec;overflow:hidden;min-width:70px}.bar-beban>i{display:block;height:100%;background:var(--hijau)}
 .diam{color:var(--teks-2)}
 .sel-ringkas{display:flex;gap:1rem;flex-wrap:wrap;color:var(--teks-2);font-size:.88rem;margin-bottom:.6rem}
@@ -153,8 +157,11 @@ window.google = { script: { get run() {
 
   <section id="logmasuk" class="tersembunyi">
     <div class="kad">
-      <h1>Sistem Jawatankuasa Kerja</h1>
-      <p class="diam">MRSM Sultan Azlan Shah · Tahun 2027</p>
+      <div class="kepala-log">
+        <img src="logo-mrsm-sas.png" alt="Logo MRSM Sultan Azlan Shah" class="logo-log" onerror="this.style.display='none'">
+        <h1>Sistem Jawatankuasa Kerja</h1>
+        <p class="diam">MRSM Sultan Azlan Shah · Tahun 2027</p>
+      </div>
       <form id="borangLog" autocomplete="on">
         <label class="medan"><span>Emel</span><input type="email" id="logEmel" required autocomplete="username"></label>
         <label class="medan"><span>Kata laluan</span><input type="password" id="logKata" required autocomplete="current-password"></label>
@@ -166,7 +173,7 @@ window.google = { script: { get run() {
 
   <div id="apl" class="tersembunyi">
     <aside id="sisi" aria-label="Menu utama">
-      <div class="jenama"><div class="logo">JK</div><span class="teks">MRSM SAS<br><small style="font-weight:400;opacity:.7">Pengurusan JK 2027</small></span></div>
+      <div class="jenama"><img src="logo-mrsm-sas.png" alt="Logo MRSM SAS" class="logo-sisi" onerror="this.outerHTML='<div class=&quot;logo&quot;>JK</div>'"><span class="teks">MRSM SAS<br><small style="font-weight:400;opacity:.7">Pengurusan JK 2027</small></span></div>
       <nav id="menu"></nav>
     </aside>
     <div id="utama">

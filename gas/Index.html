@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sistem JK MRSM SAS 2027</title>
+  <link rel="icon" type="image/png" href="logo-mrsm-sas.png">
   <?!= include('Gaya') ?>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -15,8 +16,11 @@
 
   <section id="logmasuk" class="tersembunyi">
     <div class="kad">
-      <h1>Sistem Jawatankuasa Kerja</h1>
-      <p class="diam">MRSM Sultan Azlan Shah · Tahun 2027</p>
+      <div class="kepala-log">
+        <img src="logo-mrsm-sas.png" alt="Logo MRSM Sultan Azlan Shah" class="logo-log" onerror="this.style.display='none'">
+        <h1>Sistem Jawatankuasa Kerja</h1>
+        <p class="diam">MRSM Sultan Azlan Shah · Tahun 2027</p>
+      </div>
       <form id="borangLog" autocomplete="on">
         <label class="medan"><span>Emel</span><input type="email" id="logEmel" required autocomplete="username"></label>
         <label class="medan"><span>Kata laluan</span><input type="password" id="logKata" required autocomplete="current-password"></label>
@@ -28,7 +32,7 @@
 
   <div id="apl" class="tersembunyi">
     <aside id="sisi" aria-label="Menu utama">
-      <div class="jenama"><div class="logo">JK</div><span class="teks">MRSM SAS<br><small style="font-weight:400;opacity:.7">Pengurusan JK 2027</small></span></div>
+      <div class="jenama"><img src="logo-mrsm-sas.png" alt="Logo MRSM SAS" class="logo-sisi" onerror="this.outerHTML='<div class=&quot;logo&quot;>JK</div>'"><span class="teks">MRSM SAS<br><small style="font-weight:400;opacity:.7">Pengurusan JK 2027</small></span></div>
       <nav id="menu"></nav>
     </aside>
     <div id="utama">
