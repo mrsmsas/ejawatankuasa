@@ -2,12 +2,13 @@
 /* ===== Menu & penghalaan ===== */
 var MENU = [
   { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PELIHAT' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
-  { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PELIHAT' },
+  { id: 'laporan', ikon: '🖨', label: 'Laporan JK Induk', min: 'PELIHAT' }, { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PELIHAT' },
   { sep: 'Konfigurasi' }, { id: 'posisi', ikon: '🏷', label: 'Jawatan & Merit', min: 'PELIHAT' }, { id: 'import', ikon: '⇅', label: 'Import / Eksport', min: 'PELIHAT' },
   { sep: 'Pentadbiran' }, { id: 'pengguna', ikon: '🔑', label: 'Pengguna', min: 'PENTADBIR' }, { id: 'tetapan', ikon: '⚙', label: 'Tetapan', min: 'PENTADBIR' }, { id: 'audit', ikon: '📜', label: 'Log Audit', min: 'PENTADBIR' }
 ];
 var PAPARAN = {
   papan: [function () { return paparPapan(); }, 'Papan Pemuka'], jk: [function (p) { return p ? paparJKButiran(p) : paparJK(); }, 'Jawatankuasa'], staf: [function () { return paparStaf(); }, 'Staf & Guru'],
+  laporan: [function () { return paparLaporan(); }, 'Laporan JK Induk'],
   profil: [function (p) { return paparProfil(p); }, 'Profil Merit Staf'], analisis: [function () { return paparAnalisis(); }, 'Analisis Beban'], posisi: [function () { return paparPosisi(); }, 'Jawatan & Merit'],
   import: [function () { return paparImport(); }, 'Import / Eksport'], pengguna: [function () { return paparPengguna(); }, 'Pengguna'], tetapan: [function () { return paparTetapan(); }, 'Tetapan'], audit: [function () { return paparAudit(); }, 'Log Audit']
 };

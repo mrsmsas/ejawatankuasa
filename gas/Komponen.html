@@ -1,7 +1,7 @@
 <script>
 'use strict';
 /* ===== Keadaan global ===== */
-var S = { token: null, pengguna: null, asas: null, tahun: new Date().getFullYear(), paparan: 'papan', param: null, carta: [], beban: 0 };
+var S = { token: null, pengguna: null, asas: null, tahun: null, paparan: 'papan', param: null, carta: [], beban: 0 };
 var TARAF = { PENTADBIR: 3, PENGURUS: 2, PELIHAT: 1 };
 function boleh(min) { return S.pengguna && TARAF[S.pengguna.peranan] >= TARAF[min]; }
 function simpanToken(t) { try { if (t) sessionStorage.setItem('jk_token', t); else sessionStorage.removeItem('jk_token'); } catch (e) {} }

@@ -1,0 +1,73 @@
+<script>
+/* ===== Laporan JK Induk (cetak / PDF / Excel) ===== */
+var XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+function muatXLSX() {
+  return new Promise(function (res, rej) {
+    if (window.XLSX) return res(window.XLSX);
+    var s = document.createElement('script'); s.src = XLSX_URL;
+    s.onload = function () { res(window.XLSX); }; s.onerror = function () { rej(new Error('Pustaka Excel tidak dapat dimuatkan. Semak sambungan internet.')); };
+    document.head.appendChild(s);
+  });
+}
+function kumpulJK(jk) {
+  // Kumpulan mengikut kategori; huruf bahagian (A–E) diambil daripada kod JK pertama dalam kategori itu.
+  var peta = {}, urut = [];
+  jk.forEach(function (j) { if (!peta[j.kategori]) { peta[j.kategori] = { kategori: j.kategori, huruf: (String(j.kod || '').match(/^[A-Za-z]/) || [''])[0].toUpperCase(), jk: [] }; urut.push(j.kategori); } peta[j.kategori].jk.push(j); });
+  return urut.map(function (k) { return peta[k]; });
+}
+function namaPaparan(a) { return a.nama + (a.pemegang ? ' (' + a.pemegang + ')' : ''); }
+
+async function paparLaporan() {
+  var d = await panggil('laporanInduk', { tahun: S.tahun }), kump = kumpulJK(d.jk), tajukDok = 'JAWATANKUASA KERJA MRSM SULTAN AZLAN SHAH TAHUN ' + d.tahun;
+  var f = { kat: pilihSelect(kump.map(function (g) { return { nilai: g.kategori, label: (g.huruf ? 'Bahagian ' + g.huruf + ' — ' : '') + g.kategori }; }), '', 'Semua bahagian'), merit: h('input', { type: 'checkbox' }) };
+  var dok = h('div', { id: 'laporan' });
+  var jumlahAhli = d.jk.reduce(function (s, j) { return s + j.ahli.length; }, 0);
+
+  function terpilih() { return kump.filter(function (g) { return !f.kat.value || g.kategori === f.kat.value; }); }
+  function lukis() {
+    kosongkan(dok);
+    dok.appendChild(h('div', { class: 'cetak-sahaja kepala-cetak' }, h('img', { src: 'logo-mrsm-sas.png', alt: '', class: 'logo-cetak', onerror: "this.style.display='none'" }), h('h1', null, tajukDok)));
+    var pilih = terpilih();
+    if (!pilih.length) { dok.appendChild(h('div', { class: 'kosong' }, 'Tiada jawatankuasa untuk tahun ini.')); return; }
+    pilih.forEach(function (g, gi) {
+      var bahagian = h('section', { class: 'kumpulan' }, h('h2', { class: 'tajuk-bahagian' }, (g.huruf ? 'BAHAGIAN ' + g.huruf + ' — ' : '') + g.kategori.toUpperCase()));
+      g.jk.forEach(function (j) {
+        bahagian.appendChild(h('div', { class: 'blok-jk' }, h('h3', null, (j.kod ? j.kod + '  ' : '') + j.nama.toUpperCase()),
+          j.ahli.length ? h('table', { class: 'jadual-laporan' }, h('thead', null, h('tr', null, h('th', { style: 'width:48px' }, 'Bil'), h('th', null, 'Nama'), h('th', null, 'Jawatan'), f.merit.checked ? h('th', { class: 'nombor' }, 'Merit') : null)),
+            h('tbody', null, j.ahli.map(function (a, i) { return h('tr', null, h('td', null, i + 1), h('td', null, namaPaparan(a)), h('td', null, a.jawatan), f.merit.checked ? h('td', { class: 'nombor' }, a.merit) : null); })))
+          : h('p', { class: 'diam' }, 'Belum ada ahli dilantik.')));
+      });
+      dok.appendChild(bahagian);
+    });
+  }
+  f.kat.addEventListener('change', lukis); f.merit.addEventListener('change', lukis);
+
+  async function excel() {
+    var X = await muatXLSX(), pilih = terpilih(), baris = [[tajukDok], []], gabung = [{ s: { r: 0, c: 0 }, e: { r: 0, c: f.merit.checked ? 3 : 2 } }], lebar = f.merit.checked ? 4 : 3;
+    pilih.forEach(function (g) {
+      baris.push([(g.huruf ? 'BAHAGIAN ' + g.huruf + ' — ' : '') + g.kategori.toUpperCase()]); gabung.push({ s: { r: baris.length - 1, c: 0 }, e: { r: baris.length - 1, c: lebar - 1 } });
+      g.jk.forEach(function (j) {
+        baris.push([(j.kod ? j.kod + '  ' : '') + j.nama.toUpperCase()]); gabung.push({ s: { r: baris.length - 1, c: 0 }, e: { r: baris.length - 1, c: lebar - 1 } });
+        baris.push(f.merit.checked ? ['Bil', 'Nama', 'Jawatan', 'Merit'] : ['Bil', 'Nama', 'Jawatan']);
+        j.ahli.forEach(function (a, i) { baris.push(f.merit.checked ? [i + 1, namaPaparan(a), a.jawatan, a.merit] : [i + 1, namaPaparan(a), a.jawatan]); });
+        baris.push([]);
+      });
+    });
+    var ws = X.utils.aoa_to_sheet(baris); ws['!merges'] = gabung; ws['!cols'] = [{ wch: 8 }, { wch: 52 }, { wch: 46 }, { wch: 8 }].slice(0, lebar);
+    var rata = [['Bahagian', 'Kod JK', 'Jawatankuasa', 'Bil', 'Nama', 'Jawatan', 'Merit']];
+    pilih.forEach(function (g) { g.jk.forEach(function (j) { j.ahli.forEach(function (a, i) { rata.push([g.huruf || g.kategori, j.kod, j.nama, i + 1, namaPaparan(a), a.jawatan, a.merit]); }); }); });
+    var ws2 = X.utils.aoa_to_sheet(rata); ws2['!cols'] = [{ wch: 10 }, { wch: 8 }, { wch: 50 }, { wch: 5 }, { wch: 44 }, { wch: 40 }, { wch: 7 }];
+    var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'JK Induk ' + d.tahun); X.utils.book_append_sheet(wb, ws2, 'Senarai Rata'); X.writeFile(wb, 'JK-Induk-MRSM-SAS-' + d.tahun + '.xlsx');
+    toast('Fail Excel dimuat turun.', 'berjaya');
+  }
+  lukis();
+  return h('div', null,
+    h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Laporan JK Induk ' + d.tahun), h('p', null, nf(d.jk.length) + ' jawatankuasa · ' + nf(jumlahAhli) + ' pelantikan. Susunan ahli sama seperti fail JK Induk asal.'))),
+    h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, h('div', { class: 'baris-alat' },
+      h('label', null, 'Paparkan ', f.kat), h('label', null, f.merit, ' Sertakan lajur merit'),
+      h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / Simpan PDF'),
+      h('button', { class: 'btn', onclick: ujiTindakan(excel) }, '📗 Muat turun Excel (.xlsx)')),
+      h('p', { class: 'diam', style: 'margin:.3rem 0 0' }, 'Untuk PDF: tekan "Cetak / Simpan PDF", pilih destinasi "Save as PDF" (kertas A4). Setiap bahagian bermula pada halaman baharu.')),
+    dok);
+}
+</script>

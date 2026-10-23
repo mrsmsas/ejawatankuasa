@@ -115,7 +115,21 @@ tr.klik{cursor:pointer}
   #kandungan{padding:.75rem}
   .carta{height:260px}
 }
+/* Laporan JK Induk */
+#laporan .tajuk-bahagian{background:var(--hijau);color:#fff;padding:.5rem .8rem;border-radius:8px;margin:1.2rem 0 .6rem;font-size:1rem}
+#laporan .blok-jk{margin-bottom:1.1rem}
+#laporan .blok-jk h3{margin:.2rem 0 .3rem;color:var(--hijau-2)}
+.jadual-laporan{width:100%;border:1px solid var(--garis);background:#fff}
+.jadual-laporan td,.jadual-laporan th{padding:.3rem .6rem;font-size:.9rem}
+.kepala-cetak{text-align:center;margin-bottom:.8rem}.kepala-cetak h1{font-size:1.1rem}.logo-cetak{width:70px;height:70px;object-fit:contain}
 @media print{
+  @page{size:A4;margin:12mm}
+  #laporan .kumpulan{break-before:page}#laporan .kumpulan:first-of-type{break-before:auto}
+  #laporan .blok-jk{break-inside:avoid}
+  #laporan .tajuk-bahagian{background:#fff!important;color:#000!important;border:1.5px solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #laporan .jadual-laporan th{background:#e9eeee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #laporan .jadual-laporan td,#laporan .jadual-laporan th{font-size:10pt;padding:2px 6px;border:1px solid #888}
+  #laporan .blok-jk h3{color:#000;font-size:11pt}
   #sisi,#atas,.tiada-cetak,#toast,#memuat,.btn{display:none!important}
   body{background:#fff}#kandungan{padding:0;max-width:none}
   .kad{box-shadow:none;border-color:#999}
