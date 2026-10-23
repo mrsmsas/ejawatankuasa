@@ -8,10 +8,10 @@
   <link rel="icon" type="image/png" href="logo-mrsm-sas.png">
   <style>
 :root{
-  --hijau:#0f5a52;--hijau-2:#0b3f3a;--hijau-muda:#e3f1ee;--emas:#c8942c;
-  --latar:#f3f6f6;--kad:#ffffff;--teks:#1b2a2a;--teks-2:#5b6e6e;--garis:#d9e2e2;
+  --hijau:#0f2c63;--hijau-2:#0a1f4a;--hijau-muda:#eaf0fa;--emas:#f5b800;
+  --latar:#f4f7fc;--kad:#ffffff;--teks:#14213d;--teks-2:#58647f;--garis:#d3ddf0;
   --bahaya:#b3261e;--bahaya-muda:#fbe7e5;--amaran:#a96a00;--amaran-muda:#fff1d6;--berjaya:#1b7a3d;--berjaya-muda:#e1f4e7;--info:#1f5fa8;--info-muda:#e4eefa;
-  --jejari:10px;--bayang:0 1px 3px rgba(15,60,58,.12);--sisi:248px;--sisi-kecil:64px;
+  --jejari:10px;--bayang:0 1px 3px rgba(15,44,99,.12);--sisi:248px;--sisi-kecil:64px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -22,13 +22,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tersembunyi{display:none!important}
 /* Susun atur */
 #apl{display:flex;min-height:100vh}
-#sisi{width:var(--sisi);background:var(--hijau-2);color:#e8f2f0;display:flex;flex-direction:column;transition:width .2s;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:auto}
+#sisi{width:var(--sisi);background:var(--hijau-2);color:#e6edf9;display:flex;flex-direction:column;transition:width .2s;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:auto}
 #sisi .jenama{display:flex;align-items:center;gap:.6rem;padding:1rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,.12)}
-#sisi .jenama .logo{width:34px;height:34px;border-radius:8px;background:var(--emas);color:#2a1d00;display:grid;place-items:center;font-weight:800;flex-shrink:0}
+#sisi .jenama .logo{width:34px;height:34px;border-radius:8px;background:var(--emas);color:#0f2c63;display:grid;place-items:center;font-weight:800;flex-shrink:0}
 #sisi nav{padding:.5rem}
 #sisi nav button{display:flex;gap:.7rem;align-items:center;width:100%;border:0;background:none;color:inherit;text-align:left;padding:.65rem .75rem;border-radius:8px;cursor:pointer;white-space:nowrap}
 #sisi nav button:hover{background:rgba(255,255,255,.08)}
-#sisi nav button.aktif{background:var(--hijau);color:#fff;font-weight:600}
+#sisi nav button.aktif{background:var(--emas);color:#0f2c63;font-weight:700}
 #sisi nav .ikon{width:20px;text-align:center;flex-shrink:0}
 #sisi nav .pemisah{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;opacity:.55;padding:.9rem .75rem .3rem}
 body.sisi-kecil #sisi{width:var(--sisi-kecil)}
@@ -69,21 +69,21 @@ label.medan input,label.medan select{width:100%}
 .lencana.rendah{background:var(--info-muda);color:var(--info)}
 .lencana.seimbang,.lencana.aktif{background:var(--berjaya-muda);color:var(--berjaya)}
 .lencana.amaran{background:var(--amaran-muda);color:var(--amaran)}
-.lencana.neutral{background:#eceff0;color:var(--teks-2)}
+.lencana.neutral{background:#e8edf6;color:var(--teks-2)}
 /* Jadual */
 .bungkus-jadual{overflow:auto;border:1px solid var(--garis);border-radius:8px;background:#fff}
 table{border-collapse:collapse;width:100%}
 th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--garis);vertical-align:top}
-th{background:#eef4f3;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:var(--teks-2);position:sticky;top:0;white-space:nowrap}
+th{background:#eef3fb;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:var(--teks-2);position:sticky;top:0;white-space:nowrap}
 th.boleh{cursor:pointer;user-select:none}th.boleh:hover{background:var(--hijau-muda)}
 td.nombor,th.nombor{text-align:right;font-variant-numeric:tabular-nums}
-tbody tr:hover{background:#f8fbfa}
+tbody tr:hover{background:#f6f8fd}
 tr.klik{cursor:pointer}
 .halaman{display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;gap:.5rem;flex-wrap:wrap;color:var(--teks-2);font-size:.85rem}
 .kosong{padding:2rem 1rem;text-align:center;color:var(--teks-2)}
 .carta{position:relative;height:320px}.carta.tinggi{height:520px}
 /* Modal / toast / loading */
-#lapis{position:fixed;inset:0;background:rgba(10,30,30,.5);display:none;align-items:flex-start;justify-content:center;padding:4vh 1rem;overflow:auto;z-index:100}
+#lapis{position:fixed;inset:0;background:rgba(8,26,63,.5);display:none;align-items:flex-start;justify-content:center;padding:4vh 1rem;overflow:auto;z-index:100}
 #lapis.buka{display:flex}
 .modal{background:#fff;border-radius:12px;width:min(720px,100%);box-shadow:0 12px 40px rgba(0,0,0,.3)}
 .modal.lebar{width:min(980px,100%)}
@@ -110,7 +110,7 @@ tr.klik{cursor:pointer}
 .kepala-log{text-align:center;margin-bottom:1rem}
 .logo-log{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto .5rem}
 .logo-sisi{width:42px;height:42px;object-fit:contain;flex-shrink:0;background:#fff;border-radius:8px;padding:2px}
-.bar-beban{height:8px;border-radius:99px;background:#e5ecec;overflow:hidden;min-width:70px}.bar-beban>i{display:block;height:100%;background:var(--hijau)}
+.bar-beban{height:8px;border-radius:99px;background:#e1e8f5;overflow:hidden;min-width:70px}.bar-beban>i{display:block;height:100%;background:var(--hijau)}
 .diam{color:var(--teks-2)}
 .sel-ringkas{display:flex;gap:1rem;flex-wrap:wrap;color:var(--teks-2);font-size:.88rem;margin-bottom:.6rem}
 .sel-ringkas b{color:var(--teks)}
@@ -135,7 +135,7 @@ tr.klik{cursor:pointer}
   #laporan .kumpulan{break-before:page}#laporan .kumpulan:first-of-type{break-before:auto}
   #laporan .blok-jk{break-inside:avoid}
   #laporan .tajuk-bahagian{background:#fff!important;color:#000!important;border:1.5px solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  #laporan .jadual-laporan th{background:#e9eeee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #laporan .jadual-laporan th{background:#e6ecf6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #laporan .jadual-laporan td,#laporan .jadual-laporan th{font-size:10pt;padding:2px 6px;border:1px solid #888}
   #laporan .blok-jk h3{color:#000;font-size:11pt}
   #sisi,#atas,.tiada-cetak,#toast,#memuat,.btn{display:none!important}
@@ -377,7 +377,7 @@ function jadual(opt) {
 
 /* ===== Carta ===== */
 function lupusCarta() { S.carta.forEach(function (c) { try { c.destroy(); } catch (e) {} }); S.carta = []; }
-var WARNA = { utama: '#0f5a52', emas: '#c8942c', merah: '#b3261e', biru: '#1f5fa8', kelabu: '#9aa8a8', hijauMuda: '#5aa897' };
+var WARNA = { utama: '#0f2c63', emas: '#f5b800', merah: '#b3261e', biru: '#1f5fa8', kelabu: '#98a3bd', hijauMuda: '#6b8fd1' };
 function kadCarta(tajuk, bina, opt) {
   opt = opt || {};
   var kanvas = h('canvas', { role: 'img', 'aria-label': tajuk }), kotak = h('div', { class: 'carta' + (opt.tinggi ? ' tinggi' : '') }, kanvas);
