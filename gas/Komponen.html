@@ -125,6 +125,21 @@ function pilihSelect(pilihan, nilai, kosong) {
   return s;
 }
 
+/* ===== Turutan jawatan dalam jawatankuasa (merit dahulu; jika sama: pangkat → tingkatan → urutan → nama) ===== */
+function urutAhliJK(senarai) {
+  function tkt(r) { var k = String(r.kualifikasi || '').toUpperCase(), m = /TING(?:KATAN)?\.?\s*(\d)/.exec(k); if (m) return +m[1]; return /\bSPM\b/.test(k) ? 5 : 0; }
+  function romawi(r) { var m = /(?:^|[\s—-])(III|II|I)$/.exec(String(r.kualifikasi || '').toUpperCase().trim()); return m ? m[1].length : 0; }
+  function pangkat(r) {
+    var p = String(r.posisi || '').toLowerCase().trim(), t = tkt(r) > 0;
+    if (/^timbalan pengerusi/.test(p)) return 1; if (/^pengerusi/.test(p)) return 0;
+    if (/^penyelaras/.test(p)) return t ? 5 : 4; if (/^setiausaha/.test(p)) return t ? 7 : 6;
+    if (/^ahli/.test(p)) return 8; return 7.5;
+  }
+  return (senarai || []).slice().sort(function (a, b) {
+    return (Number(b.merit) - Number(a.merit)) || (pangkat(a) - pangkat(b)) || (romawi(a) - romawi(b)) || (tkt(a) - tkt(b))
+      || ((Number(a.urutan) || 99) - (Number(b.urutan) || 99)) || String(a.nama).localeCompare(String(b.nama), 'ms');
+  });
+}
 /* ===== Jadual (cari, isih, halaman) ===== */
 function jadual(opt) {
   // opt: {lajur:[{kunci,label,nombor,papar(r)->node,isih:true,nilaiCari(r)}], data, saiz, cari, onKlik, kosong, tapis(r)->bool, namaFail}
@@ -171,7 +186,7 @@ function jadual(opt) {
 
 /* ===== Carta ===== */
 function lupusCarta() { S.carta.forEach(function (c) { try { c.destroy(); } catch (e) {} }); S.carta = []; }
-var WARNA = { utama: '#0f5a52', emas: '#c8942c', merah: '#b3261e', biru: '#1f5fa8', kelabu: '#9aa8a8', hijauMuda: '#5aa897' };
+var WARNA = { utama: '#0f2c63', emas: '#f5b800', merah: '#b3261e', biru: '#1f5fa8', kelabu: '#98a3bd', hijauMuda: '#6b8fd1' };
 function kadCarta(tajuk, bina, opt) {
   opt = opt || {};
   var kanvas = h('canvas', { role: 'img', 'aria-label': tajuk }), kotak = h('div', { class: 'carta' + (opt.tinggi ? ' tinggi' : '') }, kanvas);

@@ -108,6 +108,7 @@ function borangJK(jk) {
 
 async function paparJKButiran(id) {
   var d = await panggil('butiranJK', { jkId: id }), jk = d.jk, urus = boleh('PENGURUS');
+  d.ahli = urutAhliJK(d.ahli);
   var jad = jadual({ data: d.ahli, saiz: 50, cari: true, isihAsal: 'merit', kosong: 'Belum ada ahli dilantik.', lajur: [
     { kunci: 'nama', label: 'Nama', papar: function (r) { return h('a', { href: '#', onclick: function (e) { e.preventDefault(); pergi('profil', r.staffId); } }, r.nama); } },
     { kunci: 'posisi', label: 'Jawatan', papar: function (r) { return h('span', null, r.posisi, r.kualifikasi ? h('small', { class: 'diam' }, ' — ' + r.kualifikasi) : null); } },
