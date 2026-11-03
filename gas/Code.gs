@@ -281,7 +281,7 @@ function laporanInduk_(pg, a) {
     if (Number(t.tahun) !== tahun || t.status !== 'AKTIF') return;
     var s = sMap[t.staffId] || { nama: t.staffId, kategori: '' }, p = pMap[t.posisiId] || { nama: '?' };
     var nama = s.nama, pg2 = s.pemegangId && sMap[s.pemegangId] ? sMap[s.pemegangId].nama : '';
-    (ahli[t.jkId] = ahli[t.jkId] || []).push({ nama: nama, pemegang: pg2, jawatan: String(p.nama).toUpperCase() + (t.kualifikasi ? ' — ' + t.kualifikasi : ''),
+    (ahli[t.jkId] = ahli[t.jkId] || []).push({ staffId: t.staffId, pemegangId: s.pemegangId || '', nama: nama, pemegang: pg2,jawatan: String(p.nama).toUpperCase() + (t.kualifikasi ? ' — ' + t.kualifikasi : ''),
       merit: meritPosisi(t.posisiId, tahun, pMap, mm), kategori: s.kategori });
   });
   var jk = d.jawatankuasa.filter(function (j) { return Number(j.tahun) === tahun && j.status !== 'TIDAK AKTIF'; })

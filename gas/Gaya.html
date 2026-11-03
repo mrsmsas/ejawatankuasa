@@ -115,6 +115,21 @@ tr.klik{cursor:pointer}
   #kandungan{padding:.75rem}
   .carta{height:260px}
 }
+/* Surat rasmi (memo MARA) */
+.grid-borang{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0 1rem}
+.surat{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.35;width:min(210mm,100%);margin:0 auto 1rem;padding:16mm 18mm;box-shadow:0 1px 6px rgba(0,0,0,.2);box-sizing:border-box}
+.surat p{margin:.6em 0}
+.surat-kepala{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #000;padding-bottom:2px}
+.surat-kepala .mara{font-size:30pt;font-weight:700;letter-spacing:-1px}.surat-kepala .memograf{font-size:9pt}
+.surat-meta{width:100%;border-collapse:collapse}.surat-meta td{border-bottom:1px solid #000;padding:3px 4px;vertical-align:top}.surat-meta .ml{width:112px}
+.surat-ruj{width:100%;border-collapse:collapse;margin-top:6px;text-align:center}.surat-ruj th{font-weight:400;border-bottom:1px solid #000;border-top:1px solid #000;padding:3px}
+.surat-ruj td{border-bottom:1px solid #000;border-left:1px solid #000;padding:4px;height:2.6em;vertical-align:middle;width:25%}.surat-ruj td:first-child{border-left:0}
+.surat-tajuk{font-weight:700;text-transform:uppercase}
+.surat-para{display:flex;gap:2.2em;margin:.6em 0}.surat-para>span{width:1em;flex-shrink:0}.surat-para>div{flex:1}
+.surat-butir{margin:.6em 0 .6em 6.5em;border-collapse:collapse}.surat-butir td{padding:1px 8px 1px 0}
+.surat-jadual{width:calc(100% - 3.2em);margin:.4em 0 .6em 3.2em;border-collapse:collapse}.surat-jadual th,.surat-jadual td{border:1px solid #000;padding:3px 6px;font-size:10.5pt}
+.surat-tutup{break-inside:avoid;margin-top:1.2em}.surat-tutup .ttd{height:52px}
+.surat-ahli{margin:1.2em 0 0 1.2em;border-collapse:collapse}.surat-ahli td{padding:2px 6px;vertical-align:top}.surat-ahli .aj{width:42%}
 /* Laporan JK Induk */
 #laporan .tajuk-bahagian{background:var(--hijau);color:#fff;padding:.5rem .8rem;border-radius:8px;margin:1.2rem 0 .6rem;font-size:1rem}
 #laporan .blok-jk{margin-bottom:1.1rem}
@@ -130,6 +145,7 @@ tr.klik{cursor:pointer}
   #laporan .jadual-laporan th{background:#e9eeee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #laporan .jadual-laporan td,#laporan .jadual-laporan th{font-size:10pt;padding:2px 6px;border:1px solid #888}
   #laporan .blok-jk h3{color:#000;font-size:11pt}
+  .surat{box-shadow:none;width:auto;margin:0;padding:6mm 6mm 0;break-after:page}.surat:last-child{break-after:auto}
   #sisi,#atas,.tiada-cetak,#toast,#memuat,.btn{display:none!important}
   body{background:#fff}#kandungan{padding:0;max-width:none}
   .kad{box-shadow:none;border-color:#999}
