@@ -29,6 +29,8 @@ function simpanPenandatangan(o) { try { localStorage.setItem('jk_penandatangan',
 /* Satu helai memo (reka bentuk surat MARA): kepala "mara memograf", jadual rujukan, kandungan, tandatangan dan logo 60 tahun di kaki. */
 function memo(o) {
   var td = function (kelas, span) { var anak = Array.prototype.slice.call(arguments, 2); return h.apply(null, ['td', { class: kelas || null, colspan: span || null }].concat(anak)); };
+  // Sel rujukan: label di atas, nilai tebal di bawah; tengah secara mendatar, rapat ke atas secara menegak.
+  var rc = function (label, nilai, span) { return h('td', { class: 'rc', colspan: span }, h('div', { class: 'rl' }, label), h('div', { class: 'rn' }, nilai)); };
   return h('div', { class: 'surat' },
     h('div', { class: 'surat-kepala' }, h('span', { class: 'mara' }, 'mara'), h('span', { class: 'memograf' }, 'memograf')),
     h('table', { class: 'surat-meta' },
@@ -36,7 +38,7 @@ function memo(o) {
       h('tr', null, td('', 1, 'Kepada :'), td('b', 5, o.kepada)),
       h('tr', null, td('', 1, 'Daripada :'), td('b', 5, 'Pengetua Maktab Rendah Sains MARA Sultan Azlan Shah')),
       h('tr', null, td('', 2, 'Salinan Kepada :'), td('', 4, o.salinan || '')),
-      h('tr', { class: 'ruj' }, td('rc', 3, 'Rujuk Kami', h('br'), h('b', null, o.rujukKami || '')), td('rc', 1, 'Tarikh', h('br'), h('b', null, o.tarikh, h('br'), o.hijrah)), td('rc', 1, 'Rujuk Tuan'), td('rc', 1, 'Tarikh'))),
+      h('tr', { class: 'ruj' }, rc('Rujuk Kami', o.rujukKami || '', 3), rc('Tarikh', [o.tarikh, h('br'), o.hijrah], 1), rc('Rujuk Tuan', '', 1), rc('Tarikh', '', 1))),
     h('p', { style: 'margin-top:1em' }, 'Tuan / Puan,'),
     h('p', { class: 'surat-tajuk' }, o.tajuk),
     o.badan,
@@ -53,7 +55,8 @@ function labelJawatan(j) {
   if (/^AHLI JAWATANKUASA$/i.test(s)) return 'Ahli';
   return s.toLowerCase().replace(/\btimbalan\b/, 'timb.').replace(/(^|\s)(\S)/g, function (m, p, c) { return p + c.toUpperCase(); }).replace(/\b(Iii|Ii|I)$/, function (x) { return x.toUpperCase(); });
 }
-function para(no, teks) { return h('div', { class: 'surat-para' }, h('span', null, no ? no + '.' : ''), h('div', null, teks)); }
+// Perenggan surat rasmi: nombor di jidar kiri, teks selepas satu tab, baris sambungan kembali ke jidar kiri, teks rata kiri-kanan.
+function para(no, teks) { return h('p', { class: 'surat-para' }, no ? h('span', { class: 'no' }, no + '.') : null, teks); }
 
 function borangPenandatangan() {
   var p = ambilPenandatangan(), n = h('input', { value: p.nama }), j = h('input', { value: p.jawatan });
@@ -68,7 +71,7 @@ function kawalanHijrah() {
 function agendaNod(teks) {
   var baris = String(teks || '').split(/\n/).map(function (x) { return x.trim(); }).filter(Boolean);
   if (!baris.length) return [];
-  return [para('3', 'Agenda mesyuarat adalah seperti berikut :'), h('div', { class: 'surat-agenda' }, baris.map(function (b, i) { return h('div', null, '( ' + romawi(i) + ' ) ' + b); }))];
+  return [para('3', 'Agenda mesyuarat adalah seperti berikut :'), h('div', { class: 'surat-agenda' }, baris.map(function (b, i) { return h('div', { class: 'ag' }, h('span', { class: 'rm' }, '( ' + romawi(i) + ' )'), h('span', null, b)); }))];
 }
 function dokSurat() { return h('div', { id: 'dokSurat' }); }
 function butangCetak() { return h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / Simpan PDF'); }
