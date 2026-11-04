@@ -1,4 +1,6 @@
-﻿# Sistem Pengurusan Jawatankuasa MRSM Sultan Azlan Shah
+﻿# Sistem Pengurusan Jawatankuasa (eJawatankuasa)
+
+Digunakan oleh MRSM Sultan Azlan Shah dan boleh dipasang oleh sekolah lain melalui templat Google Sheet: lihat [Manual Pemasangan](docs/manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf).
 
 Sistem web (Bahasa Melayu) untuk mengurus jawatankuasa, pelantikan staf dan analisis beban kerja berasaskan **merit berpemberat**.
 
@@ -25,8 +27,11 @@ mrsmsas-jk-2027/
 ├── gas/                    ← SEMUA yang disalin ke projek Apps Script
 │   ├── Code.gs             API, pengesahan, kebenaran, audit, penulisan data
 │   ├── Logik.gs            Kiraan merit & peraturan integriti (tulen, diuji)
-│   ├── Setup.gs            setupAwal(): cipta helaian + data benih (tidak menimpa)
-│   ├── BenihData.gs        Data benih 2026/2027 (dijana oleh tools/jana-benih.js)
+│   ├── Setup.gs            Penyediaan helaian, fungsi pemilik (dilindungi pemilikSahaja_)
+│   ├── Pasang.gs           Menu Google Sheet dan pemasangan sekolah baharu
+│   ├── Pemasang.html       Wizard pemasangan
+│   ├── BenihData.gs        Data benih MRSM SAS (tidak dalam templat, tidak dalam git)
+│   ├── SekolahIni.gs       Maklumat lalai MRSM SAS (tidak dalam templat)
 │   ├── Index.html          Rangka halaman
 │   ├── Gaya.html           CSS (pembolehubah CSS, responsif, cetak)
 │   ├── Komponen.html       Komponen UI: jadual, modal, combobox, carta, CSV
@@ -70,24 +75,14 @@ Semua semakan dibuat di **pelayan** (`LALUAN_` dalam `Code.gs`); menyembunyikan 
 
 ## Pemasangan
 
-Lihat [docs/panduan-pemasangan.md](docs/panduan-pemasangan.md). Ringkasnya: cipta Google Sheet kosong → Extensions ▸ Apps Script → tampal fail dalam `gas/` → jalankan `setupAwal()` → Deploy ▸ Web app.
+- **Sekolah lain:** [Manual Pemasangan](docs/manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf). Buat salinan templat, jalankan wizard dalam Google Sheet, kemudian Deploy.
+- **Penyelenggaraan pemasangan MRSM SAS dan templat:** [docs/panduan-pemasangan.md](docs/panduan-pemasangan.md).
 
 ## Ujian
 
 ```
-node tools/ujian.js            # 14 ujian logik merit
-node tools/pelayan-ujian.js    # sistem penuh dengan data tiruan di http://localhost:8765
+node tools/ujian.js                    # 14 ujian logik merit
+node tools/ujian-pasang.js             # 15 ujian pemasangan sekolah baharu dan keselamatan
+node tools/pelayan-ujian.js            # sistem penuh dengan data benih di http://localhost:8765
+node tools/pelayan-ujian.js --kosong   # seperti templat baharu; wizard di http://localhost:8765/pemasang
 ```
-Senarai semak penuh: [docs/senarai-semak-ujian.md](docs/senarai-semak-ujian.md).
-
-## Had yang diketahui
-
-- Kata laluan disimpan sebagai hash SHA-256 bergaram (had 5 percubaan/10 minit) — memadai untuk kegunaan dalaman, bukan setaraf SSO. Jika sekolah ada Google Workspace sendiri, pengesahan akaun Google boleh ditambah.
-- Skrip dilindungi `LockService` (satu penulisan pada satu masa); helaian dibaca penuh setiap permintaan (sesuai untuk ≈ 2,500 baris; pertimbang pengcacheannya jika data berkembang >20,000 baris).
-- Fail DB Google Sheet **mesti peribadi** (hanya pemilik/pentadbir). Sesiapa yang boleh menyunting helaian terus boleh memintas sistem.
-- Chart.js dimuat dari CDN; tanpa internet, jadual tetap berfungsi tetapi carta memaparkan mesej.
-- Import hanya untuk staf (CSV). Import pelantikan secara pukal belum disediakan — gunakan *Peralihan Tahun* atau antara muka.
-- Kategori jawatankuasa (Pentadbiran, Akademik, Hal Ehwal Pelajar & Asrama, Kokurikulum, Program & Majlis) ditentukan oleh blok dalam JK TERKINI; kod (A01…E36) dijana baharu dan bukan kod 2026 (A01–E33) — semak dan ubah mengikut keperluan.
-
-
-

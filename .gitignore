@@ -11,3 +11,6 @@ NAMA STAF.gsheet
 data/
 gas/BenihData.gs
 *.gsheet
+
+# Pakej templat dijana (node tools/bina-templat.js)
+dist/

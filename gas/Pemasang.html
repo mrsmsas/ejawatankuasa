@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<base target="_blank">
+<meta charset="utf-8">
+<style>
+:root{--u:#0f2c63;--e:#f5b800;--g:#d3ddf0;--t2:#58647f;--m:#b3261e}
+*{box-sizing:border-box}
+body{font-family:"Segoe UI",Roboto,Arial,sans-serif;color:#17233f;margin:0;font-size:14px;line-height:1.45;background:#fff}
+#kepala{display:flex;gap:6px;margin-bottom:14px}
+#kepala div{flex:1;height:6px;border-radius:9px;background:var(--g)}#kepala div.aktif{background:var(--e)}#kepala div.siap{background:var(--u)}
+h2{margin:0 0 4px;color:var(--u);font-size:18px}
+.lead{color:var(--t2);margin:0 0 14px}
+label{display:block;margin-bottom:11px;font-weight:600}
+label small{display:block;font-weight:400;color:var(--t2);margin-top:2px}
+input,select,textarea{display:block;width:100%;margin-top:3px;padding:8px 10px;border:1px solid #a9b8d6;border-radius:7px;font:inherit;font-weight:400}
+input:focus,select:focus{outline:2px solid var(--e);border-color:var(--u)}
+.dua{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.btn{padding:9px 18px;border-radius:7px;border:1px solid var(--u);background:#fff;color:var(--u);font:inherit;font-weight:600;cursor:pointer}
+.btn.utama{background:var(--u);color:#fff}.btn:disabled{opacity:.55;cursor:wait}
+#bawah{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--g)}
+.ralat{background:#fbe7e5;color:var(--m);border-radius:7px;padding:8px 11px;margin:10px 0}
+.nota{border-left:4px solid var(--e);background:#fff8e1;border-radius:0 7px 7px 0;padding:8px 11px;margin:10px 0}
+.nota.bahaya{border-color:var(--m);background:#fbe7e5}
+.lg{display:flex;gap:12px;align-items:center}.lg img{width:64px;height:64px;object-fit:contain;border:1px solid var(--g);border-radius:8px}
+ol{padding-left:20px;margin:8px 0}ol li{margin-bottom:6px}
+code{background:#eaf0fa;padding:1px 5px;border-radius:4px}
+.pautan{word-break:break-all;background:#eaf0fa;border-radius:7px;padding:9px 11px;margin:8px 0;display:block;color:var(--u);font-weight:600}
+#btnTerus{margin-left:auto}
+.h{display:none}
+</style>
+</head>
+<body>
+<div id="kepala"><div></div><div></div><div></div><div></div></div>
+<div id="ralat" class="ralat h" role="alert"></div>
+
+<section data-l="0" class="h">
+  <h2>1. Maklumat sekolah</h2>
+  <p class="lead">Maklumat ini dipaparkan pada halaman log masuk, laporan dan surat. Semua boleh diubah kemudian di halaman Tetapan.</p>
+  <label>Nama penuh sekolah *<input id="namaSekolah" placeholder="cth. MRSM Contoh" maxlength="200"></label>
+  <div class="dua">
+    <label>Nama ringkas *<input id="namaRingkas" placeholder="cth. MRSM CTH" maxlength="40"><small>Dipaparkan pada menu sisi.</small></label>
+    <label>Lokasi<input id="lokasi" placeholder="cth. Bandar, Negeri" maxlength="200"></label>
+  </div>
+  <label>Logo sekolah (PNG atau JPG)
+    <span class="lg"><img id="pratonton" alt="Pratonton logo" class="h"><input id="failLogo" type="file" accept="image/png,image/jpeg"></span>
+    <small>Pilihan. Dikecilkan secara automatik.</small></label>
+  <label>Tahun pertama sistem *<input id="tahun" type="number" min="2000" max="2100"><small>Tahun jawatankuasa yang akan anda masukkan dahulu.</small></label>
+</section>
+
+<section data-l="1" class="h">
+  <h2>2. Surat rasmi</h2>
+  <p class="lead">Digunakan oleh Surat Perlantikan dan Surat Panggilan Mesyuarat.</p>
+  <label>Jenis institusi
+    <select id="jenis"><option value="mrsm">MRSM (format memo MARA)</option><option value="lain">Sekolah lain</option></select>
+    <small>Mengisi medan di bawah secara automatik. Anda boleh mengubahnya.</small></label>
+  <div class="dua">
+    <label>Nama pengetua / penandatangan<input id="pengetuaNama" maxlength="200"></label>
+    <label>Jawatan penandatangan<input id="pengetuaJawatan" value="Pengetua" maxlength="200"></label>
+  </div>
+  <label>Baris "Daripada" pada surat<input id="suratDaripada" maxlength="200"></label>
+  <div class="dua">
+    <label>Kepala surat, kiri<input id="suratKepalaKiri" maxlength="200"></label>
+    <label>Kepala surat, kanan<input id="suratKepalaKanan" maxlength="200"></label>
+  </div>
+  <label>Cogan kata penutup<input id="suratCogan" maxlength="200"><small>Pisahkan setiap baris dengan tanda |. Boleh dikosongkan.</small></label>
+</section>
+
+<section data-l="2" class="h">
+  <h2>3. Akaun System Admin</h2>
+  <p class="lead">Akaun pertama untuk log masuk ke sistem. Kata laluan ini khas untuk sistem ini. Jangan gunakan kata laluan akaun Google anda.</p>
+  <label>Nama penuh *<input id="adminNama" maxlength="100"></label>
+  <label>Emel *<input id="adminEmel" type="email" maxlength="120"></label>
+  <div class="dua">
+    <label>Kata laluan * (min. 8 aksara)<input id="kataLaluan" type="password" autocomplete="new-password"></label>
+    <label>Ulang kata laluan *<input id="kataLaluan2" type="password" autocomplete="new-password"></label>
+  </div>
+  <div class="nota">Catat emel dan kata laluan ini. Klik <b>Pasang</b> untuk mencipta pangkalan data.</div>
+</section>
+
+<section data-l="3" class="h">
+  <h2>4. Terbitkan sistem</h2>
+  <p class="lead" id="ringkasan"></p>
+  <div id="sudahTerbit" class="h">
+    <div class="nota">Sistem telah diterbitkan. Kongsikan pautan ini dengan staf:</div>
+    <a id="pautan" class="pautan"></a>
+  </div>
+  <div id="belumTerbit">
+    <p><b>Satu langkah terakhir.</b> Google memerlukan langkah ini dibuat sendiri oleh pemilik:</p>
+    <ol>
+      <li><a id="pautanEditor">Buka editor Apps Script</a> (tab baharu).</li>
+      <li>Klik butang biru <b>Deploy</b> di kanan atas, kemudian <b>New deployment</b>.</li>
+      <li>Klik ikon gear di sebelah <b>Select type</b> dan pilih <b>Web app</b>.</li>
+      <li>Tetapkan <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>.</li>
+      <li>Klik <b>Deploy</b>. Benarkan kebenaran jika diminta.</li>
+      <li>Salin <b>Web app URL</b> yang berakhir dengan <code>/exec</code>. Itulah pautan sistem anda.</li>
+    </ol>
+    <button class="btn" id="btnSemak" type="button">Saya sudah terbitkan — semak</button>
+    <div id="tiadaUrl" class="nota h">Pautan belum dapat dikesan di sini. Jika anda sudah menyalin Web app URL, sistem sudah sedia digunakan. Pautan juga ada di <b>Deploy ▸ Manage deployments</b>.</div>
+  </div>
+  <div class="nota bahaya"><b>Jangan kongsi fail Google Sheet ini.</b> Staf hanya perlukan pautan web. Akaun mereka dicipta di halaman Pengguna selepas log masuk.</div>
+</section>
+
+<div id="bawah">
+  <button class="btn" id="btnKembali" type="button">Kembali</button>
+  <button class="btn utama" id="btnTerus" type="button">Seterusnya</button>
+</div>
+
+<script>
+var langkah = 0, logo = '', info = null;
+function $(i) { return document.getElementById(i); }
+function nilai(i) { return $(i).value.trim(); }
+function ralat(m) { var r = $('ralat'); r.textContent = m || ''; r.classList.toggle('h', !m); }
+function papar(n) {
+  langkah = n; ralat('');
+  document.querySelectorAll('section').forEach(function (s) { s.classList.toggle('h', Number(s.dataset.l) !== n); });
+  document.querySelectorAll('#kepala div').forEach(function (d, i) { d.className = i < n ? 'siap' : i === n ? 'aktif' : ''; });
+  $('btnKembali').classList.toggle('h', n === 0 || n === 3);
+  $('btnTerus').textContent = n === 2 ? 'Pasang' : n === 3 ? 'Tutup' : 'Seterusnya';
+}
+function isiJenis() {
+  var mrsm = $('jenis').value === 'mrsm', ns = nilai('namaSekolah');
+  $('suratDaripada').value = 'Pengetua ' + (mrsm ? ns.replace(/^MRSM\b/i, 'Maktab Rendah Sains MARA') : ns);
+  $('suratKepalaKiri').value = mrsm ? 'mara' : ns;
+  $('suratKepalaKanan').value = mrsm ? 'memograf' : '';
+  $('suratCogan').value = mrsm ? 'MALAYSIA MADANI|BERKHIDMAT UNTUK NEGARA|LUAR BANDAR SEJAHTERA' : 'MALAYSIA MADANI|BERKHIDMAT UNTUK NEGARA';
+}
+function sah() {
+  if (langkah === 0) {
+    if (!nilai('namaSekolah')) return 'Isi nama penuh sekolah.';
+    if (!nilai('namaRingkas')) return 'Isi nama ringkas.';
+    var t = Number(nilai('tahun')); if (!(t >= 2000 && t <= 2100)) return 'Tahun mesti antara 2000 dan 2100.';
+  }
+  if (langkah === 2) {
+    if (!nilai('adminNama')) return 'Isi nama penuh.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(nilai('adminEmel'))) return 'Emel tidak sah.';
+    if ($('kataLaluan').value.length < 8) return 'Kata laluan sekurang-kurangnya 8 aksara.';
+    if ($('kataLaluan').value !== $('kataLaluan2').value) return 'Kata laluan tidak sepadan.';
+  }
+  return '';
+}
+function paparTerbit(d) {
+  info = d;
+  $('ringkasan').textContent = (d.namaSekolah || '') + (d.bilStaf !== undefined ? ' — ' + d.bilStaf + ' staf, ' + d.bilJK + ' rekod jawatankuasa, ' + d.bilPengguna + ' pengguna.' : '');
+  $('pautanEditor').href = d.editor;
+  $('sudahTerbit').classList.toggle('h', !d.url); $('belumTerbit').classList.toggle('h', !!d.url);
+  if (d.url) { $('pautan').href = d.url; $('pautan').textContent = d.url; }
+  papar(3);
+}
+function gagal(e) { ralat(String(e && e.message || e)); $('btnTerus').disabled = false; }
+function pasang() {
+  $('btnTerus').disabled = true; $('btnTerus').textContent = 'Memasang…';
+  var b = { logo: logo };
+  ['namaSekolah', 'namaRingkas', 'lokasi', 'tahun', 'pengetuaNama', 'pengetuaJawatan', 'suratDaripada', 'suratKepalaKiri', 'suratKepalaKanan', 'suratCogan', 'adminNama', 'adminEmel'].forEach(function (k) { b[k] = nilai(k); });
+  b.kataLaluan = $('kataLaluan').value;
+  google.script.run.withSuccessHandler(function (d) { $('btnTerus').disabled = false; d.namaSekolah = b.namaSekolah; $('kataLaluan').value = $('kataLaluan2').value = ''; paparTerbit(d); })
+    .withFailureHandler(function (e) { gagal(e); $('btnTerus').textContent = 'Pasang'; }).pasangSistem(b);
+}
+$('btnTerus').addEventListener('click', function () {
+  if (langkah === 3) { google.script.host.close(); return; }
+  var m = sah(); if (m) { ralat(m); return; }
+  if (langkah === 0) isiJenis();
+  if (langkah === 2) { pasang(); return; }
+  papar(langkah + 1);
+});
+$('btnKembali').addEventListener('click', function () { papar(langkah - 1); });
+$('jenis').addEventListener('change', isiJenis);
+$('btnSemak').addEventListener('click', function () {
+  $('btnSemak').disabled = true;
+  google.script.run.withSuccessHandler(function (d) { $('btnSemak').disabled = false; paparTerbit(Object.assign(info, d)); $('tiadaUrl').classList.toggle('h', !!d.url); })
+    .withFailureHandler(function (e) { $('btnSemak').disabled = false; ralat(String(e && e.message || e)); }).maklumatPemasang();
+});
+$('failLogo').addEventListener('change', function () {
+  var f = this.files[0]; logo = ''; $('pratonton').classList.add('h'); ralat(''); if (!f) return;
+  var input = this;
+  kecil(f, info ? info.logoMaks : 45000, function (e, url) {
+    if (e) { ralat(e); input.value = ''; return; }
+    logo = url; $('pratonton').src = url; $('pratonton').classList.remove('h');
+  });
+});
+function kecil(fail, maks, cb) {
+  if (!/^image\/(png|jpeg|webp)$/.test(fail.type)) return cb('Gunakan fail PNG atau JPG.');
+  var u = URL.createObjectURL(fail), img = new Image();
+  img.onerror = function () { URL.revokeObjectURL(u); cb('Fail gambar tidak dapat dibaca.'); };
+  img.onload = function () {
+    URL.revokeObjectURL(u);
+    var c = document.createElement('canvas'), saiz = [240, 200, 160, 120];
+    for (var i = 0; i < saiz.length; i++) {
+      var r = Math.min(1, saiz[i] / Math.max(img.width, img.height)); c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      var x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height);
+      var png = c.toDataURL('image/png'); if (png.length <= maks) return cb(null, png);
+      x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      var jpg = c.toDataURL('image/jpeg', 0.85); if (jpg.length <= maks) return cb(null, jpg);
+    }
+    cb('Logo terlalu besar. Gunakan gambar yang lebih kecil.');
+  };
+  img.src = u;
+}
+google.script.run.withSuccessHandler(function (d) {
+  info = d; $('tahun').value = d.tahun; $('adminEmel').value = d.emel;
+  if (d.dipasang) paparTerbit(d); else papar(0);
+}).withFailureHandler(function (e) { papar(0); $('bawah').classList.add('h'); ralat(String(e && e.message || e)); }).maklumatPemasang();
+</script>
+</body>
+</html>

@@ -7,6 +7,44 @@ function boleh(min) { return S.pengguna && TARAF[S.pengguna.peranan] >= TARAF[mi
 function simpanToken(t) { try { if (t) sessionStorage.setItem('jk_token', t); else sessionStorage.removeItem('jk_token'); } catch (e) {} }
 function bacaToken() { try { return sessionStorage.getItem('jk_token'); } catch (e) { return null; } }
 
+/* ===== Jenama sekolah (nilai daripada Tetapan; tiada nama sekolah tertanam dalam kod) ===== */
+function jenama() { return S.jenama || {}; }
+function namaSekolahBesar() { return String(jenama().namaSekolah || '').toUpperCase(); }
+function pasangLogo(img, url, ganti) {
+  var tunjuk = function (ada) { img.classList.toggle('tersembunyi', !ada); if (ganti) ganti.classList.toggle('tersembunyi', ada); };
+  if (!url) { img.removeAttribute('src'); tunjuk(false); return; }
+  img.onerror = function () { tunjuk(false); }; img.onload = function () { tunjuk(true); }; img.src = url;
+}
+function terapJenama(j) {
+  S.jenama = Object.assign({}, S.jenama || {}, j || {}); var b = S.jenama;
+  document.title = 'Sistem JK' + (b.namaRingkas ? ' ' + b.namaRingkas : '');
+  $('#logNama').textContent = b.namaSekolah || ''; $('#sisiNama').textContent = b.namaRingkas || b.namaSekolah || 'Sistem JK';
+  pasangLogo($('#logoLog'), b.logo); pasangLogo($('#logoSisi'), b.logo, $('#logoGanti'));
+  if (b.logo) $('#ikonTab').setAttribute('href', b.logo);
+  if (b.dipasang !== undefined) $('#notisBelumPasang').classList.toggle('tersembunyi', !!b.dipasang);
+}
+/* Kecilkan logo dalam pelayar supaya muat dalam satu sel helaian. */
+function kecilkanLogo(fail, maks) {
+  return new Promise(function (res, rej) {
+    if (!/^image\/(png|jpeg|webp)$/.test(fail.type)) return rej(new Error('Gunakan fail PNG atau JPG.'));
+    var url = URL.createObjectURL(fail), img = new Image();
+    img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Fail gambar tidak dapat dibaca.')); };
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var saiz = [240, 200, 160, 120], c = document.createElement('canvas');
+      for (var i = 0; i < saiz.length; i++) {
+        var nisbah = Math.min(1, saiz[i] / Math.max(img.width, img.height)); c.width = Math.round(img.width * nisbah); c.height = Math.round(img.height * nisbah);
+        var x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height);
+        var png = c.toDataURL('image/png'); if (png.length <= maks) return res(png);
+        x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+        var jpg = c.toDataURL('image/jpeg', 0.85); if (jpg.length <= maks) return res(jpg);
+      }
+      rej(new Error('Logo terlalu besar. Gunakan gambar yang lebih kecil.'));
+    };
+    img.src = url;
+  });
+}
+
 /* ===== DOM ===== */
 function h(tag, attr) {
   var e = document.createElement(tag), anak = Array.prototype.slice.call(arguments, 2);

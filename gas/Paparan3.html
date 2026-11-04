@@ -18,7 +18,7 @@ function kumpulJK(jk) {
 function namaPaparan(a) { return a.nama + (a.pemegang ? ' (' + a.pemegang + ')' : ''); }
 
 async function paparLaporan() {
-  var d = await panggil('laporanInduk', { tahun: S.tahun }), kump = kumpulJK(d.jk), tajukDok = 'JAWATANKUASA KERJA MRSM SULTAN AZLAN SHAH TAHUN ' + d.tahun;
+  var d = await panggil('laporanInduk', { tahun: S.tahun }), kump = kumpulJK(d.jk), tajukDok = 'JAWATANKUASA KERJA ' + namaSekolahBesar() + ' TAHUN ' + d.tahun;
   var f = { kat: pilihSelect(kump.map(function (g) { return { nilai: g.kategori, label: (g.huruf ? 'Bahagian ' + g.huruf + ' — ' : '') + g.kategori }; }), '', 'Semua bahagian'), merit: h('input', { type: 'checkbox' }) };
   var dok = h('div', { id: 'laporan' });
   var jumlahAhli = d.jk.reduce(function (s, j) { return s + j.ahli.length; }, 0);
@@ -26,7 +26,7 @@ async function paparLaporan() {
   function terpilih() { return kump.filter(function (g) { return !f.kat.value || g.kategori === f.kat.value; }); }
   function lukis() {
     kosongkan(dok);
-    dok.appendChild(h('div', { class: 'cetak-sahaja kepala-cetak' }, h('img', { src: 'logo-mrsm-sas.png', alt: '', class: 'logo-cetak', onerror: "this.style.display='none'" }), h('h1', null, tajukDok)));
+    dok.appendChild(h('div', { class: 'cetak-sahaja kepala-cetak' }, jenama().logo ? h('img', { src: jenama().logo, alt: '', class: 'logo-cetak', onerror: "this.style.display='none'" }) : null, h('h1', null, tajukDok)));
     var pilih = terpilih();
     if (!pilih.length) { dok.appendChild(h('div', { class: 'kosong' }, 'Tiada jawatankuasa untuk tahun ini.')); return; }
     pilih.forEach(function (g, gi) {
@@ -57,7 +57,7 @@ async function paparLaporan() {
     var rata = [['Bahagian', 'Kod JK', 'Jawatankuasa', 'Bil', 'Nama', 'Jawatan', 'Merit']];
     pilih.forEach(function (g) { g.jk.forEach(function (j) { j.ahli.forEach(function (a, i) { rata.push([g.huruf || g.kategori, j.kod, j.nama, i + 1, namaPaparan(a), a.jawatan, a.merit]); }); }); });
     var ws2 = X.utils.aoa_to_sheet(rata); ws2['!cols'] = [{ wch: 10 }, { wch: 8 }, { wch: 50 }, { wch: 5 }, { wch: 44 }, { wch: 40 }, { wch: 7 }];
-    var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'JK Induk ' + d.tahun); X.utils.book_append_sheet(wb, ws2, 'Senarai Rata'); X.writeFile(wb, 'JK-Induk-MRSM-SAS-' + d.tahun + '.xlsx');
+    var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'JK Induk ' + d.tahun); X.utils.book_append_sheet(wb, ws2, 'Senarai Rata'); X.writeFile(wb, 'JK-Induk-' + String(jenama().namaRingkas || 'Sekolah').replace(/[^A-Za-z0-9]+/g, '-') + '-' + d.tahun + '.xlsx');
     toast('Fail Excel dimuat turun.', 'berjaya');
   }
   lukis();

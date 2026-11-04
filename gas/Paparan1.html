@@ -1,6 +1,14 @@
 <script>
 /* ===== Papan Pemuka ===== */
 S.tapisPapan = {};
+/* Panduan bagi sekolah baharu: hilang sendiri setelah staf, jawatankuasa dan pelantikan wujud. */
+function panduanMula(c) {
+  if (!boleh('PENTADBIR') || (c.bilStaf && c.bilJK && c.bilTugasan)) return null;
+  var langkah = function (siap, teks) { return h('li', { style: siap ? 'text-decoration:line-through;opacity:.6' : '' }, teks); };
+  return h('div', { class: 'kad', style: 'margin-top:1rem;border-left:4px solid var(--emas)' }, h('h2', null, 'Selamat datang — lengkapkan data sekolah anda'),
+    h('ol', { style: 'margin:.4rem 0 .8rem 1.2rem' }, langkah(c.bilStaf, 'Import senarai staf.'), langkah(c.bilJK && c.bilTugasan, 'Import jawatankuasa dan pelantikan.'), langkah(false, 'Semak nilai merit di Jawatan & Merit, kemudian cipta akaun pengguna lain.')),
+    h('button', { class: 'btn utama', onclick: function () { pergi('import'); } }, 'Pergi ke Import'));
+}
 async function paparPapan(k) {
   var t = S.tapisPapan, d = await panggil('dashboard', { tahun: S.tahun, tapis: t }), c = d.kad;
   var ulang = ujiTindakan(function () { return muat(); });
@@ -43,6 +51,7 @@ async function paparPapan(k) {
       h('label', { class: 'diam' }, 'Jawatan ', combobox({ pilihan: S.asas.posisi.map(function (p) { return { nilai: p.posisiId, label: p.nama }; }), nilai: t.posisiId || '', kosongBoleh: true, placeholder: 'Semua jawatan', onPilih: function (v) { t.posisiId = v; ulang(); } })),
       h('label', { class: 'diam' }, 'Staf ', combobox({ pilihan: S.asas.staf.filter(function (s) { return s.kategori === 'GURU' || s.kategori === 'SOKONGAN'; }).map(function (s) { return { nilai: s.staffId, label: s.nama }; }), nilai: t.staffId || '', kosongBoleh: true, placeholder: 'Semua staf', onPilih: function (v) { t.staffId = v; ulang(); } })),
       h('button', { class: 'btn kecil', onclick: function () { S.tapisPapan = {}; ulang(); } }, 'Set semula')),
+    panduanMula(c),
     h('div', { class: 'grid g-kpi', style: 'margin:1rem 0' },
       kpi('Jumlah jawatankuasa', nf(c.bilJK)), kpi('Staf dianalisis', nf(c.bilStaf), nf(c.diasingkan) + ' diasingkan (ex-officio/pemegang tempat)'),
       kpi('Tugasan aktif', nf(c.bilTugasan)), kpi('Jumlah merit terkumpul', nf(c.jumlahMerit)),

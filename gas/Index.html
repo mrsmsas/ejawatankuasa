@@ -4,8 +4,8 @@
   <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sistem JK MRSM SAS</title>
-  <link rel="icon" type="image/png" href="logo-mrsm-sas.png">
+  <title>Sistem Jawatankuasa</title>
+  <link rel="icon" id="ikonTab" href="data:,">
   <?!= include('Gaya') ?>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -17,10 +17,11 @@
   <section id="logmasuk" class="tersembunyi">
     <div class="kad">
       <div class="kepala-log">
-        <img src="logo-mrsm-sas.png" alt="Logo MRSM Sultan Azlan Shah" class="logo-log" onerror="this.style.display='none'">
+        <img id="logoLog" alt="Logo sekolah" class="logo-log tersembunyi">
         <h1>Sistem Jawatankuasa Kerja</h1>
-        <p class="diam">MRSM Sultan Azlan Shah</p>
+        <p class="diam" id="logNama"></p>
       </div>
+      <div id="notisBelumPasang" class="amaran-kotak tersembunyi">Sistem ini belum dipasang. Pemilik perlu membuka Google Sheet pangkalan data dan memilih menu <b>eJawatankuasa ▸ Pasang sistem / Semakan</b>.</div>
       <form id="borangLog" autocomplete="on">
         <label class="medan"><span>Emel</span><input type="email" id="logEmel" required autocomplete="username"></label>
         <label class="medan"><span>Kata laluan</span><input type="password" id="logKata" required autocomplete="current-password"></label>
@@ -32,7 +33,7 @@
 
   <div id="apl" class="tersembunyi">
     <aside id="sisi" aria-label="Menu utama">
-      <div class="jenama"><img src="logo-mrsm-sas.png" alt="Logo MRSM SAS" class="logo-sisi" onerror="this.outerHTML='<div class=&quot;logo&quot;>JK</div>'"><span class="teks">MRSM SAS<br><small style="font-weight:400;opacity:.7">Pengurusan Jawatankuasa</small></span></div>
+      <div class="jenama"><img id="logoSisi" alt="Logo sekolah" class="logo-sisi tersembunyi"><div id="logoGanti" class="logo">JK</div><span class="teks"><span id="sisiNama">Sistem JK</span><br><small style="font-weight:400;opacity:.7">Pengurusan Jawatankuasa</small></span></div>
       <nav id="menu"></nav>
     </aside>
     <div id="utama">

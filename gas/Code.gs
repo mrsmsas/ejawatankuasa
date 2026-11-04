@@ -1,4 +1,4 @@
-// Sistem Pengurusan Jawatankuasa MRSM Sultan Azlan Shah (pelbagai tahun) — Backend Google Apps Script.
+// Sistem Pengurusan Jawatankuasa (pelbagai sekolah, pelbagai tahun) — Backend Google Apps Script.
 // Antara muka dihidangkan oleh Apps Script sendiri (doGet) supaya pengesahan dilakukan di pelayan.
 
 var SKEMA = {
@@ -16,13 +16,17 @@ var PERANAN = { PENTADBIR: 3, PENGURUS: 2, PELIHAT: 1 };
 var TETAPAN_ASAL = {
   tahunAktif: '', ambangTinggi: '130', ambangRendah: '50',
   posisiWajib: 'Pengerusi|Penyelaras|Presiden|Ketua Jabatan/Unit|Guru Penasihat',
-  sasaranMin_GURU: '', sasaranMax_GURU: '', sasaranMin_SOKONGAN: '', sasaranMax_SOKONGAN: ''
+  sasaranMin_GURU: '', sasaranMax_GURU: '', sasaranMin_SOKONGAN: '', sasaranMax_SOKONGAN: '',
+  // Maklumat sekolah (diisi oleh pemasang; boleh diubah di halaman Tetapan)
+  namaSekolah: '', namaRingkas: '', lokasi: '', logo: '', pengetuaNama: '', pengetuaJawatan: '',
+  suratDaripada: '', suratKepalaKiri: '', suratKepalaKanan: '', suratCogan: ''
 };
+var LOGO_MAKS_ = 45000; // had selamat: satu sel Google Sheets menyimpan sehingga 50,000 aksara
 
 // ---------- Titik masuk ----------
 function doGet() {
   return HtmlService.createTemplateFromFile('Index').evaluate()
-    .setTitle('Sistem JK MRSM SAS')
+    .setTitle('Sistem JK ' + (tetapan_().namaRingkas || ''))
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -46,7 +50,7 @@ function include(nama) { return HtmlService.createHtmlOutputFromFile(nama).getCo
 function api(permintaan) {
   try {
     var fn = permintaan && permintaan.fn, args = (permintaan && permintaan.args) || {};
-    var awam = { login: login_, sesi: sesi_ };
+    var awam = { login: login_, sesi: sesi_, jenama: jenama_ };
     if (awam[fn]) return awam[fn](permintaan.token, args);
     var pengguna = pengesah_(permintaan.token);
     if (!pengguna) return gagal_('Sesi tamat. Sila log masuk semula.', 'TAMAT_SESI');
@@ -98,6 +102,11 @@ function sesi_(token) {
   p = cariPengguna_(g);
   if (p) return ok_({ token: jadiSesi_(p), pengguna: profilPengguna_(p) });
   return gagal_('Sila log masuk.', 'PERLU_LOG_MASUK');
+}
+// Awam: hanya nama dan logo sekolah untuk halaman log masuk; tiada data staf.
+function jenama_() {
+  var t = tetapan_();
+  return ok_({ namaSekolah: t.namaSekolah, namaRingkas: t.namaRingkas, logo: t.logo, dipasang: baca_('Pengguna').length > 0 });
 }
 function login_(token, a) {
   var p = cariPengguna_(a.emel);
@@ -171,6 +180,8 @@ function log_(pengguna, tindakan, entiti, id, sebelum, selepas) {
 }
 function tetapan_() {
   var t = {}; Object.keys(TETAPAN_ASAL).forEach(function (k) { t[k] = TETAPAN_ASAL[k]; });
+  // Nilai asal khusus satu pemasangan (gas/SekolahIni.gs — tidak termasuk dalam templat).
+  if (typeof MAKLUMAT_SEKOLAH_ASAL !== 'undefined') Object.keys(MAKLUMAT_SEKOLAH_ASAL).forEach(function (k) { t[k] = MAKLUMAT_SEKOLAH_ASAL[k]; });
   baca_('Tetapan').forEach(function (r) { t[r.kunci] = r.nilai; });
   return t;
 }
@@ -185,7 +196,9 @@ function tahunAktif_(a) {
   return semua.length ? Math.max.apply(null, semua) : new Date().getFullYear();
 }
 function senaraiTahun_(d) {
-  var t = {}; d.jawatankuasa.forEach(function (j) { t[j.tahun] = 1; }); return Object.keys(t).map(Number).sort();
+  // Termasuk tahun dalam TetapanMerit supaya sekolah baharu (belum ada jawatankuasa) tetap mempunyai tahun aktif.
+  var t = {}; d.jawatankuasa.forEach(function (j) { t[j.tahun] = 1; }); (d.tetapanMerit || []).forEach(function (m) { if (Number(m.tahun)) t[m.tahun] = 1; });
+  return Object.keys(t).map(Number).sort();
 }
 function bersih_(s, maks) { return String(s === undefined || s === null ? '' : s).replace(/[\u0000-\u001f]/g, ' ').trim().substring(0, maks || 200); }
 function lindungFormula_(s) { return /^[=+\-@]/.test(s) ? "'" + s : s; }
@@ -380,7 +393,8 @@ function salinTahun_(pg, a) {
   var na = Number(janaId_('A', d.tugasan, 'asgId').substring(1)), tsBaru = d.tugasan.filter(function (t) { return Number(t.tahun) === dari && t.status === 'AKTIF' && peta[t.jkId]; }).map(function (t) {
     var y = JSON.parse(JSON.stringify(t)); y.asgId = 'A' + ('00000' + (na++)).slice(-5); y.jkId = peta[t.jkId]; y.tahun = ke; y.tarikhEfektif = ke + '-01-01'; y.tarikhLantik = tarikh_(); return y; });
   tambah_('Jawatankuasa', jkBaru); tambah_('Tugasan', tsBaru);
-  var mm = d.tetapanMerit.filter(function (m) { return Number(m.tahun) === dari; }).map(function (m) { return { tahun: ke, posisiId: m.posisiId, merit: m.merit }; });
+  var meritSedia = {}; d.tetapanMerit.forEach(function (m) { if (Number(m.tahun) === ke) meritSedia[m.posisiId] = 1; });
+  var mm = d.tetapanMerit.filter(function (m) { return Number(m.tahun) === dari && !meritSedia[m.posisiId]; }).map(function (m) { return { tahun: ke, posisiId: m.posisiId, merit: m.merit }; });
   tambah_('TetapanMerit', mm);
   log_(pg.emel, 'SALIN_TAHUN', 'Tahun', dari + '->' + ke, '', { jk: jkBaru.length, tugasan: tsBaru.length });
   return ok_({ jk: jkBaru.length, tugasan: tsBaru.length }, 'Disalin: ' + jkBaru.length + ' jawatankuasa, ' + tsBaru.length + ' tugasan ke tahun ' + ke + '.');
@@ -466,6 +480,31 @@ function lulusImport_(pg, a) {
   return ok_({ bil: hasil.length }, hasil.length + ' staf diimport. Rekod sedia ada tidak diubah.');
 }
 
+// Import jawatankuasa & pelantikan (semak dahulu, kemudian tambah; tiada penimpaan).
+var IMPORT_JK_MAKS_ = 3000;
+function bacaBarisPelantikan_(a) {
+  var baris = a.baris || [];
+  if (baris.length > IMPORT_JK_MAKS_) tolak_('Fail terlalu besar: maksimum ' + IMPORT_JK_MAKS_ + ' baris sekali import. Bahagikan fail kepada beberapa bahagian.');
+  return baris.map(function (b) {
+    return { kod: lindungFormula_(bersih_(b.kod, 20).toUpperCase()), nama: lindungFormula_(bersih_(b.nama, 250)), kategori: lindungFormula_(bersih_(b.kategori, 80)),
+      staffId: bersih_(b.staffId, 30), namaStaf: bersih_(b.namaStaf, 200), jawatan: bersih_(b.jawatan, 100), kualifikasi: lindungFormula_(bersih_(b.kualifikasi, 150).toUpperCase()) };
+  });
+}
+function semakImportJK_(pg, a) {
+  var d = semuaData_(), r = semakImportPelantikan(bacaBarisPelantikan_(a), d, tahunAktif_(a));
+  return ok_({ hasil: r.hasil, sah: r.hasil.filter(function (h) { return h.sah; }).length, tidakSah: r.hasil.filter(function (h) { return !h.sah; }).length, bilJKBaru: r.jkBaru.length, bilTugasanBaru: r.tugasanBaru.length });
+}
+function lulusImportJK_(pg, a) {
+  var d = semuaData_(), tahun = tahunAktif_(a), r = semakImportPelantikan(bacaBarisPelantikan_(a), d, tahun);
+  var peta = {}, noJ = Number(janaId_('JK', d.jawatankuasa, 'jkId').substring(2));
+  var jk = r.jkBaru.map(function (j) { var id = 'JK' + ('00000' + (noJ++)).slice(-5); peta[j.jkId] = id; return { jkId: id, tahun: tahun, kod: j.kod, nama: j.nama, kategori: j.kategori, keterangan: '', status: 'AKTIF', posisiWajib: '' }; });
+  var noA = Number(janaId_('A', d.tugasan, 'asgId').substring(1)), kini = tarikh_();
+  var ts = r.tugasanBaru.map(function (t) { return { asgId: 'A' + ('00000' + (noA++)).slice(-5), tahun: tahun, jkId: peta[t.jkId] || t.jkId, staffId: t.staffId, posisiId: t.posisiId, kualifikasi: t.kualifikasi, status: 'AKTIF', tarikhEfektif: tahun + '-01-01', tarikhLantik: kini, catatan: '' }; });
+  tambah_('Jawatankuasa', jk); tambah_('Tugasan', ts);
+  log_(pg.emel, 'IMPORT', 'Jawatankuasa', '-', '', { tahun: tahun, jk: jk.length, tugasan: ts.length });
+  return ok_({ jk: jk.length, tugasan: ts.length }, jk.length + ' jawatankuasa dan ' + ts.length + ' pelantikan diimport ke tahun ' + tahun + '.');
+}
+
 // ---------- Pengguna, tetapan, audit ----------
 function senaraiPengguna_(pg, a) { return ok_(baca_('Pengguna').map(function (p) { return { emel: p.emel, nama: p.nama, peranan: p.peranan, aktif: benar_(p.aktif), adaKataLaluan: !!p.hash }; })); }
 function simpanPengguna_(pg, a) {
@@ -482,7 +521,15 @@ function simpanPengguna_(pg, a) {
 function simpanTetapan_(pg, a) {
   var kebenaran = Object.keys(TETAPAN_ASAL), diubah = {};
   Object.keys(a.tetapan || {}).forEach(function (k) {
-    if (kebenaran.indexOf(k) < 0) return; var v = bersih_(a.tetapan[k], 200);
+    if (kebenaran.indexOf(k) < 0) return;
+    if (k === 'logo') {
+      var lg = String(a.tetapan[k] || '');
+      if (lg && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(lg)) tolak_('Format logo tidak sah. Gunakan PNG atau JPG.');
+      if (lg.length > LOGO_MAKS_) tolak_('Logo terlalu besar. Gunakan gambar yang lebih kecil.');
+      diubah.logo = lg; return;
+    }
+    var v = bersih_(a.tetapan[k], 200);
+    if (k === 'namaSekolah' && !v) tolak_('Nama sekolah diperlukan.');
     if (['ambangTinggi', 'ambangRendah'].indexOf(k) >= 0 && (isNaN(Number(v)) || v === '')) tolak_('Nilai ' + k + ' mesti nombor.');
     if (k === 'tahunAktif' && v !== '' && (isNaN(Number(v)) || Number(v) < 2000 || Number(v) > 2100)) tolak_('Tahun lalai mesti nombor 2000–2100, atau kosong untuk tahun terkini.');
     if (/^sasaran/.test(k) && v !== '' && isNaN(Number(v))) tolak_('Sasaran mesti nombor atau kosong.');
@@ -492,7 +539,8 @@ function simpanTetapan_(pg, a) {
   Object.keys(diubah).forEach(function (k) {
     var b = cariBaris_(sh, 'Tetapan', 'kunci', k); if (b < 0) tambah_('Tetapan', [{ kunci: k, nilai: diubah[k] }]); else sh.getRange(b, 2).setValue(diubah[k]);
   });
-  log_(pg.emel, 'UBAH_TETAPAN', 'Tetapan', '-', '', diubah); return ok_(null, 'Tetapan disimpan.');
+  var catat = JSON.parse(JSON.stringify(diubah)); if (catat.logo !== undefined) catat.logo = catat.logo ? '(logo dikemas kini)' : '(logo dibuang)';
+  log_(pg.emel, 'UBAH_TETAPAN', 'Tetapan', '-', '', catat); return ok_(null, 'Tetapan disimpan.');
 }
 function bacaAudit_(pg, a) {
   var sh = db_().getSheetByName('LogAudit'), n = sh.getLastRow(); if (n < 2) return ok_([]);
@@ -514,6 +562,7 @@ var LALUAN_ = {
   simpanPosisi: { min: 'PENTADBIR', fn: simpanPosisi_, tulis: true }, simpanMerit: { min: 'PENTADBIR', fn: simpanMerit_, tulis: true },
   padamPosisi: { min: 'PENTADBIR', fn: padamPosisi_, tulis: true },
   semakImport: { min: 'PENTADBIR', fn: semakImport_ }, lulusImport: { min: 'PENTADBIR', fn: lulusImport_, tulis: true },
+  semakImportJK: { min: 'PENTADBIR', fn: semakImportJK_ }, lulusImportJK: { min: 'PENTADBIR', fn: lulusImportJK_, tulis: true },
   senaraiPengguna: { min: 'PENTADBIR', fn: senaraiPengguna_ }, simpanPengguna: { min: 'PENTADBIR', fn: simpanPengguna_, tulis: true },
   simpanTetapan: { min: 'PENTADBIR', fn: simpanTetapan_, tulis: true }, bacaAudit: { min: 'PENTADBIR', fn: bacaAudit_ }
 };

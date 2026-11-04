@@ -1,12 +1,38 @@
-﻿# Panduan Pemasangan & Penyelenggaraan
+# Panduan Penyelenggaraan (MRSM SAS dan Templat)
 
-## A. Pemasangan (sekali sahaja, ±15 minit)
+> **Sekolah lain:** gunakan [Manual Pemasangan](manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf). Dokumen ini untuk pembangun.
+
+## Templat sekolah lain
+
+- Google Sheet templat: https://docs.google.com/spreadsheets/d/1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA (pautan salinan: tambah `/copy`). Mesti dikongsi *Anyone with the link: Viewer*.
+- Kemas kini templat selepas mengubah `gas/`:
+  1. `node tools/ujian.js` dan `node tools/ujian-pasang.js`
+  2. `node tools/bina-templat.js` (gagal jika data staf atau nama MRSM SAS ditemui)
+  3. Dalam folder `dist/templat`: semak `scriptId` dalam `.clasp.json` bermula `1jb5pJycQjE8`, kemudian `npx @google/clasp@3 push --force`
+- `dist/templat/.clasp.json` menunjuk ke projek templat. Tanpa fail itu, clasp menggunakan `.clasp.json` projek induk dan akan menolak ke sistem MRSM SAS. Jika `dist/` dicipta semula, pulihkan fail ini dahulu (scriptId `1jb5pJycQjE8s6PWz7z803T5qHLPTex4QSIsHJMcnlYqeSaNA1FWaV01j`, parentId `1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA`, rootDir `.`).
+- Salinan sekolah lain tidak dikemas kini secara automatik.
+- Manual: sunting `docs/manual-pemasangan/manual-pemasangan.html`, kemudian cetak ke PDF (A4, Background graphics dihidupkan).
+- Fungsi global baharu dalam `.gs` yang mengubah data atau kata laluan **mesti** memanggil `pemilikSahaja_()`, atau namanya berakhir dengan `_`: `google.script.run` boleh memanggil fungsi global lain tanpa log masuk.
+
+## Mengemas kini sistem MRSM SAS
+
+Manifest kini mempunyai skop baharu (`script.container.ui`). Selepas `clasp push`, pemilik MESTI memberi kebenaran semula **sebelum** deploy; jika tidak, API boleh gagal:
+
+1. `node tools/bina-web.js`
+2. `clasp push`
+3. Buka editor Apps Script, pilih fungsi `maklumatPemasang` dan klik **Run**, kemudian benarkan kebenaran. Fungsi ini hanya membaca.
+4. `clasp deploy --deploymentId <ID>` (kekalkan URL API)
+5. Tolak `index.html` ke GitHub **selepas** API dikemas kini.
+
+Nama sekolah dan butiran surat MRSM SAS datang daripada `gas/SekolahIni.gs`; nilai yang disimpan di halaman Tetapan mengatasinya. Pangkalan data tidak perlu diubah.
+
+## A. Pemasangan semula MRSM SAS dengan data benih
 
 1. **Cipta pangkalan data.** Dalam Google Drive anda, cipta Google Sheet kosong bernama `DB JK MRSM SAS 2027`. **Jangan kongsi** dengan sesiapa (hanya pemilik).
 2. **Buka Apps Script.** Dalam Sheet itu: *Extensions ▸ Apps Script*. Ini mencipta projek terikat pada Sheet tersebut.
 3. **Salin kod.** Padamkan `Code.gs` lalai. Untuk setiap fail dalam folder `gas/`:
-   - `.gs` → *Add a file ▸ Script*, nama sama tanpa `.gs`, tampal kandungan (`Code`, `Logik`, `Setup`, `BenihData`).
-   - `.html` → *Add a file ▸ HTML*, nama sama tanpa `.html` (`Index`, `Gaya`, `Komponen`, `Paparan1`, `Paparan2`, `Aplikasi`).
+   - `.gs` → *Add a file ▸ Script*, nama sama tanpa `.gs`, tampal kandungan (`Code`, `Logik`, `Setup`, `Pasang`, `SekolahIni`, `BenihData`).
+   - `.html` → *Add a file ▸ HTML*, nama sama tanpa `.html` (`Index`, `Gaya`, `Komponen`, `Paparan1` hingga `Paparan4`, `Aplikasi`, `Pemasang`).
    - `appsscript.json` → *Project Settings ▸ Show "appsscript.json"*, kemudian tampal kandungannya.
 4. **Cipta jadual dan data.** Pilih fungsi `setupAwal` ▸ **Run** ▸ benarkan kebenaran. Lihat *Execution log*: ia memaparkan **emel pentadbir** dan **kata laluan sementara**. Catatkannya.
    - `setupAwal()` selamat dijalankan semula: ia tidak menimpa helaian yang sudah berisi.
@@ -20,7 +46,7 @@
 
 - Fail Google Sheet DB: *Share* hanya untuk anda (dan pentadbir yang dipercayai). Sesiapa yang boleh menyunting Sheet boleh memintas semua kawalan sistem.
 - Jangan letak kata laluan atau kunci dalam kod. Sistem tidak memerlukan sebarang rahsia dalam kod; hash kata laluan disimpan dalam helaian `Pengguna`.
-- Lupa kata laluan: di editor Apps Script jalankan `tetapKataLaluan('emel@contoh.my','KataBaharu123')` (edit pemanggilan dalam fungsi pembungkus sementara) atau gunakan *Pengguna ▸ Sunting* oleh pentadbir lain.
+- Lupa kata laluan: dalam Google Sheet pilih *eJawatankuasa ▸ Set semula kata laluan System Admin*, atau gunakan *Pengguna ▸ Sunting* oleh pentadbir lain.
 - Log masuk dihadkan 5 percubaan salah / 10 minit bagi setiap emel. Sesi tamat selepas 6 jam.
 - Semua perubahan direkod dalam helaian `LogAudit` dan dipaparkan di halaman *Log Audit*.
 - Jika repo GitHub digunakan untuk simpanan kod, jadikannya **Private**. Data benih (`BenihData.gs`, `data/`) mengandungi nama dan emel rasmi staf — jangan terbitkan secara awam.

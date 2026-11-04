@@ -43,7 +43,7 @@ async function render() {
 
 /* ===== Data asas ===== */
 async function muatAsas() {
-  S.asas = await panggil('muatAsas');
+  S.asas = await panggil('muatAsas'); terapJenama(S.asas.tetapan);
   if (!S.tahun || S.asas.tahun.indexOf(S.tahun) < 0) S.tahun = S.asas.tahun.indexOf(S.asas.tahunAktif) >= 0 ? S.asas.tahunAktif : S.asas.tahun[S.asas.tahun.length - 1];
   var sel = kosongkan($('#pilihTahun'));
   S.asas.tahun.forEach(function (t) { sel.appendChild(h('option', { value: t, selected: t === S.tahun }, t)); });
@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   // Cuba sesi sedia ada atau akaun Google yang dikenali pelayan
   S.token = bacaToken();
-  panggil('sesi', {}, { senyap: true }).then(masukApl).catch(function () { keLogMasuk(); });
+  var muatJenama = panggil('jenama', {}, { senyap: true }).then(terapJenama).catch(function () {});
+  var muatSesi = panggil('sesi', {}, { senyap: true }).then(function (d) { return d; }, function () { return null; });
+  Promise.all([muatSesi, muatJenama]).then(function (r) { if (r[0]) return masukApl(r[0]); keLogMasuk(); }).catch(function () { keLogMasuk(); });
 });
 </script>

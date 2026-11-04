@@ -255,10 +255,48 @@ function semakImportStaf(baris, stafSedia) {
     return { baris: i + 2, data: b, ralat: ralat, amaran: amaran, sah: !ralat.length };
   });
 }
+// Semak import jawatankuasa & pelantikan. Baris tanpa staf/jawatan hanya mencipta jawatankuasa.
+// baris: [{kod, nama, kategori, staffId, namaStaf, jawatan, kualifikasi}]
+// Pulangkan {hasil, jkBaru, tugasanBaru}; id jkBaru sementara ('__JK1') dipetakan semasa penulisan.
+function semakImportPelantikan(baris, d, tahun) {
+  var stafId = lPeta_(d.staf, 'staffId'), stafNama = {}, posisiNama = {}, jkNama = {};
+  (d.staf || []).forEach(function (s) { var k = normNama_(s.nama); stafNama[k] = stafNama[k] ? 'BERULANG' : s; });
+  (d.posisi || []).forEach(function (p) { posisiNama[String(p.nama).trim().toUpperCase()] = p; });
+  if (posisiNama['AHLI JAWATANKUASA'] && !posisiNama.AHLI) posisiNama.AHLI = posisiNama['AHLI JAWATANKUASA'];
+  (d.jawatankuasa || []).forEach(function (j) { if (Number(j.tahun) === Number(tahun)) jkNama[String(j.nama).trim().toUpperCase()] = j; });
+  var kerja = { staf: d.staf, posisi: d.posisi, jawatankuasa: (d.jawatankuasa || []).slice(), tugasan: (d.tugasan || []).slice() };
+  var noJ = 0, calonJK = [], digunakan = {}, tugasanBaru = [];
+  var hasil = baris.map(function (b, i) {
+    var ralat = [], namaJK = lId_(b.nama).trim(), kunci = namaJK.toUpperCase(), jk = jkNama[kunci];
+    var adaOrang = lId_(b.staffId).trim() || lId_(b.namaStaf).trim() || lId_(b.jawatan).trim();
+    if (!namaJK) ralat.push('Nama jawatankuasa kosong');
+    if (namaJK && !jk) {
+      jk = { jkId: '__JK' + (++noJ), tahun: Number(tahun), kod: lId_(b.kod).trim(), nama: namaJK, kategori: lId_(b.kategori).trim(), status: 'AKTIF' };
+      jkNama[kunci] = jk; calonJK.push(jk); kerja.jawatankuasa.push(jk);
+    }
+    var staf = null, posisi = null;
+    if (namaJK && adaOrang) {
+      var id = lId_(b.staffId).trim(), nama = lId_(b.namaStaf).trim();
+      staf = id && stafId[id] ? stafId[id] : (nama ? stafNama[normNama_(nama)] : null);
+      if (staf === 'BERULANG') { ralat.push('Nama staf "' + nama + '" berulang; gunakan ID staf'); staf = null; }
+      else if (!staf) ralat.push('Staf tidak dijumpai: ' + (id || nama || '(kosong)') + ' — import staf dahulu');
+      posisi = posisiNama[lId_(b.jawatan).trim().toUpperCase()];
+      if (!posisi) ralat.push('Jawatan tidak dijumpai: "' + lId_(b.jawatan).trim() + '" — tambah di Jawatan & Merit');
+      if (staf && posisi) {
+        var t = { asgId: '__A' + i, tahun: Number(tahun), jkId: jk.jkId, staffId: lId_(staf.staffId), posisiId: lId_(posisi.posisiId), kualifikasi: lId_(b.kualifikasi).trim(), status: 'AKTIF' };
+        ralat = ralat.concat(semakTugasan(t, kerja));
+        if (!ralat.length) { kerja.tugasan.push(t); tugasanBaru.push(t); }
+      }
+    }
+    if (namaJK && !ralat.length) digunakan[jk.jkId] = 1;
+    return { baris: i + 2, jk: namaJK, staf: staf ? staf.nama : lId_(b.namaStaf).trim(), jawatan: posisi ? posisi.nama : lId_(b.jawatan).trim(), ralat: ralat, sah: !ralat.length };
+  });
+  return { hasil: hasil, jkBaru: calonJK.filter(function (j) { return digunakan[j.jkId]; }), tugasanBaru: tugasanBaru };
+}
 function normNama_(n) {
   return String(n || '').toUpperCase().replace(/[‘’`´"']/g, '').replace(/^(EN|PN|DR|USTAZ|USTAZAH)\.?\s+/, '')
     .replace(/\bBT\b\.?/g, 'BINTI').replace(/\bB\b\.?/g, 'BIN').replace(/[^A-Z@ ]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-if (typeof module !== 'undefined') module.exports = { masukAnalisis: masukAnalisis, kiraMerit: kiraMerit, semakTugasan: semakTugasan, pratontonKesan: pratontonKesan, ringkasDashboard: ringkasDashboard, bandingTahun: bandingTahun, cadangCalon: cadangCalon, semakImportStaf: semakImportStaf, statusBeban: statusBeban, normNama_: normNama_ };
+if (typeof module !== 'undefined') module.exports = { masukAnalisis: masukAnalisis, kiraMerit: kiraMerit, semakTugasan: semakTugasan, pratontonKesan: pratontonKesan, ringkasDashboard: ringkasDashboard, bandingTahun: bandingTahun, cadangCalon: cadangCalon, semakImportStaf: semakImportStaf, semakImportPelantikan: semakImportPelantikan, statusBeban: statusBeban, normNama_: normNama_ };
 

@@ -69,8 +69,22 @@ async function paparImport() {
         { kunci: 'sah', label: 'Semakan', papar: function (r) { return h('span', null, r.sah ? lencana('Sah', 'aktif') : lencana('Ditolak', 'tinggi'), ' ', r.ralat.concat(r.amaran).join('; ')); } }] }));
       if (h2.sah) kotakHasil.appendChild(h('button', { class: 'btn utama', style: 'margin-top:.6rem', onclick: ujiTindakan(async function () { var ok = await sahkan('Import ' + h2.sah + ' staf baharu?', { label: 'Import' }); if (!ok) return; toast((await panggil('lulusImport', { baris: baris }, { penuh: true })).message, 'berjaya'); await muatAsas(); kosongkan(kotakHasil); }) }, 'Import ' + h2.sah + ' baris sah'));
     });
-    kad.appendChild(h('div', { class: 'kad' }, h('h2', null, 'Import Staf (peringkat semakan)'), h('p', { class: 'diam' }, 'CSV dengan lajur: staffId, nama, jawatan, emel, telefon, jabatan, kategori (GURU/SOKONGAN). Sistem menyemak ID pendua, nama menyerupai dan emel sebelum menyimpan.'),
-      h('div', { class: 'baris-alat' }, fail, h('button', { class: 'btn', onclick: semak }, 'Semak fail'), h('button', { class: 'btn kecil', onclick: function () { eksportCSV('templat-import-staf.csv', ['staffId', 'nama', 'jawatan', 'emel', 'telefon', 'jabatan', 'kategori'], [['123456', 'NAMA CONTOH BIN ABU', 'GURU MARA', 'contoh@mara.gov.my', '', 'Akademik', 'GURU']]); } }, 'Muat turun templat')), kotakHasil));
+    kad.appendChild(h('div', { class: 'kad' }, h('h2', null, 'Import Staf (peringkat semakan)'), h('p', { class: 'diam' }, 'CSV dengan lajur: staffId (No. Gaji atau ID unik), nama, jawatan, emel, telefon, jabatan, kategori (GURU, SOKONGAN atau EXOFFICIO). EXOFFICIO tidak dikira dalam analisis beban. Sistem menyemak ID pendua, nama menyerupai dan emel sebelum menyimpan.'),
+      h('div', { class: 'baris-alat' }, fail, h('button', { class: 'btn', onclick: semak }, 'Semak fail'), h('button', { class: 'btn kecil', onclick: function () { eksportCSV('templat-import-staf.csv', ['staffId', 'nama', 'jawatan', 'emel', 'telefon', 'jabatan', 'kategori'], [['123456', 'NAMA CONTOH BIN ABU', 'GURU', 'contoh@sekolah.edu.my', '', 'Akademik', 'GURU'], ['123457', 'NAMA CONTOH BINTI ALI', 'PEMBANTU TADBIR', '', '', 'Pentadbiran', 'SOKONGAN'], ['123458', 'NAMA PENGETUA', 'PENGETUA', '', '', 'Pentadbiran', 'EXOFFICIO']]); } }, 'Muat turun templat')), kotakHasil));
+    var failJK = h('input', { type: 'file', accept: '.csv,text/csv' }), barisJK = [], hasilJK = h('div');
+    var semakJK = ujiTindakan(async function () {
+      var f = failJK.files[0]; if (!f) { toast('Pilih fail CSV dahulu.', 'ralat'); return; }
+      if (f.size > 500000) { toast('Fail terlalu besar (maks 500 KB). Bahagikan fail kepada beberapa bahagian.', 'ralat'); return; }
+      barisJK = huraiCSV(await f.text()).filter(function (r) { return String(r.Status || '').toUpperCase() !== 'TAMAT'; }).map(function (r) { return { kod: r['Kod JK'] || r.kod || '', nama: r.Jawatankuasa || r.nama || '', kategori: r.Kategori || r.kategori || '', staffId: r['ID staf'] || r.staffId || '', namaStaf: r.Nama || r.namaStaf || '', jawatan: r.Jawatan || r.jawatan || '', kualifikasi: r.Kualifikasi || r.kualifikasi || '' }; });
+      if (!barisJK.length) { toast('Tiada baris dijumpai dalam fail.', 'ralat'); return; }
+      var r = await panggil('semakImportJK', { baris: barisJK, tahun: S.tahun }); kosongkan(hasilJK);
+      hasilJK.appendChild(h('div', { class: r.tidakSah ? 'amaran-kotak' : 'info-kotak' }, r.sah + ' baris sah, ' + r.tidakSah + ' baris bermasalah. Akan ditambah ke tahun ' + S.tahun + ': ' + r.bilJKBaru + ' jawatankuasa baharu dan ' + r.bilTugasanBaru + ' pelantikan. Data sedia ada tidak ditimpa.'));
+      hasilJK.appendChild(jadual({ data: r.hasil, saiz: 15, cari: false, lajur: [{ kunci: 'baris', label: 'Baris', nombor: true }, { kunci: 'jk', label: 'Jawatankuasa' }, { kunci: 'staf', label: 'Staf' }, { kunci: 'jawatan', label: 'Jawatan' },
+        { kunci: 'sah', label: 'Semakan', papar: function (x) { return h('span', null, x.sah ? lencana('Sah', 'aktif') : lencana('Ditolak', 'tinggi'), ' ', x.ralat.join('; ')); } }] }));
+      if (r.sah) hasilJK.appendChild(h('button', { class: 'btn utama', style: 'margin-top:.6rem', onclick: ujiTindakan(async function () { if (!(await sahkan('Import ' + r.bilJKBaru + ' jawatankuasa dan ' + r.bilTugasanBaru + ' pelantikan ke tahun ' + S.tahun + '?', { label: 'Import' }))) return; toast((await panggil('lulusImportJK', { baris: barisJK, tahun: S.tahun }, { penuh: true })).message, 'berjaya'); await muatAsas(); kosongkan(hasilJK); }) }, 'Import baris sah'));
+    });
+    kad.appendChild(h('div', { class: 'kad' }, h('h2', null, 'Import Jawatankuasa & Pelantikan (peringkat semakan)'), h('p', { class: 'diam' }, 'Satu baris bagi setiap ahli, ke tahun ' + S.tahun + '. Lajur: Kod JK, Jawatankuasa, Kategori, ID staf, Nama, Jawatan, Kualifikasi. Import staf dahulu. Baris dengan nama jawatankuasa sahaja akan mencipta jawatankuasa tanpa ahli.'),
+      h('div', { class: 'baris-alat' }, failJK, h('button', { class: 'btn', onclick: semakJK }, 'Semak fail'), h('button', { class: 'btn kecil', onclick: function () { eksportCSV('templat-import-jawatankuasa.csv', ['Kod JK', 'Jawatankuasa', 'Kategori', 'ID staf', 'Nama', 'Jawatan', 'Kualifikasi'], [['A01', 'JAWATANKUASA PENGURUSAN', 'Pentadbiran', '123458', 'NAMA PENGETUA', 'Pengerusi', ''], ['A01', 'JAWATANKUASA PENGURUSAN', 'Pentadbiran', '123456', 'NAMA CONTOH BIN ABU', 'Setiausaha', ''], ['A01', 'JAWATANKUASA PENGURUSAN', 'Pentadbiran', '123457', 'NAMA CONTOH BINTI ALI', 'Ahli Jawatankuasa', '']]); } }, 'Muat turun templat')), hasilJK));
     var dari = pilihSelect(S.asas.tahun, S.asas.tahun[S.asas.tahun.length - 1]), ke = h('input', { type: 'number', value: S.tahun + 1, min: 2000, max: 2100 });
     kad.appendChild(h('div', { class: 'kad' }, h('h2', null, 'Peralihan Tahun'), h('p', { class: 'diam' }, 'Salin struktur jawatankuasa, pelantikan aktif dan nilai merit ke tahun baharu. Tidak dibenarkan jika tahun sasaran sudah mempunyai data — data sedia ada tidak akan ditimpa. Data tahun lama kekal untuk sejarah.'),
       h('div', { class: 'baris-alat' }, h('label', null, 'Dari ', dari), h('label', null, 'Ke ', ke), h('button', { class: 'btn utama', onclick: ujiTindakan(async function () {
@@ -99,14 +113,23 @@ function borangPengguna(p) {
 async function paparTetapan() {
   var t = S.asas.tetapan, f = {};
   var buat = function (k, label, bantuan, jenis) { f[k] = h('input', { type: jenis || 'text', value: t[k] === undefined ? '' : t[k] }); return medan(label, f[k], bantuan); };
+  var logoBaru, gambar = h('img', { alt: 'Logo sekolah', class: 'logo-log' }), failLogo = h('input', { type: 'file', accept: 'image/png,image/jpeg' });
+  pasangLogo(gambar, t.logo);
+  failLogo.addEventListener('change', ujiTindakan(async function () { if (!failLogo.files[0]) return; try { logoBaru = await kecilkanLogo(failLogo.files[0], 45000); pasangLogo(gambar, logoBaru); } catch (e) { toast(e.message, 'ralat'); failLogo.value = ''; } }));
   return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Tetapan Sistem'), h('p', null, 'Semua nilai boleh diubah tanpa menyunting kod. Nilai merit jawatan diurus di halaman Jawatan & Merit.'))),
-    h('div', { class: 'kad', style: 'max-width:720px' },
+    h('div', { class: 'kad', style: 'max-width:720px;margin-bottom:1rem' }, h('h2', null, 'Maklumat Sekolah'),
+      gambar, medan('Logo sekolah (PNG atau JPG)', failLogo, 'Dikecilkan secara automatik.'),
+      buat('namaSekolah', 'Nama penuh sekolah', 'Dipaparkan pada log masuk, laporan dan surat.'), buat('namaRingkas', 'Nama ringkas', 'Dipaparkan pada menu sisi.'), buat('lokasi', 'Lokasi', 'Cth: Bandar, Negeri. Dipaparkan pada tandatangan surat.'),
+      h('h2', { style: 'margin-top:1rem' }, 'Surat Rasmi'),
+      buat('pengetuaNama', 'Nama penandatangan lalai'), buat('pengetuaJawatan', 'Jawatan penandatangan'), buat('suratDaripada', 'Baris "Daripada" pada surat', 'Cth: Pengetua Maktab Rendah Sains MARA Contoh.'),
+      buat('suratKepalaKiri', 'Kepala surat, kiri', 'Teks besar di atas surat, cth. mara atau nama sekolah.'), buat('suratKepalaKanan', 'Kepala surat, kanan', 'Cth. memograf. Boleh dikosongkan.'), buat('suratCogan', 'Cogan kata penutup', 'Pisahkan setiap baris dengan |. Boleh dikosongkan.')),
+    h('div', { class: 'kad', style: 'max-width:720px' }, h('h2', null, 'Tetapan Analisis'),
       buat('tahunAktif', 'Tahun lalai semasa log masuk', 'Kosongkan untuk sentiasa membuka tahun terkini dalam data. Anda juga boleh menukar tahun dari menu di bahagian atas.', 'number'), buat('ambangTinggi', 'Ambang beban tinggi (% daripada purata kategori)', 'Cth 130 = melebihi 130% daripada purata dikira beban tinggi.', 'number'),
       buat('ambangRendah', 'Ambang beban rendah (% daripada purata kategori)', '', 'number'),
       buat('sasaranMin_GURU', 'Sasaran merit minimum — GURU', 'Kosong = gunakan ambang peratusan.', 'number'), buat('sasaranMax_GURU', 'Sasaran merit maksimum — GURU', '', 'number'),
       buat('sasaranMin_SOKONGAN', 'Sasaran merit minimum — SOKONGAN', '', 'number'), buat('sasaranMax_SOKONGAN', 'Sasaran merit maksimum — SOKONGAN', '', 'number'),
       buat('posisiWajib', 'Jawatan wajib bagi kelengkapan JK', 'Pisahkan dengan koma; gunakan | untuk alternatif. Cth: Pengerusi|Penyelaras,Setiausaha'),
-      h('button', { class: 'btn utama', onclick: ujiTindakan(async function () { var o = {}; Object.keys(f).forEach(function (k) { o[k] = f[k].value; }); toast((await panggil('simpanTetapan', { tetapan: o }, { penuh: true })).message, 'berjaya'); await muatAsas(); }) }, 'Simpan tetapan')));
+      h('button', { class: 'btn utama', onclick: ujiTindakan(async function () { var o = {}; Object.keys(f).forEach(function (k) { o[k] = f[k].value; }); if (logoBaru) o.logo = logoBaru; toast((await panggil('simpanTetapan', { tetapan: o }, { penuh: true })).message, 'berjaya'); await muatAsas(); }) }, 'Simpan tetapan')));
 }
 
 /* ===== Log audit ===== */

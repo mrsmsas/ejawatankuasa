@@ -1,10 +1,10 @@
 <script>
-/* ===== Surat rasmi (memo MARA): Surat Perlantikan & Surat Panggilan Mesyuarat ===== */
-var TARIKH_PERLANTIKAN = '2027-01-04';   // tarikh tetap surat perlantikan
+/* ===== Surat rasmi: Surat Perlantikan & Surat Panggilan Mesyuarat (butiran sekolah daripada Tetapan) ===== */
+// Tarikh lalai surat perlantikan: Isnin pertama bulan Januari; boleh diubah pada borang.
+function isninPertama(tahun) { var d = new Date(Date.UTC(tahun, 0, 1)); d.setUTCDate(1 + (8 - d.getUTCDay()) % 7); return d.toISOString().substring(0, 10); }
 var BLN_MS = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
 var HARI_MS = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
 var BLN_HIJRAH = ['Muharam', 'Safar', 'Rabiulawal', 'Rabiulakhir', 'Jamadil Awal', 'Jamadil Akhir', 'Rejab', 'Syaaban', 'Ramadan', 'Syawal', 'Zulkaedah', 'Zulhijjah'];
-var PENANDATANGAN_LALAI = { nama: 'KHAIRIL AZRI BIN MOHD HABIBOLLAH', jawatan: 'Pengetua' };
 
 function tarikhDari(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; }
 function tarikhMasehi(d) { return d.getUTCDate() + ' ' + BLN_MS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
@@ -22,31 +22,32 @@ function masaBM(hhmm) {
 }
 function ambilPenandatangan() {
   try { var t = JSON.parse(localStorage.getItem('jk_penandatangan') || 'null'); if (t && t.nama) return t; } catch (e) {}
-  return PENANDATANGAN_LALAI;
+  return { nama: jenama().pengetuaNama || '', jawatan: jenama().pengetuaJawatan || 'Pengetua' };
 }
 function simpanPenandatangan(o) { try { localStorage.setItem('jk_penandatangan', JSON.stringify(o)); } catch (e) {} }
 
-/* Satu helai memo (reka bentuk surat MARA): kepala "mara memograf", jadual rujukan, kandungan, tandatangan dan logo 60 tahun di kaki. */
+/* Satu helai memo: kepala surat, jadual rujukan, kandungan dan tandatangan. */
 function memo(o) {
   var td = function (kelas, span) { var anak = Array.prototype.slice.call(arguments, 2); return h.apply(null, ['td', { class: kelas || null, colspan: span || null }].concat(anak)); };
   // Sel rujukan: label di atas, nilai tebal di bawah; tengah secara mendatar, rapat ke atas secara menegak.
   var rc = function (label, nilai, span) { return h('td', { class: 'rc', colspan: span }, h('div', { class: 'rl' }, label), h('div', { class: 'rn' }, nilai)); };
+  var b = jenama(), cogan = String(b.suratCogan || '').split('|').map(function (x) { return x.trim(); }).filter(Boolean);
   return h('div', { class: 'surat' },
-    h('div', { class: 'surat-kepala' }, h('span', { class: 'mara' }, 'mara'), h('span', { class: 'memograf' }, 'memograf')),
+    b.suratKepalaKiri || b.suratKepalaKanan ? h('div', { class: 'surat-kepala' }, h('span', { class: 'mara' }, b.suratKepalaKiri || ''), h('span', { class: 'memograf' }, b.suratKepalaKanan || '')) : null,
     h('table', { class: 'surat-meta' },
       h('colgroup', null, [17.1, 9, 5, 29.8, 21.7, 17.4].map(function (w) { return h('col', { style: 'width:' + w + '%' }); })),
       h('tr', null, td('', 1, 'Kepada :'), td('b', 5, o.kepada)),
-      h('tr', null, td('', 1, 'Daripada :'), td('b', 5, 'Pengetua Maktab Rendah Sains MARA Sultan Azlan Shah')),
+      h('tr', null, td('', 1, 'Daripada :'), td('b', 5, b.suratDaripada || ('Pengetua ' + (b.namaSekolah || '')))),
       h('tr', null, td('', 2, 'Salinan Kepada :'), td('', 4, o.salinan || '')),
       h('tr', { class: 'ruj' }, rc('Rujuk Kami', o.rujukKami || '', 3), rc('Tarikh', [o.tarikh, h('br'), o.hijrah], 1), rc('Rujuk Tuan', '', 1), rc('Tarikh', '', 1))),
     h('p', { style: 'margin-top:1em' }, 'Tuan / Puan,'),
     h('p', { class: 'surat-tajuk' }, o.tajuk),
     o.badan,
     h('div', { class: 'surat-tutup' },
-      h('p', { style: 'margin:0' }, h('b', null, '“MALAYSIA MADANI”'), h('br'), h('b', null, '“BERKHIDMAT UNTUK NEGARA”'), h('br'), h('b', null, '“LUAR BANDAR SEJAHTERA”')),
+      cogan.length ? h('p', { style: 'margin:0' }, cogan.map(function (c, i) { return [i ? h('br') : null, h('b', null, '“' + c + '”')]; })) : null,
       h('p', null, h('b', null, 'Saya yang menjalankan amanah,')),
       h('div', { class: 'ttd' }),
-      h('p', { style: 'margin:0' }, h('b', null, o.penandatangan.nama), h('br'), o.penandatangan.jawatan, h('br'), 'MRSM Sultan Azlan Shah', h('br'), 'Kuala Kangsar, Perak')));
+      h('p', { style: 'margin:0' }, h('b', null, o.penandatangan.nama), h('br'), o.penandatangan.jawatan, h('br'), b.namaSekolah || '', b.lokasi ? [h('br'), b.lokasi] : null)));
 }
 function romawi(n) { return ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx'][n] || String(n + 1); }
 // Label jawatan gaya surat: "Pengerusi", "Timb. Pengerusi I", "Ahli"
@@ -78,7 +79,7 @@ function butangCetak() { return h('button', { class: 'btn utama', onclick: funct
 
 /* ===== Surat Perlantikan ===== */
 async function paparSuratLantik() {
-  var d = await panggil('laporanInduk', { tahun: S.tahun }), tahun = d.tahun, tkh = tarikhDari(TARIKH_PERLANTIKAN);
+  var d = await panggil('laporanInduk', { tahun: S.tahun }), tahun = d.tahun, tkhInput = h('input', { type: 'date', value: isninPertama(tahun) });
   var peta = {}, urut = [];
   d.jk.forEach(function (j) {
     j.ahli.forEach(function (a) {
@@ -89,11 +90,13 @@ async function paparSuratLantik() {
   });
   var senarai = urut.map(function (k) { return peta[k]; }).sort(function (x, y) { return x.nama.localeCompare(y.nama, 'ms'); });
   var pilih = pilihSelect(senarai.map(function (s, i) { return { nilai: i, label: s.nama + ' (' + s.lantik.length + ' jawatan)' }; }), '', 'Semua staf (cetak kelompok)');
-  var tajuk = h('input', { value: 'PERLANTIKAN SEBAGAI AHLI JAWATANKUASA KERJA MRSM SULTAN AZLAN SHAH TAHUN ' + tahun });
+  var tajuk = h('input', { value: 'PERLANTIKAN SEBAGAI AHLI JAWATANKUASA KERJA ' + namaSekolahBesar() + ' TAHUN ' + tahun });
   var tt = borangPenandatangan(), hj = kawalanHijrah(), dok = dokSurat();
 
   function lukis() {
-    kosongkan(dok); var hijrah = hj.nilai(tkh), ttd = tt.baca();
+    kosongkan(dok); var tkh = tarikhDari(tkhInput.value);
+    if (!tkh) { dok.appendChild(h('div', { class: 'kad kosong tiada-cetak' }, 'Isi tarikh surat.')); return; }
+    var hijrah = hj.nilai(tkh), ttd = tt.baca();
     var terpilih = pilih.value === '' ? senarai : [senarai[Number(pilih.value)]];
     if (!terpilih.length) { dok.appendChild(h('div', { class: 'kosong' }, 'Tiada pelantikan untuk tahun ' + tahun + '.')); return; }
     terpilih.forEach(function (s) {
@@ -104,15 +107,15 @@ async function paparSuratLantik() {
           para('2', 'Sukacita dimaklumkan bahawa tuan/puan telah dilantik untuk menyandang jawatan dalam jawatankuasa bagi tahun ' + tahun + ' seperti senarai di lampiran.'),
           para('3', 'Tuan/puan adalah dipohon melaksanakan tugas dan tanggungjawab yang diamanahkan dengan penuh dedikasi.'),
           para('', 'Kerjasama daripada tuan/puan amatlah dihargai dan didahului dengan ucapan terima kasih.'), para('', 'Sekian,')] }));
-      dok.appendChild(h('div', { class: 'surat lampiran' }, h('p', { style: 'text-align:center;font-weight:700;margin:0' }, 'MRSM SULTAN AZLAN SHAH'),
+      dok.appendChild(h('div', { class: 'surat lampiran' }, h('p', { style: 'text-align:center;font-weight:700;margin:0' }, namaSekolahBesar()),
         h('p', { class: 'surat-tajuk', style: 'text-align:center;margin-top:0' }, 'SENARAI JAWATANKUASA DAN JAWATAN TAHUN ' + tahun), h('p', { style: 'margin:.8em 0 0' }, 'Nama : ', h('b', null, s.nama)), jadualLantik));
     });
   }
-  [pilih, tajuk, hj.input, tt.nama, tt.jawatan].forEach(function (e) { e.addEventListener('input', function () { tt.simpan(); lukis(); }); e.addEventListener('change', lukis); });
+  [pilih, tajuk, tkhInput, hj.input, tt.nama, tt.jawatan].forEach(function (e) { e.addEventListener('input', function () { tt.simpan(); lukis(); }); e.addEventListener('change', lukis); });
   lukis();
   return h('div', null,
-    h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Surat Perlantikan ' + tahun), h('p', null, 'Satu surat bagi setiap staf; senarai jawatankuasa dan jawatan beliau dipaparkan pada lampiran. Tarikh surat ditetapkan ' + tarikhMasehi(tkh) + '; ruang Rujuk Kami dibiarkan kosong untuk ditulis secara manual.'))),
-    h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, h('div', { class: 'grid-borang' }, medan('Penerima', pilih), medan('Tajuk surat', tajuk), hj.medan, tt.medan), h('div', { class: 'baris-alat', style: 'margin-top:.6rem' }, butangCetak())),
+    h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Surat Perlantikan ' + tahun), h('p', null, 'Satu surat bagi setiap staf; senarai jawatankuasa dan jawatan beliau dipaparkan pada lampiran. Tarikh lalai ialah Isnin pertama bulan Januari dan boleh diubah; ruang Rujuk Kami dibiarkan kosong untuk ditulis secara manual.'))),
+    h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, h('div', { class: 'grid-borang' }, medan('Penerima', pilih), medan('Tajuk surat', tajuk), medan('Tarikh surat', tkhInput), hj.medan, tt.medan), h('div', { class: 'baris-alat', style: 'margin-top:.6rem' }, butangCetak())),
     dok);
 }
 
@@ -121,8 +124,8 @@ async function paparSuratMesyuarat() {
   var d = await panggil('laporanInduk', { tahun: S.tahun }), tahun = d.tahun, hariIni = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
   var jkSel = pilihSelect(d.jk.map(function (j, i) { return { nilai: i, label: (j.kod ? j.kod + ' — ' : '') + j.nama }; }), '', '— Pilih jawatankuasa —');
   var f = { tarikhSurat: h('input', { type: 'date', value: hariIni.getFullYear() + '-' + pad(hariIni.getMonth() + 1) + '-' + pad(hariIni.getDate()) }),
-    rujuk: h('input', { placeholder: 'cth. MRSMSAS.100-14/1/5 ( )' }), tajuk: h('input', { placeholder: 'cth. MESYUARAT … BIL.1/' + tahun }), tarikhM: h('input', { type: 'date' }),
-    masa: h('input', { type: 'time', value: '14:30' }), agenda: h('textarea', { rows: 4, placeholder: 'Ucapan Pengerusi\nPengesahan Minit Mesyuarat\nPerkara Berbangkit\nHal-hal lain' }), tempat: h('input', { placeholder: 'cth. Bilik Mesyuarat (Rafflesia)' }) };
+    rujuk: h('input', { placeholder: 'cth. RUJ.100-14/1/5 ( )' }), tajuk: h('input', { placeholder: 'cth. MESYUARAT … BIL.1/' + tahun }), tarikhM: h('input', { type: 'date' }),
+    masa: h('input', { type: 'time', value: '14:30' }), agenda: h('textarea', { rows: 4, placeholder: 'Ucapan Pengerusi\nPengesahan Minit Mesyuarat\nPerkara Berbangkit\nHal-hal lain' }), tempat: h('input', { placeholder: 'cth. Bilik Mesyuarat Utama' }) };
   var tt = borangPenandatangan(), hj = kawalanHijrah(), dok = dokSurat(), tajukDisunting = false;
   f.tajuk.addEventListener('input', function () { tajukDisunting = true; });
 
@@ -141,7 +144,7 @@ async function paparSuratMesyuarat() {
         para('', 'Kerjasama daripada tuan/puan amatlah dihargai dan didahului dengan ucapan terima kasih.'), para('', 'Sekian,')]) }));
     // Lampiran: senarai ahli jawatankuasa terpilih; label jawatan dipaparkan sekali bagi jawatan berturutan yang sama.
     var terdahulu = null;
-    dok.appendChild(h('div', { class: 'surat lampiran' }, h('p', { style: 'text-align:center;font-weight:700;margin:0' }, 'MRSM SULTAN AZLAN SHAH'), h('p', { class: 'surat-tajuk', style: 'text-align:center;margin-top:0' }, jk.nama.toUpperCase()),
+    dok.appendChild(h('div', { class: 'surat lampiran' }, h('p', { style: 'text-align:center;font-weight:700;margin:0' }, namaSekolahBesar()), h('p', { class: 'surat-tajuk', style: 'text-align:center;margin-top:0' }, jk.nama.toUpperCase()),
       jk.ahli.length ? h('table', { class: 'surat-ahli' }, jk.ahli.map(function (a) {
         var label = a.jawatan === terdahulu ? '' : labelJawatan(a.jawatan); terdahulu = a.jawatan;
         return h('tr', null, h('td', { class: 'aj' }, label), h('td', { style: 'width:14px' }, ':'), h('td', null, namaPaparan(a)));

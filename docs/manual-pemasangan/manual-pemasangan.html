@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ms"><head><meta charset="utf-8"><title>Manual Pemasangan eJawatankuasa</title>
+<style>
+@page{size:A4;margin:20mm 16mm 18mm}
+:root{--u:#0f2c63;--ul:#eaf0fa;--e:#f5b800;--t:#17233f;--t2:#58647f;--g:#d3ddf0;--m:#b3261e}
+*{box-sizing:border-box}
+body{font-family:"Segoe UI",Calibri,Arial,sans-serif;color:var(--t);font-size:10.5pt;line-height:1.5;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+a{color:#1d4a9a}
+.kulit{height:255mm;display:flex;flex-direction:column;justify-content:center;break-after:page}
+.kulit .jalur{width:26mm;height:2.2mm;background:var(--e);margin-bottom:7mm}
+.kulit h1{font-size:34pt;line-height:1.1;color:var(--u);margin:0 0 3mm}
+.kulit .sub{font-size:14pt;color:var(--t2);margin:0 0 12mm}
+.kulit .kotak{background:var(--u);color:#fff;border-radius:3mm;padding:6mm 7mm;max-width:130mm}
+.kulit .kotak b{color:var(--e)}
+h2{font-size:17pt;color:var(--u);margin:0 0 2mm;padding-bottom:2mm;border-bottom:.7mm solid var(--e);break-after:avoid}
+section{break-before:page}
+section.terus{break-before:auto;margin-top:8mm}
+h3{font-size:12pt;color:var(--u);margin:5mm 0 1.5mm;break-after:avoid}
+p{margin:0 0 2.5mm}.lead{color:var(--t2);font-size:11pt;margin:2.5mm 0 4mm}
+ul,ol{margin:0 0 3mm;padding-left:6mm}li{margin-bottom:1.2mm}
+.nota{border-left:1.2mm solid var(--e);background:#fff8e1;padding:2.5mm 3.5mm;border-radius:0 2mm 2mm 0;margin:3mm 0;break-inside:avoid}
+.nota.b{border-color:var(--m);background:#fbe7e5}
+.aliran{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin:4mm 0}
+.aliran div{background:var(--ul);border-radius:2.5mm;padding:3mm;font-size:9.5pt;position:relative}
+.aliran b{display:block;color:var(--u);font-size:10.5pt}.aliran i{display:inline-grid;place-items:center;width:6.5mm;height:6.5mm;border-radius:50%;background:var(--u);color:#fff;font-style:normal;font-weight:700;font-size:9.5pt;margin-bottom:1.5mm}
+table{width:100%;border-collapse:collapse;margin:2mm 0 4mm;font-size:9.5pt;break-inside:auto}
+th{background:var(--u);color:#fff;text-align:left;padding:1.6mm 2.2mm}td{border:.25mm solid var(--g);padding:1.6mm 2.2mm;vertical-align:top}tr{break-inside:avoid}
+code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Consolas,monospace;font-size:9.2pt}
+.gbr{display:block;border:.3mm solid #a9b8d6;border-radius:2mm;margin:2.5mm auto 1mm;box-shadow:0 .6mm 2mm rgba(0,0,0,.12)}
+.kap{text-align:center;color:var(--t2);font-size:8.8pt;margin:0 0 3.5mm}
+.dua{display:grid;grid-template-columns:1fr 1fr;gap:4mm;align-items:start;break-inside:avoid}.dua .gbr{width:100%}
+.pautan{display:block;background:var(--u);color:#fff;border-radius:2mm;padding:3mm 4mm;margin:3mm 0;font-weight:600;text-decoration:none;word-break:break-all}
+.semak li{list-style:none;margin-left:-5mm}.semak li:before{content:"☐  ";color:var(--u);font-weight:700}
+</style></head><body>
+
+<div class="kulit">
+  <div class="jalur"></div>
+  <h1>Manual Pemasangan<br>eJawatankuasa</h1>
+  <p class="sub">Sistem pengurusan jawatankuasa, pelantikan staf dan analisis beban kerja untuk sekolah</p>
+  <div class="kotak"><b>Tempoh pemasangan:</b> kira-kira 15 minit<br><b>Kos:</b> percuma, menggunakan akaun Google<br><b>Kemahiran:</b> tiada pengaturcaraan diperlukan</div>
+  <p style="margin-top:12mm;color:var(--t2);font-size:9.5pt">Dibangunkan oleh MRSM Sultan Azlan Shah · Versi 1.0 · November 2026</p>
+</div>
+
+<section style="break-before:auto">
+<h2>1. Gambaran keseluruhan</h2>
+<p class="lead">Setiap sekolah mempunyai salinan sendiri. Data anda disimpan dalam Google Drive akaun anda dan tidak boleh dilihat oleh sekolah lain atau pembangun sistem.</p>
+<div class="aliran">
+  <div><i>1</i><b>Buat salinan</b>Salin templat Google Sheet ke Drive anda.</div>
+  <div><i>2</i><b>Beri kebenaran</b>Benarkan skrip berjalan pada akaun anda.</div>
+  <div><i>3</i><b>Isi borang</b>Maklumat sekolah, surat dan akaun System Admin.</div>
+  <div><i>4</i><b>Terbitkan</b>Dapatkan pautan web untuk staf.</div>
+</div>
+<h3>Yang perlu disediakan</h3>
+<ul>
+  <li><b>Akaun Google yang akan menjadi pemilik sistem.</b> Disyorkan akaun khas sekolah, bukan akaun peribadi guru, supaya sistem tidak hilang apabila guru berpindah.</li>
+  <li><b>Logo sekolah</b> dalam format PNG atau JPG (pilihan).</li>
+  <li><b>Senarai staf dan senarai jawatankuasa.</b> Boleh disediakan selepas pemasangan (Bahagian 6).</li>
+</ul>
+<div class="nota"><b>Akaun Google Workspace (mis. akaun rasmi jabatan):</b> pentadbir domain mungkin menghalang skrip atau pilihan akses <b>Anyone</b>. Jika pilihan itu tiada, gunakan akaun Gmail khas sekolah (lihat Bahagian 9).</div>
+<h3>Peranan dalam sistem</h3>
+<table><tr><th style="width:26%">Peranan</th><th>Kebenaran</th></tr>
+<tr><td><b>System Admin</b></td><td>Semua: staf, jawatan dan merit, tetapan, pengguna, peralihan tahun, import, log audit.</td></tr>
+<tr><td><b>Editor</b></td><td>Urus jawatankuasa dan pelantikan, lihat laporan, jana surat.</td></tr>
+<tr><td><b>Viewer</b></td><td>Baca sahaja. Emel, telefon dan catatan staf disembunyikan.</td></tr></table>
+</section>
+
+<section class="terus">
+<h2>2. Langkah 1: Buat salinan templat</h2>
+<ol>
+  <li>Log masuk ke akaun Google pemilik sistem dalam pelayar web.</li>
+  <li>Buka pautan templat ini:
+    <a class="pautan" href="https://docs.google.com/spreadsheets/d/1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA/copy">https://docs.google.com/spreadsheets/d/1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA/copy</a></li>
+  <li>Klik <b>Make a copy</b> (Buat salinan). Google memaklumkan bahawa skrip turut disalin. Ini memang dijangka.</li>
+  <li>Salinan dibuka dalam tab baharu. Inilah pangkalan data sekolah anda.</li>
+</ol>
+</section>
+
+<section>
+<h2>3. Langkah 2: Beri kebenaran</h2>
+<ol>
+  <li>Tunggu beberapa saat sehingga menu <b>eJawatankuasa</b> muncul di bar menu, di sebelah kanan menu <b>Help</b>. Muat semula halaman jika menu tidak muncul.</li>
+  <li>Klik <b>eJawatankuasa ▸ Pasang sistem / Semakan</b>.</li>
+  <li>Kotak <b>Authorization required</b> dipaparkan. Klik <b>OK</b>, kemudian pilih akaun anda.</li>
+  <li>Jika Google memaparkan amaran <b>Google hasn't verified this app</b>: klik <b>Advanced</b>, kemudian <b>Go to … (unsafe)</b>.</li>
+  <li>Semak senarai kebenaran dan klik <b>Allow</b>.</li>
+  <li>Klik <b>eJawatankuasa ▸ Pasang sistem / Semakan</b> sekali lagi untuk membuka borang.</li>
+</ol>
+<div class="nota"><b>Mengapa ada amaran?</b> Google memaparkan amaran ini bagi skrip yang tidak melalui proses pengesahan Google. Salinan ini milik anda dan berjalan pada akaun anda sendiri.<br><br>
+<b>Kebenaran yang diminta:</b> Google menyenaraikan akses kepada hamparan Google Sheets akaun anda (had teknikal Google), paparan dialog dalam Sheet, dan alamat emel akaun anda. Sistem hanya membaca dan menulis Sheet salinan ini. Inilah sebab akaun khas sekolah disyorkan.</div>
+</section>
+
+<section>
+<h2>4. Langkah 3: Isi borang pemasangan</h2>
+<p class="lead">Borang empat langkah dibuka dalam Google Sheet. Semua maklumat sekolah boleh diubah kemudian di halaman Tetapan.</p>
+<div class="dua">
+  <div><img class="gbr" src="gambar/wizard-1.png" alt="Borang maklumat sekolah"><p class="kap">Rajah 1: Maklumat sekolah, logo dan tahun pertama</p></div>
+  <div><img class="gbr" src="gambar/wizard-2.png" alt="Borang surat rasmi"><p class="kap">Rajah 2: Butiran surat rasmi</p></div>
+</div>
+<table><tr><th style="width:30%">Medan</th><th>Panduan</th></tr>
+<tr><td><b>Nama penuh sekolah</b></td><td>Dipaparkan pada log masuk, laporan dan surat.</td></tr>
+<tr><td><b>Tahun pertama sistem</b></td><td>Tahun jawatankuasa yang akan dimasukkan dahulu. Tahun seterusnya dicipta melalui Peralihan Tahun.</td></tr>
+<tr><td><b>Jenis institusi</b></td><td><b>MRSM</b> mengisi format memo MARA. <b>Sekolah lain</b> menggunakan nama sekolah sebagai kepala surat. Semak dan ubah jika perlu.</td></tr>
+<tr><td><b>Cogan kata penutup</b></td><td>Pisahkan setiap baris dengan tanda <code>|</code>. Kosongkan jika tidak perlu.</td></tr>
+<tr><td><b>Akaun System Admin</b></td><td>Emel dan kata laluan untuk log masuk ke sistem. Gunakan kata laluan baharu, bukan kata laluan Google. Sekurang-kurangnya 8 aksara.</td></tr></table>
+<div class="dua">
+  <div><img class="gbr" src="gambar/wizard-3.png" alt="Borang akaun System Admin"><p class="kap">Rajah 3: Akaun System Admin. Klik Pasang untuk mencipta pangkalan data.</p></div>
+  <div><img class="gbr" src="gambar/wizard-4.png" alt="Arahan penerbitan"><p class="kap">Rajah 4: Selepas dipasang, borang memaparkan arahan penerbitan</p></div>
+</div>
+</section>
+
+<section>
+<h2>5. Langkah 4: Terbitkan sistem</h2>
+<p class="lead">Langkah ini mesti dibuat sendiri oleh pemilik kerana Google tidak membenarkan skrip menerbitkan dirinya.</p>
+<ol>
+  <li>Dalam borang, klik <b>Buka editor Apps Script</b>. Atau pilih <b>Extensions ▸ Apps Script</b> dalam Google Sheet.</li>
+  <li>Klik butang biru <b>Deploy</b> di kanan atas, kemudian <b>New deployment</b>.</li>
+  <li>Klik ikon gear di sebelah <b>Select type</b>, kemudian pilih <b>Web app</b>.</li>
+  <li>Tetapkan:
+    <table style="margin-top:2mm"><tr><td style="width:40%"><b>Execute as</b></td><td><b>Me</b> (akaun anda)</td></tr><tr><td><b>Who has access</b></td><td><b>Anyone</b></td></tr></table></li>
+  <li>Klik <b>Deploy</b>. Jika diminta, benarkan kebenaran seperti Bahagian 3.</li>
+  <li>Salin <b>Web app URL</b> yang berakhir dengan <code>/exec</code>. Inilah pautan sistem anda.</li>
+</ol>
+<div class="nota"><b>Adakah "Anyone" selamat?</b> Sesiapa boleh membuka halaman log masuk, tetapi data hanya dipaparkan selepas log masuk dengan akaun yang dicipta dalam sistem. Setiap tindakan disemak di pelayan mengikut peranan pengguna.</div>
+<div class="nota b"><b>JANGAN kongsi fail Google Sheet.</b> Sesiapa yang boleh menyunting Sheet itu boleh memintas semua kawalan sistem. Staf hanya perlukan pautan web.</div>
+<img class="gbr" style="width:112mm" src="gambar/logmasuk.png" alt="Halaman log masuk"><p class="kap">Rajah 5: Halaman log masuk memaparkan nama dan logo sekolah anda</p>
+</section>
+
+<section>
+<h2>6. Masukkan data sekolah</h2>
+<p class="lead">Log masuk sebagai System Admin. Papan Pemuka memaparkan panduan sehingga data lengkap. Pergi ke <b>Import / Eksport</b>.</p>
+<h3>A. Import staf (dahulu)</h3>
+<p>Klik <b>Muat turun templat</b>, isi dalam Excel, simpan sebagai <b>CSV UTF-8</b>, pilih fail, klik <b>Semak fail</b>, kemudian <b>Import</b>.</p>
+<table><tr><th style="width:27%">Lajur</th><th>Keterangan</th></tr>
+<tr><td><code>staffId</code></td><td>Wajib dan unik. Gunakan No. Gaji atau kod unik.</td></tr>
+<tr><td><code>nama</code></td><td>Wajib. Nama penuh.</td></tr>
+<tr><td><code>jawatan</code>, <code>emel</code>, <code>telefon</code>, <code>jabatan</code></td><td>Pilihan.</td></tr>
+<tr><td><code>kategori</code></td><td><b>GURU</b> atau <b>SOKONGAN</b> dikira dalam analisis beban. <b>EXOFFICIO</b> (mis. Pengetua) direkodkan tetapi diasingkan daripada analisis.</td></tr></table>
+<h3>B. Import jawatankuasa dan pelantikan</h3>
+<p>Pilih tahun yang betul di bahagian atas skrin. Sediakan satu baris bagi setiap ahli. Jawatankuasa baharu dicipta secara automatik.</p>
+<table><tr><th style="width:24%">Lajur</th><th>Keterangan</th></tr>
+<tr><td><code>Kod JK</code>, <code>Kategori</code></td><td>Pilihan tetapi disyorkan. Laporan disusun mengikut kod dan kategori (mis. A01, Pentadbiran).</td></tr>
+<tr><td><code>Jawatankuasa</code></td><td>Wajib. Nama jawatankuasa. Gunakan ejaan yang sama bagi semua ahli.</td></tr>
+<tr><td><code>ID staf</code> atau <code>Nama</code></td><td>Sekurang-kurangnya satu. ID staf lebih tepat.</td></tr>
+<tr><td><code>Jawatan</code></td><td>Mesti wujud dalam senarai <b>Jawatan &amp; Merit</b>, mis. Pengerusi, Setiausaha, Ahli.</td></tr>
+<tr><td><code>Kualifikasi</code></td><td>Pilihan. Membezakan pemegang jawatan yang sama, mis. I, II.</td></tr></table>
+<img class="gbr" style="width:128mm" src="gambar/import-jk.png" alt="Semakan import jawatankuasa"><p class="kap">Rajah 6: Sistem menyemak setiap baris sebelum menyimpan. Baris bermasalah ditolak dengan sebab yang jelas; data sedia ada tidak ditimpa.</p>
+<h3>C. Lengkapkan tetapan</h3>
+<ol>
+  <li><b>Jawatan &amp; Merit:</b> semak nilai merit dan tambah jawatan khas sekolah anda.</li>
+  <li><b>Pengguna:</b> cipta akaun Editor dan Viewer, kemudian kongsikan pautan web dan kata laluan awal.</li>
+  <li><b>Tetapan:</b> ubah maklumat sekolah, kepala surat atau ambang beban jika perlu.</li>
+  <li><b>Surat Perlantikan:</b> cetak satu surat contoh dan semak formatnya.</li>
+</ol>
+</section>
+
+<section>
+<h2>7. Senarai semak selepas pemasangan</h2>
+<ul class="semak">
+  <li>Pautan <code>/exec</code> boleh dibuka dalam tetingkap Incognito dan memaparkan nama sekolah.</li>
+  <li>System Admin boleh log masuk.</li>
+  <li>Bilangan staf dan jawatankuasa pada Papan Pemuka betul.</li>
+  <li>Surat Perlantikan memaparkan nama, tandatangan dan kepala surat yang betul.</li>
+  <li>Akaun Viewer tidak dapat melihat emel staf dan tidak boleh menyunting.</li>
+  <li>Fail Google Sheet tidak dikongsi dengan sesiapa (butang <b>Share</b> menunjukkan <i>Restricted</i>).</li>
+</ul>
+</section>
+
+<section class="terus">
+<h2>8. Penyelenggaraan</h2>
+<table><tr><th style="width:32%">Tugas</th><th>Cara</th></tr>
+<tr><td><b>Sandaran bulanan</b></td><td>Google Sheet ▸ <b>File ▸ Make a copy</b>. Simpan di folder tertutup. Salinan ini mengandungi data staf.</td></tr>
+<tr><td><b>Tahun baharu</b></td><td><b>Import / Eksport ▸ Peralihan Tahun</b>. Struktur, pelantikan aktif dan merit disalin; data tahun lama kekal.</td></tr>
+<tr><td><b>Terlupa kata laluan pengguna</b></td><td>System Admin: <b>Pengguna ▸ klik nama ▸</b> tetapkan kata laluan baharu.</td></tr>
+<tr><td><b>Terlupa kata laluan System Admin</b></td><td>Pemilik: Google Sheet ▸ <b>eJawatankuasa ▸ Set semula kata laluan System Admin</b>.</td></tr>
+<tr><td><b>Pertukaran pemilik</b></td><td>Pemilik baharu perlu membuat salinan Sheet (termasuk skrip), kemudian melakukan semula Langkah 4. Pautan web akan berubah.</td></tr>
+<tr><td><b>Kemas kini versi baharu</b></td><td>Salinan anda tidak dikemas kini secara automatik. Apabila versi baharu dikeluarkan, gantikan fail kod dalam editor Apps Script mengikut arahan versi tersebut, kemudian <b>Deploy ▸ Manage deployments ▸ Edit (ikon pensel) ▸ Version: New version ▸ Deploy</b>. Pautan web kekal sama.</td></tr></table>
+</section>
+
+<section>
+<h2>9. Masalah lazim</h2>
+<table><tr><th style="width:38%">Masalah</th><th>Penyelesaian</th></tr>
+<tr><td>Menu eJawatankuasa tidak muncul</td><td>Tunggu 10 saat dan muat semula halaman. Pastikan anda membuka salinan anda, bukan templat asal.</td></tr>
+<tr><td>Borang tidak dibuka selepas memberi kebenaran</td><td>Ini biasa. Klik menu itu sekali lagi.</td></tr>
+<tr><td><i>This app is blocked</i> atau tiada pautan <b>Advanced</b></td><td>Akaun Workspace anda menghalang skrip. Mohon kebenaran pentadbir domain, atau gunakan akaun Gmail khas sekolah.</td></tr>
+<tr><td>Pilihan <b>Anyone</b> tiada ketika Deploy</td><td>Dasar domain Workspace. Gunakan akaun Gmail khas sekolah.</td></tr>
+<tr><td><i>Fungsi ini hanya boleh dijalankan oleh pemilik</i></td><td>Log keluar daripada akaun Google lain, atau buka Sheet dalam profil pelayar yang hanya menggunakan akaun pemilik.</td></tr>
+<tr><td>Google meminta log masuk apabila pautan dibuka, atau akses ditolak</td><td>Semak <b>Manage deployments</b>: <b>Who has access</b> mesti <b>Anyone</b>, bukan <i>Anyone with Google account</i> atau <i>Only myself</i>.</td></tr>
+<tr><td>Pautan berakhir dengan <code>/dev</code> tidak berfungsi untuk staf</td><td>Itu pautan ujian. Gunakan pautan <code>/exec</code> dari <b>Deploy ▸ Manage deployments</b>.</td></tr>
+<tr><td>Notis kecil <i>created by a Google Apps Script user</i> di atas halaman</td><td>Notis standard Google dan tidak menjejaskan fungsi. Untuk membuangnya, lihat Lampiran A.</td></tr>
+<tr><td>Import: nama jatuh pada lajur yang salah atau aksara pelik</td><td>Dalam Excel, pilih <b>Save As ▸ CSV UTF-8 (Comma delimited)</b>. Jangan ubah nama lajur pada baris pertama.</td></tr>
+<tr><td>Import: <i>Jawatan tidak dijumpai</i></td><td>Tambah jawatan itu di <b>Jawatan &amp; Merit</b>, atau betulkan ejaan dalam fail. Import semula: baris yang sudah ada akan ditolak sebagai pendua dan tidak digandakan.</td></tr>
+<tr><td>Sistem lambat ketika ramai pengguna</td><td>Had Google Apps Script. Tunggu seketika. Untuk tindakan simpan, sistem memaparkan <i>Sistem sedang sibuk</i> jika perlu menunggu giliran.</td></tr></table>
+</section>
+
+<section class="terus">
+<h2>Lampiran A: Pilihan lanjutan tanpa notis Google</h2>
+<p>Pilihan sahaja dan memerlukan akaun GitHub. Antara muka dihoskan di GitHub Pages dan terus menggunakan pangkalan data Google Sheet anda.</p>
+<ol>
+  <li>Selesaikan semua langkah dalam manual ini dan salin pautan <code>/exec</code>.</li>
+  <li>Dapatkan fail <code>index-sekolah.html</code> daripada pembangun. Buka dengan Notepad, cari <code>ISI_ID_ANDA</code> dan gantikan keseluruhan URL itu dengan pautan <code>/exec</code> anda.</li>
+  <li>Namakan fail sebagai <code>index.html</code>, muat naik ke repositori GitHub baharu, kemudian hidupkan <b>Settings ▸ Pages</b>.</li>
+</ol>
+<p><b>Jangan</b> muat naik data staf atau fail eksport CSV ke GitHub. Fail ini hanya mengandungi kod paparan.</p>
+</section>
+</body></html>
