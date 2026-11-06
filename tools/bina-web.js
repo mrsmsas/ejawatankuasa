@@ -8,6 +8,8 @@ const keluar = process.argv[3] || path.join(__dirname, '..', 'index.html');
 if (!/^https?:\/\//.test(API)) throw new Error('URL API tidak sah');
 const inc = n => fs.readFileSync(path.join(gas, n + '.html'), 'utf8');
 let t = inc('Index').replace(/<\?!= include\('(\w+)'\) \?>/g, (_, n) => inc(n));
+// Pautan demo hanya untuk halaman MRSM SAS (binaan tanpa URL_API); templat sekolah lain tidak menerimanya.
+if (!process.argv[2]) t = t.replace(/(<form id="borangLog"[\s\S]*?<\/form>)/, (_, f) => f + '\n      <p style="margin:16px 0 0;text-align:center;font-size:14px"><a href="https://mrsmsas.github.io/ejawatankuasa-demo/" target="_blank" rel="noopener">Cuba demo sistem</a></p>');
 const shim = `<script>
 /* Pengganti google.script.run untuk dihoskan di luar Apps Script: POST teks biasa ke API (tiada preflight CORS). */
 window.API_URL = ${JSON.stringify(API)};
