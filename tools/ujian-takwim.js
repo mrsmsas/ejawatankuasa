@@ -77,6 +77,17 @@ ujian('Input tidak sah ditolak', () => {
   });
   assert.strictEqual(P.api('takwimSimpan', { takwim: null }, editor).success, false);
 });
+ujian('Tahun simpanan mengikut pilihan pengguna (±1 tahun sahaja)', () => {
+  const r = P.api('takwimSimpan', { takwim: contoh(), tahun: 2027 }, editor);   // takwim bermula Feb 2026, disimpan sebagai 2027
+  assert.ok(r.success, r.message); assert.strictEqual(r.data.tahun, 2027);
+  const d = P.api('takwimDapat', { tahun: 2027 }, pelihat).data.takwim;
+  assert.strictEqual(d.tahun, 2027); assert.ok(d.days['2026-02-16'], 'tarikh asal tidak diubah');
+  assert.strictEqual(P.api('takwimSimpan', { takwim: contoh(), tahun: 2030 }, editor).success, false);
+  assert.strictEqual(P.api('takwimSimpan', { takwim: contoh(), tahun: 'abc' }, editor).success, false);
+  // Sunting semula takwim 2027 kekal sebagai 2027 (tidak kembali ke 2026)
+  assert.ok(P.api('takwimSimpan', { takwim: Object.assign(contoh(), { title: 'Diubah' }), tahun: 2027 }, editor).success);
+  assert.strictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.takwim.title, 'Diubah');
+});
 ujian('Admin memadam takwim', () => {
   assert.ok(P.api('takwimPadam', { tahun: 2027 }, admin).success);
   assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.senarai.map(x => x.tahun), [2026]);

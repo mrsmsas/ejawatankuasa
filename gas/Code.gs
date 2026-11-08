@@ -599,6 +599,13 @@ function takwimDapat_(pg, a) {
 }
 function takwimSimpan_(pg, a) {
   var t = takwimBersih_(a.takwim), json = JSON.stringify(t.days);
+  // Tahun simpanan mengikut tahun dipilih pengguna (seperti Jawatankuasa); mesti hampir dengan tarikh dalam takwim.
+  if (a.tahun !== undefined && a.tahun !== null && a.tahun !== '') {
+    var dipilih = Number(a.tahun);
+    if (Math.floor(dipilih) !== dipilih || dipilih < 2000 || dipilih > 2100) tolak_('Tahun tidak sah.');
+    if (Math.abs(dipilih - t.tahun) > 1) tolak_('Takwim ini bermula tahun ' + t.tahun + '; tidak boleh disimpan sebagai tahun ' + dipilih + '.');
+    t.tahun = dipilih;
+  }
   if (json.length > TAKWIM_SEL_ * TAKWIM_PECAHAN_.length) tolak_('Takwim terlalu besar untuk disimpan. Kurangkan teks acara.');
   var baris = { tahun: t.tahun, tajuk: lindungFormula_(t.title), bulan: takwimSel_(JSON.stringify(t.months)), kategori: takwimSel_(JSON.stringify(t.cats)),
     nota: takwimSel_(JSON.stringify(t.notes)), dikemaskini: Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', 'yyyy-MM-dd HH:mm'), oleh: pg.emel };
