@@ -146,8 +146,45 @@ tr.klik{cursor:pointer}
 .jadual-laporan{width:100%;border:1px solid var(--garis);background:#fff}
 .jadual-laporan td,.jadual-laporan th{padding:.3rem .6rem;font-size:.9rem}
 .kepala-cetak{text-align:center;margin-bottom:.8rem}.kepala-cetak h1{font-size:1.1rem}.logo-cetak{width:70px;height:70px;object-fit:contain}
+/* Takwim Sekolah */
+.tkw-seg{display:inline-flex;gap:0}.tkw-seg .btn{border-radius:0;margin-left:-1px}.tkw-seg .btn:first-child{border-radius:8px 0 0 8px}.tkw-seg .btn:last-child{border-radius:0 8px 8px 0}
+.tkw-seg .btn.aktif{background:var(--hijau);border-color:var(--hijau);color:#fff}
+.tkw{background:#fff;border:1px solid var(--garis);border-radius:var(--jejari);padding:12px}
+.tkw-skrol{overflow:auto}
+.tkw-tajuk{text-align:center;font-weight:700;font-size:15px;margin:0 0 8px}
+.tkw table{border-collapse:collapse}
+.tkw th,.tkw td{position:static;text-transform:none;letter-spacing:0;white-space:normal;color:inherit}
+.tkw-grid{width:100%;min-width:1100px;table-layout:fixed;font-size:10px}
+.tkw-grid col.hr{width:46px}.tkw-grid col.bil{width:13px}
+.tkw-grid th,.tkw-grid td{border:1px solid #555;padding:2px 3px;line-height:1.2;font-size:inherit}
+.tkw-grid th{background:#d9d9d9;color:#000;font-size:11px;text-align:center}
+.tkw-grid td.hr{font-weight:600;background:#f2f2f2}
+.tkw-grid tr.hm td.hr,.tkw-grid tr.hm td.hk:not([data-c]),.tkw-kal td.hm:not([data-c]){background:#e3e3e3}
+.tkw-grid td.hk{height:30px;white-space:pre-line;word-wrap:break-word}
+.tkw-grid td.bil{text-align:center;font-size:9px;padding:2px 0;color:#444}
+.tkw-grid tr.jum td{font-weight:700;text-align:center;background:#f2f2f2}
+.tkw [data-k]{cursor:pointer}.tkw [data-k]:hover{outline:2px solid var(--hijau);outline-offset:-2px}
+.tkw-mk{font-size:9px;font-weight:700;color:var(--info)}[data-c] .tkw-mk{color:inherit}
+.tkw-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:10px 0 4px;font-size:11px;align-items:center}
+.tkw-legend i,.tkw-cip{display:inline-block;width:22px;height:12px;border:1px solid #555;vertical-align:middle;margin-right:5px}
+.tkw-legend.kecil{font-size:9px;margin-top:4px}.tkw-legend.kecil i{width:14px;height:9px}
+.tkw-nota{font-size:11px;display:flex;gap:18px;flex-wrap:wrap}
+.tkw-bulan-senarai{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:18px}
+.tkw-bulan h3{display:flex;justify-content:space-between;margin:0 0 4px;font-size:15px}.tkw-bulan h3 small{font-weight:400;color:var(--teks-2);font-size:12px}
+.tkw-kal{width:100%;table-layout:fixed;font-size:10px}
+.tkw-kal th{background:#d9d9d9;color:#000;border:1px solid #777;padding:3px;font-size:11px;text-align:center}
+.tkw-kal td{border:1px solid #777;height:64px;padding:2px 3px;white-space:pre-line;word-wrap:break-word;font-size:10px}
+.tkw-kal td.luar{background:#fafafa}
+.tkw-senarai td{font-size:13px}
+.tkw-katbaris{display:flex;gap:8px;align-items:center;margin-bottom:6px}.tkw-katbaris input[type=text]{flex:1}
+@page tkwA3{size:A3 landscape;margin:8mm}
 @page surat{size:A4;margin:22mm 12mm 10mm 30mm}
 @media print{
+  .tkw{border:0;padding:0}.tkw-skrol{overflow:visible}
+  .tkw *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tkw-v-grid{page:tkwA3}.tkw-v-grid .tkw-grid{min-width:0;font-size:8px}.tkw-v-grid .tkw-grid td.hk{height:auto}
+  .tkw-bulan-senarai{display:block}.tkw-bulan{break-inside:avoid;margin-bottom:8mm}.tkw-bulan:nth-child(2n){break-after:page}
+  .tkw-kal td{height:56px}
   @page{size:A4;margin:12mm}
   #laporan .kumpulan{break-before:page}#laporan .kumpulan:first-of-type{break-before:auto}
   #laporan .blok-jk{break-inside:avoid}
@@ -1145,17 +1182,339 @@ async function paparSuratMesyuarat() {
 </script>
 
   <script>
+/* ===== Takwim Sekolah =====
+   Muat naik Excel takwim tahunan (format grid: lajur Hari + 2 lajur setiap bulan, legend berwarna di bawah)
+   -> dibaca terus dalam pelayar -> disimpan melalui API takwimSimpan -> dipaparkan & dicetak seperti Excel asal. */
+var TKW = { paparan: 'grid', tahun: null, ikutTahun: null, tapis: { q: '', c: '' } };
+var TKW_BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+var TKW_HARI = ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu', 'Ahad'];
+var TKW_KAT_ASAL = [
+  { id: 'ED7D31', name: 'CUTI UMUM', color: '#ED7D31', legend: true }, { id: 'FFFF00', name: 'CUTI SEKOLAH', color: '#FFFF00', legend: true },
+  { id: '9DC3E6', name: 'CUTI TAMBAHAN', color: '#9DC3E6', legend: true }, { id: 'FF0000', name: 'PEPERIKSAAN', color: '#FF0000', legend: true },
+  { id: 'C5E0B4', name: 'AKTIVITI PELAJAR', color: '#C5E0B4', legend: true }, { id: '7030A0', name: 'MINGGU AKTIVITI', color: '#7030A0', legend: true }
+];
+
+/* ---------- Utiliti tarikh ---------- */
+function tkPad(n) { return (n < 10 ? '0' : '') + n; }
+function tkIso(y, m, d) { return y + '-' + tkPad(m + 1) + '-' + tkPad(d); }
+function tkDow(y, m, d) { return (new Date(y, m, d).getDay() + 6) % 7; } // Isnin = 0
+function tkBilHari(y, m) { return new Date(y, m + 1, 0).getDate(); }
+function tkEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function tkTarikh(k) { var p = k.split('-'); return +p[2] + ' ' + TKW_BULAN[+p[1] - 1].slice(0, 3) + ' ' + p[0]; }
+function tkHariDari(k) { var p = k.split('-'); return TKW_HARI[tkDow(+p[0], +p[1] - 1, +p[2])]; }
+function tkEsok(k) { var d = new Date(k + 'T00:00:00'); d.setDate(d.getDate() + 1); return tkIso(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+/* ---------- Pembaca Excel takwim ---------- */
+function tkBulanDari(s) {
+  s = String(s || '').trim();
+  var p = [[/^jan/i, 0], [/^feb/i, 1], [/^mac|^mar/i, 2], [/^apr/i, 3], [/^mei|^may/i, 4], [/^jun/i, 5], [/^jul/i, 6], [/^ogo|^aug/i, 7], [/^sep/i, 8], [/^okt|^oct/i, 9], [/^nov/i, 10], [/^dis|^dec/i, 11]];
+  for (var i = 0; i < p.length; i++) if (p[i][0].test(s)) return p[i][1];
+  return -1;
+}
+function tkHariDariTeks(s) {
+  s = String(s || '').trim();
+  var p = [/^isn/i, /^sel/i, /^rab/i, /^kha/i, /^jum/i, /^sab/i, /^aha/i];
+  for (var i = 0; i < p.length; i++) if (p[i].test(s)) return i;
+  return -1;
+}
+function tkTeksSel(c) { if (!c) return ''; var v = c.w != null ? c.w : c.v; return v == null ? '' : String(v); }
+function tkWarnaSel(c) {
+  if (!c || !c.s || (c.s.patternType && c.s.patternType !== 'solid')) return null;
+  var fg = c.s.fgColor; if (!fg || !fg.rgb) return null;
+  var rgb = String(fg.rgb).toUpperCase().slice(-6);
+  return (rgb === 'FFFFFF' || rgb === '000000') ? null : rgb;
+}
+function tkBersih(t) { return String(t).replace(/\r/g, '').split('\n').map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n'); }
+function tkUraiSel(raw) {
+  var s = String(raw).replace(/ /g, ' '), mk = '', m = s.match(/^\s*\[\s*([^\]\s]{1,3})\s*\]\s*/);
+  if (m) { mk = m[1].replace(/[ɑa]/gi, 'α').replace(/[ßb]/gi, 'β'); s = s.slice(m[0].length); }
+  var d = s.match(/^\s*(\d{1,2})(?!\d)\s*([\s\S]*)$/);
+  return d ? { mk: mk, d: +d[1], t: tkBersih(d[2]) } : null;
+}
+function tkBacaHelaian(X, wb, namaHelaian) {
+  var ws = wb.Sheets[namaHelaian];
+  if (!ws || !ws['!ref']) throw new Error('Helaian kosong.');
+  var jl = X.utils.decode_range(ws['!ref']), sel = function (r, c) { return ws[X.utils.encode_cell({ r: r, c: c })]; }, amaran = [];
+  var kepala = -1, lajurBulan = [], r, c;
+  for (r = jl.s.r; r <= Math.min(jl.e.r, 30) && kepala < 0; r++) {
+    var lj = [];
+    for (c = jl.s.c; c <= jl.e.c; c++) { var tx = tkTeksSel(sel(r, c)); if (tkBulanDari(tx) >= 0 && tx.trim().length <= 20) lj.push(c); }
+    if (lj.length >= 3) { kepala = r; lajurBulan = lj; }
+  }
+  if (kepala < 0) throw new Error('Tidak jumpa baris nama bulan (cth. "Hari | Februari | Mac ...").');
+  var tajuk = '';
+  for (r = jl.s.r; r < kepala; r++) for (c = jl.s.c; c <= jl.e.c; c++) { var tt = tkTeksSel(sel(r, c)).trim(); if (tt) tajuk = tajuk ? tajuk + ' ' + tt : tt; }
+  tajuk = tkBersih(tajuk).replace(/\n/g, ' ');
+  var ym = tajuk.match(/(19|20)\d\d/), y = ym ? +ym[0] : new Date().getFullYear(), sebelum = -1;
+  var bulan = lajurBulan.map(function (col) {
+    var lbl = tkTeksSel(sel(kepala, col)).trim(), m = tkBulanDari(lbl), yy = lbl.match(/(19|20)\d\d/);
+    if (yy) y = +yy[0]; else if (sebelum >= 0 && m < sebelum) y++;
+    sebelum = m; return { y: y, m: m, label: TKW_BULAN[m], col: col };
+  });
+  // Tarikh dikira ikut kedudukan baris (baris pertama grid = Isnin minggu pertama) kerana sesetengah sel tarikh dibiarkan kosong.
+  var hari = {}, warnaGuna = {}, akhirGrid = kepala, tidakPadan = 0, mula = false, gi = -1;
+  for (r = kepala + 1; r <= jl.e.r; r++) {
+    var hw = tkHariDariTeks(tkTeksSel(sel(r, jl.s.c)));
+    if (hw < 0) { if (mula) break; else continue; }
+    if (!mula && hw !== 0) amaran.push('Baris pertama grid bukan Isnin; semak susunan hari.');
+    mula = true; akhirGrid = r; gi++;
+    bulan.forEach(function (mo) {
+      var d = gi - tkDow(mo.y, mo.m, 1) + 1;
+      if (d < 1 || d > tkBilHari(mo.y, mo.m)) return;
+      var cl = sel(r, mo.col), raw = tkTeksSel(cl), p = raw.trim() ? tkUraiSel(raw) : null;
+      if (p && p.d !== d) tidakPadan++;
+      if (!p) p = { mk: '', t: raw.trim() && !/^\s*\[/.test(raw) ? tkBersih(raw) : '' };
+      var rek = {}; if (p.t) rek.t = p.t; if (p.mk) rek.mk = p.mk;
+      var w = tkWarnaSel(cl); if (w) { rek.c = w; warnaGuna[w] = 1; }
+      if (tkTeksSel(sel(r, mo.col + 1)).trim() === '1') rek.s = 1;
+      hari[tkIso(mo.y, mo.m, d)] = rek;
+    });
+  }
+  if (!mula) throw new Error('Tidak jumpa baris hari (Isnin, Selasa, ...) di lajur pertama.');
+  if (tidakPadan) amaran.push(tidakPadan + ' nombor tarikh dalam Excel tidak sepadan dengan kalendar sebenar — semak tahun dalam tajuk.');
+  var legend = {}, nota = [];
+  for (r = akhirGrid + 1; r <= jl.e.r; r++) for (c = jl.s.c; c <= jl.e.c; c++) {
+    var s2 = sel(r, c), t2 = tkBersih(tkTeksSel(s2)).replace(/\n/g, ' ');
+    if (!t2 || /^\d+$/.test(t2)) continue;
+    var w2 = tkWarnaSel(s2);
+    if (w2) { if (!legend[w2]) legend[w2] = t2; } else if (nota.indexOf(t2) < 0) nota.push(t2);
+  }
+  var kat = Object.keys(legend).map(function (k) { return { id: k, name: legend[k], color: '#' + k, legend: true }; });
+  Object.keys(warnaGuna).forEach(function (k) {
+    if (legend[k]) return;
+    var contoh = ''; for (var dk in hari) if (hari[dk].c === k && hari[dk].t) { contoh = hari[dk].t.split('\n')[0].replace(/\(.*$/, '').trim(); break; }
+    kat.push({ id: k, name: contoh ? 'Lain: ' + contoh : 'Warna #' + k, color: '#' + k, legend: false });
+  });
+  return { title: tajuk, months: bulan.map(function (b) { return { y: b.y, m: b.m, label: b.label }; }), days: hari, cats: kat, notes: nota, warnings: amaran, helaian: namaHelaian };
+}
+function tkSenaraiAcara(d) {
+  var out = [];
+  Object.keys(d.days).sort().forEach(function (k) {
+    var r = d.days[k]; if (!r.t) return;
+    var akhir = k, n = tkEsok(k);
+    while (r.c && d.days[n] && !d.days[n].t && d.days[n].c === r.c) { akhir = n; n = tkEsok(n); }
+    out.push({ mula: k, akhir: akhir, teks: r.t, kat: r.c || '' });
+  });
+  return out;
+}
+
+/* ---------- Bantuan paparan ---------- */
+function tkKat(d, id) { for (var i = 0; i < d.cats.length; i++) if (d.cats[i].id === id) return d.cats[i]; return null; }
+function tkWarnaTeks(hex) { hex = hex.replace('#', ''); var r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16); return (0.299 * r + 0.587 * g + 0.114 * b) < 140 ? '#fff' : '#000'; }
+function tkGaya(d, rek) { var c = rek && tkKat(d, rek.c); return c ? ' data-c="1" style="background:' + c.color + ';color:' + tkWarnaTeks(c.color) + '"' : ''; }
+function tkIsiHari(n, rek) { return (rek && rek.mk ? '<span class="tkw-mk">[' + tkEsc(rek.mk) + ']</span> ' : '') + '<b>' + n + '</b>' + (rek && rek.t ? ' ' + tkEsc(rek.t) : ''); }
+function tkHariSekolah(d, mo) { var n = 0; for (var i = 1; i <= tkBilHari(mo.y, mo.m); i++) { var r = d.days[tkIso(mo.y, mo.m, i)]; if (r && r.s) n++; } return n; }
+function tkLegend(d, kecil) {
+  var h2 = '<div class="tkw-legend' + (kecil ? ' kecil' : '') + '">';
+  d.cats.filter(function (c) { return !kecil || c.legend; }).forEach(function (c) { h2 += '<span><i style="background:' + c.color + '"></i>' + tkEsc(c.name) + '</span>'; });
+  if (!kecil) h2 += '<span><i style="background:#e3e3e3"></i>Hujung minggu</span><span><b class="tkw-mk">[α] [β]</b> Penanda minggu</span>';
+  h2 += '</div>';
+  if (!kecil && d.notes && d.notes.length) h2 += '<div class="tkw-nota">' + d.notes.map(function (n) { return '<span>' + tkEsc(n) + '</span>'; }).join('') + '</div>';
+  return h2;
+}
+function tkJanaGrid(d) {
+  var ofs = d.months.map(function (mo) { return tkDow(mo.y, mo.m, 1); }), baris = 0;
+  d.months.forEach(function (mo, i) { baris = Math.max(baris, ofs[i] + tkBilHari(mo.y, mo.m)); });
+  var s = '<p class="tkw-tajuk">' + tkEsc(d.title) + '</p><table class="tkw-grid"><colgroup><col class="hr">';
+  d.months.forEach(function () { s += '<col><col class="bil">'; });
+  s += '<col class="hr"></colgroup><thead><tr><th>Hari</th>';
+  d.months.forEach(function (mo, i) { s += '<th colspan="2">' + tkEsc(mo.label + (i > 0 && mo.y !== d.months[0].y ? ' ' + mo.y : '')) + '</th>'; });
+  s += '<th>Hari</th></tr></thead><tbody>';
+  for (var r = 0; r < baris; r++) {
+    var dw = r % 7, hm = dw >= 5;
+    s += '<tr class="' + (hm ? 'hm' : '') + '"><td class="hr">' + TKW_HARI[dw] + '</td>';
+    d.months.forEach(function (mo, i) {
+      var n = r - ofs[i] + 1;
+      if (n < 1 || n > tkBilHari(mo.y, mo.m)) { s += '<td class="hk"></td><td class="bil"></td>'; return; }
+      var k = tkIso(mo.y, mo.m, n), rek = d.days[k];
+      s += '<td class="hk" data-k="' + k + '"' + tkGaya(d, rek) + '>' + tkIsiHari(n, rek) + '</td><td class="bil">' + (rek && rek.s ? '1' : '') + '</td>';
+    });
+    s += '<td class="hr">' + TKW_HARI[dw] + '</td></tr>';
+  }
+  var jum = 0; s += '<tr class="jum"><td>Jumlah</td>';
+  d.months.forEach(function (mo) { var n = tkHariSekolah(d, mo); jum += n; s += '<td colspan="2">' + n + ' hari</td>'; });
+  return s + '<td>' + jum + '</td></tr></tbody></table>' + tkLegend(d);
+}
+function tkJanaBulanan(d) {
+  var s = '<p class="tkw-tajuk">' + tkEsc(d.title) + '</p><div class="tiada-cetak">' + tkLegend(d) + '</div><div class="tkw-bulan-senarai">';
+  d.months.forEach(function (mo) {
+    var of = tkDow(mo.y, mo.m, 1), n = tkBilHari(mo.y, mo.m), sel = Math.ceil((of + n) / 7) * 7;
+    s += '<div class="tkw-bulan"><h3>' + mo.label + ' ' + mo.y + ' <small>' + tkHariSekolah(d, mo) + ' hari persekolahan</small></h3><table class="tkw-kal"><thead><tr>';
+    TKW_HARI.forEach(function (x) { s += '<th>' + x + '</th>'; });
+    s += '</tr></thead><tbody>';
+    for (var i = 0; i < sel; i++) {
+      if (i % 7 === 0) s += '<tr>';
+      var hb = i - of + 1;
+      if (hb < 1 || hb > n) s += '<td class="luar"></td>';
+      else { var k = tkIso(mo.y, mo.m, hb), rek = d.days[k]; s += '<td data-k="' + k + '" class="' + (i % 7 >= 5 ? 'hm' : '') + '"' + tkGaya(d, rek) + '>' + tkIsiHari(hb, rek) + '</td>'; }
+      if (i % 7 === 6) s += '</tr>';
+    }
+    s += '</tbody></table>' + tkLegend(d, true) + '</div>';
+  });
+  return s + '</div>';
+}
+
+/* ---------- Halaman ---------- */
+async function paparTakwim() {
+  if (TKW.ikutTahun !== S.tahun) { TKW.ikutTahun = S.tahun; TKW.tahun = S.tahun; } // tahun di bar atas berubah
+  var res = await panggil('takwimDapat', { tahun: TKW.tahun }), d = res.takwim, editor = boleh('PENGURUS');
+  var tahunAda = res.senarai.map(function (x) { return x.tahun; });
+  var pilihanTahun = tahunAda.slice(); if (pilihanTahun.indexOf(TKW.tahun) < 0) pilihanTahun.push(TKW.tahun); pilihanTahun.sort();
+  var selTahun = h('select', { 'aria-label': 'Tahun takwim', onchange: function () { TKW.tahun = Number(this.value); render(); } },
+    pilihanTahun.map(function (t) { return h('option', { value: t, selected: t === TKW.tahun }, t + (tahunAda.indexOf(t) < 0 ? ' (belum ada)' : '')); }));
+  var kandungan = h('div', { class: 'tkw' });
+
+  var alat = h('div', { class: 'baris-alat' }, h('label', null, 'Takwim tahun ', selTahun));
+  if (d) {
+    var seg = h('div', { class: 'tkw-seg', role: 'tablist' });
+    [['grid', 'Format Excel'], ['bulan', 'Kalendar Bulanan'], ['senarai', 'Senarai Acara']].forEach(function (p) {
+      seg.appendChild(h('button', { class: 'btn' + (TKW.paparan === p[0] ? ' aktif' : ''), role: 'tab', 'aria-selected': TKW.paparan === p[0] ? 'true' : 'false',
+        onclick: function () { TKW.paparan = p[0]; render(); } }, p[1]));
+    });
+    alat.appendChild(seg);
+    alat.appendChild(h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / PDF'));
+    if (editor) alat.appendChild(h('button', { class: 'btn', onclick: function () { dialogKategoriTakwim(d); } }, '🎨 Kategori & tajuk'));
+  }
+  if (editor) alat.appendChild(h('button', { class: 'btn' + (d ? '' : ' utama'), onclick: pilihFailTakwim }, '⬆ Muat naik Excel takwim'));
+  if (d && boleh('PENTADBIR')) alat.appendChild(h('button', { class: 'btn bahaya', onclick: ujiTindakan(async function () {
+    if (!(await sahkan('Padam takwim ' + d.tahun + ' daripada sistem? Fail Excel asal tidak terjejas.', { bahaya: true, label: 'Padam' }))) return;
+    toast((await panggil('takwimPadam', { tahun: d.tahun }, { penuh: true })).message, 'berjaya'); render();
+  }) }, 'Padam'));
+
+  var bantuan = d
+    ? (TKW.paparan === 'grid' ? 'Cetakan: satu halaman A3 landskap (seperti Excel asal).' : TKW.paparan === 'bulan' ? 'Cetakan: A4, dua bulan sehalaman.' : 'Cetakan: A4. Gunakan carian/tapis sebelum cetak.') +
+      (editor ? ' Klik mana-mana tarikh untuk membetulkan acara atau warna.' : '')
+    : '';
+  var kepala = h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Takwim Sekolah'),
+    h('p', null, d ? d.title + (d.dikemaskini ? ' · dikemas kini ' + d.dikemaskini + (d.oleh && editor ? ' oleh ' + d.oleh : '') : '') : 'Kalendar akademik tahunan sekolah.')));
+
+  if (!d) {
+    kandungan.appendChild(h('div', { class: 'kad kosong' },
+      h('p', null, 'Belum ada takwim untuk tahun ' + TKW.tahun + '.'),
+      editor ? h('p', { class: 'diam' }, 'Muat naik fail Excel takwim tahunan. Sistem membaca tarikh, acara, warna kategori dan jumlah hari persekolahan secara automatik — tiada kemasukan manual.')
+        : h('p', { class: 'diam' }, 'Sila hubungi Editor atau System Admin untuk memuat naik takwim.'),
+      tahunAda.length ? h('p', null, 'Takwim tersedia: ', tahunAda.map(function (t) { return h('button', { class: 'btn kecil', style: 'margin:0 .25rem', onclick: function () { TKW.tahun = t; render(); } }, String(t)); })) : null));
+  } else {
+    var dalam = h('div', { class: 'tkw-v-' + TKW.paparan });
+    if (TKW.paparan === 'senarai') lukisSenaraiTakwim(dalam, d);
+    else { dalam.innerHTML = TKW.paparan === 'grid' ? tkJanaGrid(d) : tkJanaBulanan(d); }
+    if (editor && TKW.paparan !== 'senarai') dalam.addEventListener('click', function (e) { var td = e.target.closest('[data-k]'); if (td) dialogHariTakwim(d, td.getAttribute('data-k')); });
+    kandungan.appendChild(TKW.paparan === 'grid' ? h('div', { class: 'tkw-skrol' }, dalam) : dalam);
+  }
+  return h('div', null, kepala, h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, alat, bantuan ? h('p', { class: 'diam', style: 'margin:.2rem 0 0' }, bantuan) : null), kandungan);
+}
+
+function lukisSenaraiTakwim(bekas, d) {
+  var q = h('input', { type: 'search', placeholder: 'Cari acara…', value: TKW.tapis.q }), k = pilihSelect(d.cats.map(function (c) { return { nilai: c.id, label: c.name }; }), TKW.tapis.c, 'Semua kategori');
+  var bil = h('span', { class: 'diam' }), badan = h('tbody');
+  function lukis() {
+    TKW.tapis.q = q.value; TKW.tapis.c = k.value;
+    var ev = tkSenaraiAcara(d).filter(function (e) { return (!k.value || e.kat === k.value) && (!q.value || e.teks.toLowerCase().indexOf(q.value.toLowerCase()) >= 0); });
+    bil.textContent = ev.length + ' acara'; kosongkan(badan);
+    ev.forEach(function (e) {
+      var c = tkKat(d, e.kat);
+      badan.appendChild(h('tr', boleh('PENGURUS') ? { style: 'cursor:pointer', onclick: function () { dialogHariTakwim(d, e.mula); } } : null,
+        h('td', { style: 'white-space:nowrap' }, tkTarikh(e.mula) + (e.akhir !== e.mula ? ' – ' + tkTarikh(e.akhir) : '')), h('td', null, tkHariDari(e.mula)),
+        h('td', { style: 'white-space:pre-line' }, e.teks), h('td', null, c ? h('span', null, h('i', { class: 'tkw-cip', style: 'background:' + c.color }), c.name) : '')));
+    });
+  }
+  q.addEventListener('input', lukis); k.addEventListener('change', lukis);
+  async function excel() {
+    var X = await muatXLSX(), rows = [['Tarikh Mula', 'Tarikh Tamat', 'Hari', 'Acara', 'Kategori']];
+    tkSenaraiAcara(d).forEach(function (e) { var c = tkKat(d, e.kat); rows.push([e.mula, e.akhir, tkHariDari(e.mula), e.teks.replace(/\n/g, ' / '), c ? c.name : '']); });
+    var ws = X.utils.aoa_to_sheet(rows), wb = X.utils.book_new(); ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 9 }, { wch: 60 }, { wch: 22 }];
+    X.utils.book_append_sheet(wb, ws, 'Takwim ' + d.tahun); X.writeFile(wb, 'Senarai-Acara-Takwim-' + d.tahun + '.xlsx'); toast('Fail Excel dimuat turun.', 'berjaya');
+  }
+  bekas.appendChild(h('div', { class: 'baris-alat tiada-cetak' }, q, k, bil, h('button', { class: 'btn', onclick: ujiTindakan(excel) }, '📗 Muat turun Excel')));
+  bekas.appendChild(h('p', { class: 'tkw-tajuk' }, d.title + ' — Senarai Acara'));
+  bekas.appendChild(h('div', { class: 'bungkus-jadual' }, h('table', { class: 'tkw-senarai' }, h('thead', null, h('tr', null, h('th', null, 'Tarikh'), h('th', null, 'Hari'), h('th', null, 'Acara'), h('th', null, 'Kategori'))), badan)));
+  lukis();
+}
+
+/* ---------- Simpan ---------- */
+function salinTakwim(d) { return { title: d.title, months: d.months, cats: JSON.parse(JSON.stringify(d.cats)), notes: d.notes, days: JSON.parse(JSON.stringify(d.days)) }; }
+async function simpanTakwim(t) { var r = await panggil('takwimSimpan', { takwim: t }, { penuh: true }); toast(r.message, 'berjaya'); TKW.tahun = r.data.tahun; render(); }
+
+/* ---------- Import Excel ---------- */
+function pilihFailTakwim() {
+  var inp = h('input', { type: 'file', accept: '.xlsx,.xls,.xlsm' });
+  inp.addEventListener('change', ujiTindakan(async function () { if (inp.files[0]) await importTakwim(inp.files[0]); }));
+  inp.click();
+}
+async function importTakwim(fail) {
+  var X = await muatXLSX(); beban(1);
+  var wb, hasil = null, ralat = [];
+  try {
+    wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true });
+    for (var i = 0; i < wb.SheetNames.length && !hasil; i++) { try { hasil = tkBacaHelaian(X, wb, wb.SheetNames[i]); } catch (e) { ralat.push(wb.SheetNames[i] + ': ' + e.message); } }
+  } catch (e) { ralat.push(e.message); } finally { beban(-1); }
+  if (!hasil) { modal({ tajuk: 'Fail tidak dapat dibaca', isi: h('div', null, h('p', null, 'Format takwim tidak dikenali.'), h('ul', null, ralat.map(function (r) { return h('li', null, r); })),
+    h('p', { class: 'diam' }, 'Format yang disokong: lajur pertama nama hari (Isnin…Ahad), baris tajuk dengan nama bulan, setiap bulan dua lajur (tarikh + acara, dan "1" untuk hari persekolahan), legend berwarna di bawah jadual.')), butang: [{ label: 'Tutup' }] }); return; }
+  var tahun = hasil.months[0].y, akhir = hasil.months[hasil.months.length - 1], acara = tkSenaraiAcara(hasil).length;
+  var jumHari = hasil.months.reduce(function (s, mo) { return s + tkHariSekolah(hasil, mo); }, 0);
+  var sedia = (await panggil('takwimDapat', { tahun: tahun })).takwim;
+  modal({ tajuk: 'Semak sebelum simpan', lebar: true, isi: h('div', null,
+    h('p', null, h('b', null, hasil.title || '(tiada tajuk)')),
+    h('ul', null, h('li', null, 'Tempoh: ' + hasil.months[0].label + ' ' + tahun + ' – ' + akhir.label + ' ' + akhir.y + ' (' + hasil.months.length + ' bulan)'),
+      h('li', null, acara + ' acara · ' + jumHari + ' hari persekolahan'), h('li', null, 'Helaian: ' + hasil.helaian),
+      h('li', null, 'Kategori: ', hasil.cats.map(function (c) { return h('span', { style: 'margin-right:.6rem;white-space:nowrap' }, h('i', { class: 'tkw-cip', style: 'background:' + c.color }), c.name); }))),
+    hasil.warnings.length ? h('div', { class: 'amaran-kotak' }, '⚠ ' + hasil.warnings.join(' ')) : null,
+    sedia ? h('div', { class: 'amaran-kotak' }, 'Takwim ' + tahun + ' sudah ada dalam sistem dan akan DIGANTIKAN.') : null,
+    h('p', { class: 'diam' }, 'Disimpan sebagai takwim tahun ' + tahun + '. Pembetulan kecil boleh dibuat selepas ini dengan klik pada tarikh.')),
+    butang: [{ label: 'Batal' }, { label: sedia ? 'Ganti takwim ' + tahun : 'Simpan takwim ' + tahun, kelas: 'utama', onClick: ujiTindakan(async function () { await simpanTakwim(hasil); }) }] });
+}
+
+/* ---------- Sunting hari ---------- */
+function dialogHariTakwim(d, k) {
+  var rek = d.days[k] || {};
+  var teks = h('textarea', { rows: 3, value: rek.t || '' });
+  var kat = pilihSelect(d.cats.map(function (c) { return { nilai: c.id, label: c.name }; }), rek.c || '', '— Tiada warna —');
+  var mk = pilihSelect([{ nilai: 'α', label: 'α' }, { nilai: 'β', label: 'β' }], rek.mk || '', '—');
+  var sek = h('input', { type: 'checkbox', checked: !!rek.s }), hingga = h('input', { type: 'date', min: k });
+  modal({ tajuk: tkHariDari(k) + ', ' + tkTarikh(k), isi: h('div', null,
+    medan('Acara / catatan (Enter = baris baharu)', teks), medan('Kategori (warna)', kat), medan('Penanda minggu', mk),
+    h('label', { style: 'display:flex;gap:.4rem;align-items:center;margin:.5rem 0' }, sek, 'Hari persekolahan (dikira dalam jumlah hari)'),
+    medan('Warnakan hingga tarikh (pilihan)', hingga)),
+    butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () {
+      var t = salinTakwim(d), baru = {}, v = teks.value.trim();
+      if (v) baru.t = v; if (kat.value) baru.c = kat.value; if (mk.value) baru.mk = mk.value; if (sek.checked) baru.s = 1;
+      t.days[k] = baru;
+      if (hingga.value && hingga.value > k) for (var n = tkEsok(k); n <= hingga.value; n = tkEsok(n)) { var r = t.days[n] || (t.days[n] = {}); if (kat.value) r.c = kat.value; else delete r.c; }
+      await simpanTakwim(t);
+    }) }] });
+}
+function dialogKategoriTakwim(d) {
+  var t = salinTakwim(d), tajuk = h('input', { type: 'text', value: t.title }), senarai = h('div');
+  function lukis() {
+    kosongkan(senarai);
+    t.cats.forEach(function (c) {
+      senarai.appendChild(h('div', { class: 'tkw-katbaris' },
+        h('input', { type: 'color', value: c.color, oninput: function () { c.color = this.value.toUpperCase(); } }),
+        h('input', { type: 'text', value: c.name, oninput: function () { c.name = this.value; } }),
+        h('label', { class: 'diam' }, h('input', { type: 'checkbox', checked: c.legend, onchange: function () { c.legend = this.checked; } }), ' legend')));
+    });
+  }
+  lukis();
+  modal({ tajuk: 'Kategori & Tajuk Takwim', isi: h('div', null, medan('Tajuk takwim', tajuk), h('p', { class: 'diam' }, 'Warna dan nama kategori (diambil daripada legend Excel). "Legend" = dipaparkan di bawah kalendar.'), senarai,
+    h('button', { class: 'btn kecil', onclick: function () { var ada = {}; t.cats.forEach(function (c) { ada[c.id] = 1; });
+      var id = 'K' + Date.now().toString(36).toUpperCase().slice(-6); if (!ada[id]) t.cats.push({ id: id, name: 'Kategori baharu', color: '#B4C7E7', legend: true }); lukis(); } }, '+ Kategori')),
+    butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () { t.title = tajuk.value; await simpanTakwim(t); }) }] });
+}
+</script>
+
+  <script>
 /* ===== Menu & penghalaan ===== */
 var MENU = [
   { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PELIHAT' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
   { id: 'laporan', ikon: '🖨', label: 'Laporan JK Induk', min: 'PELIHAT' }, { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PELIHAT' },
+  { id: 'takwim', ikon: '📅', label: 'Takwim Sekolah', min: 'PELIHAT' },
   { sep: 'Surat Rasmi' }, { id: 'suratLantik', ikon: '✉', label: 'Surat Perlantikan', min: 'PENGURUS' }, { id: 'suratMesyuarat', ikon: '📨', label: 'Surat Panggilan Mesyuarat', min: 'PENGURUS' },
   { sep: 'Konfigurasi' }, { id: 'posisi', ikon: '🏷', label: 'Jawatan & Merit', min: 'PELIHAT' }, { id: 'import', ikon: '⇅', label: 'Import / Eksport', min: 'PELIHAT' },
   { sep: 'Pentadbiran' }, { id: 'pengguna', ikon: '🔑', label: 'Pengguna', min: 'PENTADBIR' }, { id: 'tetapan', ikon: '⚙', label: 'Tetapan', min: 'PENTADBIR' }, { id: 'audit', ikon: '📜', label: 'Log Audit', min: 'PENTADBIR' }
 ];
 var PAPARAN = {
   papan: [function () { return paparPapan(); }, 'Papan Pemuka'], jk: [function (p) { return p ? paparJKButiran(p) : paparJK(); }, 'Jawatankuasa'], staf: [function () { return paparStaf(); }, 'Staf & Guru'],
-  laporan: [function () { return paparLaporan(); }, 'Laporan JK Induk'],
+  laporan: [function () { return paparLaporan(); }, 'Laporan JK Induk'], takwim: [function () { return paparTakwim(); }, 'Takwim Sekolah'],
   suratLantik: [function () { return paparSuratLantik(); }, 'Surat Perlantikan'], suratMesyuarat: [function () { return paparSuratMesyuarat(); }, 'Surat Panggilan Mesyuarat'],
   profil: [function (p) { return paparProfil(p); }, 'Profil Merit Staf'], analisis: [function () { return paparAnalisis(); }, 'Analisis Beban'], posisi: [function () { return paparPosisi(); }, 'Jawatan & Merit'],
   import: [function () { return paparImport(); }, 'Import / Eksport'], pengguna: [function () { return paparPengguna(); }, 'Pengguna'], tetapan: [function () { return paparTetapan(); }, 'Tetapan'], audit: [function () { return paparAudit(); }, 'Log Audit']

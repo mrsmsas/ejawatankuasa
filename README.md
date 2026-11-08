@@ -37,6 +37,7 @@ mrsmsas-jk-2027/
 │   ├── Komponen.html       Komponen UI: jadual, modal, combobox, carta, CSV
 │   ├── Paparan1.html       Papan pemuka, jawatankuasa, staf, profil merit
 │   ├── Paparan2.html       Analisis, jawatan & merit, import/eksport, pengguna, tetapan, audit
+│   ├── Paparan5.html       Takwim Sekolah: pembaca Excel takwim, paparan Excel/bulanan/senarai, cetak
 │   ├── Aplikasi.html       Penghalaan, log masuk, permulaan
 │   └── appsscript.json     Manifest
 ├── data/                   nama-staf.csv, benih.json, _jkterkini-dump.txt (sumber penjanaan)
@@ -53,6 +54,14 @@ mrsmsas-jk-2027/
 - **Dikecualikan daripada analisis** (diasingkan): jawatan ex-officio (Pengetua, Timbalan Pengetua, Penolong Pegawai Tadbir, Pembantu Tadbir (K), Pengarah MARA Negeri) dan *pemegang tempat* (cth. "GURU PENDIDIKAN ISLAM", "PRESIDEN LDP"). Pelantikan mereka tetap direkodkan.
 - Beban TINGGI/RENDAH ditentukan berbanding purata **kategori** (GURU/SOKONGAN) menggunakan ambang peratus, atau julat sasaran jika ditetapkan di *Tetapan*.
 - Sistem hanya **mencadangkan** calon (beban rendah) — pelantikan tetap dibuat oleh pentadbir dengan pratonton kesan merit sebelum simpan.
+
+## Modul Takwim Sekolah
+
+- Menu **📅 Takwim Sekolah**. Editor/System Admin memuat naik fail Excel takwim tahunan (format grid biasa: lajur Hari, dua lajur setiap bulan, legend berwarna di bawah). Fail dibaca **dalam pelayar** (SheetJS dari cdnjs): tarikh, acara, penanda minggu [α]/[β], warna → kategori (nama dari legend), jumlah hari persekolahan dan nota. Tiada kemasukan manual.
+- Tarikh dikira mengikut kedudukan baris (bukan nombor dalam sel), jadi sel tarikh yang dibiarkan kosong dalam Excel tetap betul. Tahun diambil daripada tajuk ("SESI 2026 / 2027") — berfungsi untuk mana-mana tahun.
+- Tiga paparan cetak: **Format Excel** (1 halaman A3 landskap), **Kalendar Bulanan** (A4, 2 bulan sehalaman), **Senarai Acara** (A4, cari/tapis, muat turun Excel).
+- Pembetulan: klik tarikh (Editor ke atas). Padam takwim: System Admin. Viewer baca sahaja. Semua perubahan direkod dalam Log Audit.
+- Storan: helaian `Takwim`, satu baris setahun (data hari JSON dipecah ke `hari1..hari4`, setiap sel diawali `~` supaya tidak dianggap formula). Helaian dicipta automatik pada simpanan pertama — pemasangan sedia ada tidak perlu dipasang semula.
 
 ## Peranan
 
@@ -83,6 +92,7 @@ Semua semakan dibuat di **pelayan** (`LALUAN_` dalam `Code.gs`); menyembunyikan 
 ```
 node tools/ujian.js                    # 14 ujian logik merit
 node tools/ujian-pasang.js             # 15 ujian pemasangan sekolah baharu dan keselamatan
+node tools/ujian-takwim.js             # 8 ujian modul Takwim (simpan, peranan, had sel, input tidak sah)
 node tools/pelayan-ujian.js            # sistem penuh dengan data benih di http://localhost:8765
 node tools/pelayan-ujian.js --kosong   # seperti templat baharu; wizard di http://localhost:8765/pemasang
 ```
