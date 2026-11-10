@@ -36,16 +36,16 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <div class="kulit">
   <div class="jalur"></div>
   <h1>Manual Pemasangan<br>eJawatankuasa</h1>
-  <p class="sub">Sistem pengurusan jawatankuasa, pelantikan staf dan analisis beban kerja untuk sekolah</p>
-  <div class="kotak"><b>Tempoh pemasangan:</b> kira-kira 15 minit<br><b>Kos:</b> percuma, menggunakan akaun Google<br><b>Kemahiran:</b> tiada pengaturcaraan diperlukan</div>
-  <p style="margin-top:12mm;color:var(--t2);font-size:9.5pt">Dibangunkan oleh MRSM Sultan Azlan Shah · Versi 1.0 · November 2026</p>
+  <p class="sub">Sistem pengurusan jawatankuasa, pelantikan staf dan analisis beban kerja untuk MRSM dan sekolah</p>
+  <div class="kotak"><b>Tempoh pemasangan:</b> kira-kira 20 minit<br><b>Kos:</b> percuma, menggunakan akaun Google<br><b>Kemahiran:</b> tiada pengaturcaraan diperlukan</div>
+  <p style="margin-top:12mm;color:var(--t2);font-size:9.5pt">Dibangunkan oleh MRSM Sultan Azlan Shah · Versi 1.3 · November 2026</p>
 </div>
 
 <section style="break-before:auto">
 <h2>1. Gambaran keseluruhan</h2>
-<p class="lead">Setiap sekolah mempunyai salinan sendiri. Data anda disimpan dalam Google Drive akaun anda dan tidak boleh dilihat oleh sekolah lain atau pembangun sistem.</p>
+<p class="lead">Setiap maktab memasang salinan sendiri menggunakan fail dalam pakej ini. Data anda disimpan dalam Google Drive akaun anda dan tidak boleh dilihat oleh maktab lain atau pembangun sistem.</p>
 <div class="aliran">
-  <div><i>1</i><b>Buat salinan</b>Salin templat Google Sheet ke Drive anda.</div>
+  <div><i>1</i><b>Masukkan kod</b>Cipta Google Sheet dan tampal 4 fail kod.</div>
   <div><i>2</i><b>Beri kebenaran</b>Benarkan skrip berjalan pada akaun anda.</div>
   <div><i>3</i><b>Isi borang</b>Maklumat sekolah, surat dan akaun System Admin.</div>
   <div><i>4</i><b>Terbitkan</b>Dapatkan pautan web untuk staf.</div>
@@ -53,40 +53,59 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <h3>Yang perlu disediakan</h3>
 <ul>
   <li><b>Akaun Google yang akan menjadi pemilik sistem.</b> Disyorkan akaun khas sekolah, bukan akaun peribadi guru, supaya sistem tidak hilang apabila guru berpindah.</li>
-  <li><b>Logo sekolah</b> dalam format PNG atau JPG (pilihan).</li>
-  <li><b>Senarai staf dan senarai jawatankuasa.</b> Boleh disediakan selepas pemasangan (Bahagian 6).</li>
+  <li><b>Logo</b> dalam format PNG atau JPG (pilihan). Logo MRSM tersedia dalam folder <code>4-Logo</code>.</li>
+  <li><b>Senarai staf dan senarai jawatankuasa.</b> Boleh disediakan selepas pemasangan (Bahagian 6). Templat tersedia dalam folder <code>3-Templat-Data</code>.</li>
+  <li><b>Pakej ini</b> dalam komputer yang digunakan untuk memasang. Ekstrak dahulu jika anda menerimanya sebagai fail ZIP.</li>
 </ul>
 <div class="nota"><b>Akaun Google Workspace (mis. akaun rasmi jabatan):</b> pentadbir domain mungkin menghalang skrip atau pilihan akses <b>Anyone</b>. Jika pilihan itu tiada, gunakan akaun Gmail khas sekolah (lihat Bahagian 9).</div>
 <h3>Peranan dalam sistem</h3>
 <table><tr><th style="width:26%">Peranan</th><th>Kebenaran</th></tr>
 <tr><td><b>System Admin</b></td><td>Semua: staf, jawatan dan merit, tetapan, pengguna, peralihan tahun, import, log audit.</td></tr>
-<tr><td><b>Editor</b></td><td>Urus jawatankuasa dan pelantikan, lihat laporan, jana surat.</td></tr>
-<tr><td><b>Viewer</b></td><td>Baca sahaja. Emel, telefon dan catatan staf disembunyikan.</td></tr></table>
+<tr><td><b>Editor</b></td><td>Urus jawatankuasa dan pelantikan, muat naik dan sunting Takwim Sekolah, lihat laporan, jana surat.</td></tr>
+<tr><td><b>Viewer</b></td><td>Baca sahaja, termasuk Takwim Sekolah. Emel, telefon dan catatan staf disembunyikan.</td></tr></table>
 </section>
 
-<section class="terus">
-<h2>2. Langkah 1: Buat salinan templat</h2>
+<section>
+<h2>2. Langkah 1: Cipta Google Sheet dan masukkan kod</h2>
+<p class="lead">Semua fail untuk langkah ini berada dalam folder <code>2-Kod-Sistem</code>. Anda hanya menyalin dan menampal; tiada kod perlu diubah.</p>
+<h3>A. Cipta pangkalan data</h3>
 <ol>
   <li>Log masuk ke akaun Google pemilik sistem dalam pelayar web.</li>
-  <li>Buka pautan templat ini:
-    <a class="pautan" href="https://docs.google.com/spreadsheets/d/1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA/copy">https://docs.google.com/spreadsheets/d/1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA/copy</a></li>
-  <li>Klik <b>Make a copy</b> (Buat salinan). Google memaklumkan bahawa skrip turut disalin. Ini memang dijangka.</li>
-  <li>Salinan dibuka dalam tab baharu. Inilah pangkalan data sekolah anda.</li>
+  <li>Buka <a href="https://sheets.new">sheets.new</a> untuk mencipta Google Sheet kosong. Inilah pangkalan data maktab anda. Namanya akan ditukar secara automatik semasa pemasangan.</li>
+  <li>Pilih menu <b>Extensions ▸ Apps Script</b>. Editor dibuka dalam tab baharu.</li>
+  <li>Klik <b>Untitled project</b> di kiri atas, taip <code>eJawatankuasa</code>, kemudian klik <b>Rename</b>.</li>
 </ol>
+<h3>B. Paparkan fail tetapan</h3>
+<ol>
+  <li>Klik ikon gear <b>Project Settings</b> di menu kiri.</li>
+  <li>Tandakan <b>Show "appsscript.json" manifest file in editor</b>.</li>
+  <li>Klik ikon <b>&lt;&gt; Editor</b> di menu kiri untuk kembali.</li>
+</ol>
+<h3>C. Tampal keempat-empat fail</h3>
+<p>Bagi setiap fail: dalam folder pakej, klik kanan fail ▸ <b>Open with ▸ Notepad</b>, tekan <b>Ctrl+A</b> dan <b>Ctrl+C</b>. Dalam editor Apps Script, klik pada kandungan fail sasaran, tekan <b>Ctrl+A</b> dan <b>Ctrl+V</b> supaya kandungan lama diganti.</p>
+<table><tr><th style="width:7%">No.</th><th style="width:27%">Fail dalam pakej</th><th>Tampal ke dalam</th></tr>
+<tr><td>1</td><td><code>appsscript.json</code></td><td><b>appsscript.json</b> yang sudah ada dalam senarai fail.</td></tr>
+<tr><td>2</td><td><code>Code.gs</code></td><td><b>Code.gs</b> yang sudah ada dalam senarai fail.</td></tr>
+<tr><td>3</td><td><code>Index.html</code></td><td>Fail baharu: klik <b>+</b> di sebelah <b>Files ▸ HTML</b>, taip <code>Index</code>, tekan Enter.</td></tr>
+<tr><td>4</td><td><code>Pemasang.html</code></td><td>Fail baharu: klik <b>+</b> di sebelah <b>Files ▸ HTML</b>, taip <code>Pemasang</code>, tekan Enter.</td></tr></table>
+<p>Klik ikon <b>Save project</b> (atau tekan <b>Ctrl+S</b>) dan pastikan tiada lagi tanda titik oren pada nama fail. Simpan dahulu sebelum kembali ke Google Sheet, kerana tab Apps Script tertutup sendiri apabila Sheet dimuat semula.</p>
+<div class="nota"><b>Semak sebelum meneruskan:</b> senarai fail mesti mengandungi tepat <code>appsscript.json</code>, <code>Code.gs</code>, <code>Index.html</code> dan <code>Pemasang.html</code>. Nama mesti sama, termasuk huruf besar. Baris terakhir <code>Code.gs</code>, <code>Index.html</code> dan <code>Pemasang.html</code> mesti mengandungi perkataan <b>TAMAT FAIL</b>. Jika tiada, fail tidak habis ditampal.</div>
+<div class="nota b"><b>Jangan</b> buka fail kod dengan Word atau Excel. Aplikasi itu boleh mengubah kandungan fail.</div>
 </section>
 
 <section>
 <h2>3. Langkah 2: Beri kebenaran</h2>
 <ol>
-  <li>Tunggu beberapa saat sehingga menu <b>eJawatankuasa</b> muncul di bar menu, di sebelah kanan menu <b>Help</b>. Muat semula halaman jika menu tidak muncul.</li>
+  <li>Kembali ke tab Google Sheet dan tekan <b>F5</b> untuk memuat semula halaman.</li>
+  <li>Tunggu beberapa saat sehingga menu <b>eJawatankuasa</b> muncul di bar menu, di sebelah kanan menu <b>Help</b>. Helaian <b>MULA DI SINI</b> juga dicipta secara automatik.</li>
   <li>Klik <b>eJawatankuasa ▸ Pasang sistem / Semakan</b>.</li>
-  <li>Kotak <b>Authorization required</b> dipaparkan. Klik <b>OK</b>, kemudian pilih akaun anda.</li>
-  <li>Jika Google memaparkan amaran <b>Google hasn't verified this app</b>: klik <b>Advanced</b>, kemudian <b>Go to … (unsafe)</b>.</li>
+  <li>Kotak <b>Authorisation required</b> dipaparkan. Klik <b>OK</b>, kemudian pilih akaun anda.</li>
+  <li>Jika Google memaparkan amaran <b>Google hasn't verified this app</b>: klik <b>Advanced</b>, kemudian <b>Go to eJawatankuasa (unsafe)</b>.</li>
   <li>Semak senarai kebenaran dan klik <b>Allow</b>.</li>
-  <li>Klik <b>eJawatankuasa ▸ Pasang sistem / Semakan</b> sekali lagi untuk membuka borang.</li>
+  <li>Borang pemasangan biasanya terbuka sendiri. Jika tidak, klik <b>eJawatankuasa ▸ Pasang sistem / Semakan</b> sekali lagi.</li>
 </ol>
-<div class="nota"><b>Mengapa ada amaran?</b> Google memaparkan amaran ini bagi skrip yang tidak melalui proses pengesahan Google. Salinan ini milik anda dan berjalan pada akaun anda sendiri.<br><br>
-<b>Kebenaran yang diminta:</b> Google menyenaraikan akses kepada hamparan Google Sheets akaun anda (had teknikal Google), paparan dialog dalam Sheet, dan alamat emel akaun anda. Sistem hanya membaca dan menulis Sheet salinan ini. Inilah sebab akaun khas sekolah disyorkan.</div>
+<div class="nota"><b>Mengapa ada amaran?</b> Google memaparkan amaran ini bagi skrip yang tidak melalui proses pengesahan Google. Skrip ini berada dalam Sheet milik anda dan berjalan pada akaun anda sendiri.<br><br>
+<b>Kebenaran yang diminta:</b> Google menyenaraikan akses kepada hamparan Google Sheets akaun anda (had teknikal Google), paparan dialog dalam Sheet, dan alamat emel akaun anda. Sistem hanya membaca dan menulis Sheet ini. Inilah sebab akaun khas maktab disyorkan.</div>
 </section>
 
 <section>
@@ -103,7 +122,7 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <tr><td><b>Cogan kata penutup</b></td><td>Pisahkan setiap baris dengan tanda <code>|</code>. Kosongkan jika tidak perlu.</td></tr>
 <tr><td><b>Akaun System Admin</b></td><td>Emel dan kata laluan untuk log masuk ke sistem. Gunakan kata laluan baharu, bukan kata laluan Google. Sekurang-kurangnya 8 aksara.</td></tr></table>
 <div class="dua">
-  <div><img class="gbr" src="gambar/wizard-3.png" alt="Borang akaun System Admin"><p class="kap">Rajah 3: Akaun System Admin. Klik Pasang untuk mencipta pangkalan data.</p></div>
+  <div><img class="gbr" src="gambar/wizard-3.png" alt="Borang akaun System Admin"><p class="kap">Rajah 3: Akaun System Admin. Klik Pasang dan tunggu kira-kira 30 saat.</p></div>
   <div><img class="gbr" src="gambar/wizard-4.png" alt="Arahan penerbitan"><p class="kap">Rajah 4: Selepas dipasang, borang memaparkan arahan penerbitan</p></div>
 </div>
 </section>
@@ -114,12 +133,13 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <ol>
   <li>Dalam borang, klik <b>Buka editor Apps Script</b>. Atau pilih <b>Extensions ▸ Apps Script</b> dalam Google Sheet.</li>
   <li>Klik butang biru <b>Deploy</b> di kanan atas, kemudian <b>New deployment</b>.</li>
-  <li>Klik ikon gear di sebelah <b>Select type</b>, kemudian pilih <b>Web app</b>.</li>
-  <li>Tetapkan:
+  <li>Pastikan jenis ialah <b>Web app</b>. Jika tiada, klik ikon gear di sebelah <b>Select type</b> dan pilih <b>Web app</b>.</li>
+  <li>Pastikan tetapan berikut (biasanya sudah terisi):
     <table style="margin-top:2mm"><tr><td style="width:40%"><b>Execute as</b></td><td><b>Me</b> (akaun anda)</td></tr><tr><td><b>Who has access</b></td><td><b>Anyone</b></td></tr></table></li>
   <li>Klik <b>Deploy</b>. Jika diminta, benarkan kebenaran seperti Bahagian 3.</li>
-  <li>Salin <b>Web app URL</b> yang berakhir dengan <code>/exec</code>. Inilah pautan sistem anda.</li>
+  <li>Salin <b>Web app URL</b> yang berakhir dengan <code>/exec</code>. Inilah pautan sistem anda. Bukanya untuk menguji, kemudian simpan untuk dikongsi dengan staf.</li>
 </ol>
+<div class="nota b"><b>Ambil pautan hanya daripada kotak Deploy</b> atau <b>Deploy ▸ Manage deployments</b>. Pautan daripada sumber lain mungkin memberi ralat <i>Page not found</i>.</div>
 <div class="nota"><b>Adakah "Anyone" selamat?</b> Sesiapa boleh membuka halaman log masuk, tetapi data hanya dipaparkan selepas log masuk dengan akaun yang dicipta dalam sistem. Setiap tindakan disemak di pelayan mengikut peranan pengguna.</div>
 <div class="nota b"><b>JANGAN kongsi fail Google Sheet.</b> Sesiapa yang boleh menyunting Sheet itu boleh memintas semua kawalan sistem. Staf hanya perlukan pautan web.</div>
 <img class="gbr" style="width:112mm" src="gambar/logmasuk.png" alt="Halaman log masuk"><p class="kap">Rajah 5: Halaman log masuk memaparkan nama dan logo sekolah anda</p>
@@ -127,9 +147,9 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 
 <section>
 <h2>6. Masukkan data sekolah</h2>
-<p class="lead">Log masuk sebagai System Admin. Papan Pemuka memaparkan panduan sehingga data lengkap. Pergi ke <b>Import / Eksport</b>.</p>
+<p class="lead">Log masuk sebagai System Admin. Jika pelayar anda sudah log masuk ke akaun Google pemilik dan emel System Admin sama dengan akaun itu, sistem terus memaparkan Papan Pemuka tanpa meminta kata laluan. Papan Pemuka memaparkan panduan sehingga data lengkap. Pergi ke <b>Import / Eksport</b>.</p>
 <h3>A. Import staf (dahulu)</h3>
-<p>Klik <b>Muat turun templat</b>, isi dalam Excel, simpan sebagai <b>CSV UTF-8</b>, pilih fail, klik <b>Semak fail</b>, kemudian <b>Import</b>.</p>
+<p>Gunakan <code>templat-import-staf.csv</code> dalam folder <code>3-Templat-Data</code>, atau klik <b>Muat turun templat</b> dalam sistem. Isi dalam Excel, simpan sebagai <b>CSV UTF-8</b>, pilih fail, klik <b>Semak fail</b>, kemudian <b>Import</b>.</p>
 <table><tr><th style="width:27%">Lajur</th><th>Keterangan</th></tr>
 <tr><td><code>staffId</code></td><td>Wajib dan unik. Gunakan No. Gaji atau kod unik.</td></tr>
 <tr><td><code>nama</code></td><td>Wajib. Nama penuh.</td></tr>
@@ -151,6 +171,19 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
   <li><b>Tetapan:</b> ubah maklumat sekolah, kepala surat atau ambang beban jika perlu.</li>
   <li><b>Surat Perlantikan:</b> cetak satu surat contoh dan semak formatnya.</li>
 </ol>
+<h3>D. Takwim Sekolah (pilihan)</h3>
+<p>Modul <b>📅 Takwim Sekolah</b> memaparkan takwim tahunan maktab kepada semua pengguna. Takwim dimuat naik oleh System Admin atau Editor daripada fail Excel takwim sedia ada; tiada persediaan tambahan diperlukan semasa pemasangan.</p>
+<ol>
+  <li>Buka <b>Takwim Sekolah</b>. Takwim boleh dimuat naik untuk mana-mana tahun, termasuk tahun hadapan yang belum ada jawatankuasa: klik <b>＋ tahun</b> (mis. <b>＋ 2027</b>) untuk membuka tahun seterusnya. Tahun takwim juga dikesan secara automatik daripada fail Excel.</li>
+  <li>Klik <b>⬆ Muat naik Excel takwim</b> dan pilih fail <code>.xlsx</code>. Format yang dibaca: lajur pertama nama hari (Isnin hingga Ahad), baris tajuk dengan nama bulan, <b>2 lajur bagi setiap bulan</b> (tarikh dan acara, dengan <code>1</code> menandakan hari persekolahan), dan petunjuk warna (legend) di bawah jadual, mis. Cuti Umum, Cuti Sekolah, Peperiksaan.</li>
+  <li>Semak ringkasan yang dipaparkan (bulan, bilangan acara, hari persekolahan) dan tahun simpanan, kemudian simpan. Takwim disimpan dalam helaian <b>Takwim</b> Google Sheet anda (dicipta secara automatik) dan kekal selepas log keluar.</li>
+  <li>Untuk membetulkan satu tarikh, klik tarikh itu untuk mengubah acara, warna atau status hari persekolahan. Untuk menukar keseluruhan takwim, gunakan <b>⬆ Ganti Excel takwim</b>.</li>
+</ol>
+<table><tr><th style="width:27%">Paparan</th><th>Kegunaan dan cetakan</th></tr>
+<tr><td><b>Format Excel</b></td><td>Seperti fail asal. Dicetak satu halaman A3 landskap.</td></tr>
+<tr><td><b>Kalendar Bulanan</b></td><td>Kalendar biasa. Dicetak A4, dua bulan sehalaman.</td></tr>
+<tr><td><b>Senarai Acara</b></td><td>Cari dan tapis acara, cetak A4 atau muat turun Excel.</td></tr></table>
+<div class="nota">Takwim boleh disimpan untuk tahun dalam fail Excel atau satu tahun sebelum/selepasnya sahaja. Jika dua pengguna menyunting serentak, simpanan kedua ditolak dengan mesej <i>muat semula halaman</i> supaya suntingan pertama tidak hilang. Hanya System Admin boleh memadam takwim.</div>
 </section>
 
 <section>
@@ -161,6 +194,7 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
   <li>Bilangan staf dan jawatankuasa pada Papan Pemuka betul.</li>
   <li>Surat Perlantikan memaparkan nama, tandatangan dan kepala surat yang betul.</li>
   <li>Akaun Viewer tidak dapat melihat emel staf dan tidak boleh menyunting.</li>
+  <li>Jika menggunakan Takwim Sekolah: takwim tahun semasa dipaparkan dan bilangan hari persekolahan munasabah.</li>
   <li>Fail Google Sheet tidak dikongsi dengan sesiapa (butang <b>Share</b> menunjukkan <i>Restricted</i>).</li>
 </ul>
 </section>
@@ -173,14 +207,16 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <tr><td><b>Terlupa kata laluan pengguna</b></td><td>System Admin: <b>Pengguna ▸ klik nama ▸</b> tetapkan kata laluan baharu.</td></tr>
 <tr><td><b>Terlupa kata laluan System Admin</b></td><td>Pemilik: Google Sheet ▸ <b>eJawatankuasa ▸ Set semula kata laluan System Admin</b>.</td></tr>
 <tr><td><b>Pertukaran pemilik</b></td><td>Pemilik baharu perlu membuat salinan Sheet (termasuk skrip), kemudian melakukan semula Langkah 4. Pautan web akan berubah.</td></tr>
-<tr><td><b>Kemas kini versi baharu</b></td><td>Salinan anda tidak dikemas kini secara automatik. Apabila versi baharu dikeluarkan, gantikan fail kod dalam editor Apps Script mengikut arahan versi tersebut, kemudian <b>Deploy ▸ Manage deployments ▸ Edit (ikon pensel) ▸ Version: New version ▸ Deploy</b>. Pautan web kekal sama.</td></tr></table>
+<tr><td><b>Kemas kini versi baharu</b></td><td>Sistem anda tidak dikemas kini secara automatik. Apabila menerima pakej baharu, tampal semula <code>Code.gs</code>, <code>Index.html</code> dan <code>Pemasang.html</code> seperti Bahagian 2, simpan, kemudian <b>Deploy ▸ Manage deployments ▸ Edit (ikon pensel) ▸ Version: New version ▸ Deploy</b>. Pautan dan data kekal. Buat sandaran dahulu.</td></tr></table>
 </section>
 
 <section>
 <h2>9. Masalah lazim</h2>
 <table><tr><th style="width:38%">Masalah</th><th>Penyelesaian</th></tr>
-<tr><td>Menu eJawatankuasa tidak muncul</td><td>Tunggu 10 saat dan muat semula halaman. Pastikan anda membuka salinan anda, bukan templat asal.</td></tr>
-<tr><td>Borang tidak dibuka selepas memberi kebenaran</td><td>Ini biasa. Klik menu itu sekali lagi.</td></tr>
+<tr><td>Menu eJawatankuasa tidak muncul</td><td>Tunggu 10 saat dan muat semula halaman. Pastikan projek Apps Script disimpan dan dicipta melalui <b>Extensions ▸ Apps Script</b> dalam Sheet yang sama. Semak juga <code>Code.gs</code> berakhir dengan TAMAT FAIL.</td></tr>
+<tr><td>Borang tidak dibuka, atau tetingkap kebenaran kosong</td><td>Ini biasa. Tutup tetingkap kosong itu dan klik menu sekali lagi.</td></tr>
+<tr><td>Ralat <i>No HTML file named Index</i> atau <i>Pemasang</i></td><td>Nama fail salah dalam editor Apps Script. Namakan semula tepat seperti Bahagian 2, kemudian simpan. Selepas itu, buat versi baharu seperti baris "Kemas kini versi baharu" di Bahagian 8.</td></tr>
+<tr><td><i>Page not found</i> atau 404 apabila pautan <code>/exec</code> dibuka</td><td>Pautan salah, atau sistem belum di-Deploy. Pergi ke <b>Extensions ▸ Apps Script ▸ Deploy ▸ Manage deployments</b>. Jika tiada deployment, ikut Bahagian 5. Jika ada, salin <b>Web app URL</b> dari situ. Jika masih gagal, cuba dalam tetingkap Incognito.</td></tr>
 <tr><td><i>This app is blocked</i> atau tiada pautan <b>Advanced</b></td><td>Akaun Workspace anda menghalang skrip. Mohon kebenaran pentadbir domain, atau gunakan akaun Gmail khas sekolah.</td></tr>
 <tr><td>Pilihan <b>Anyone</b> tiada ketika Deploy</td><td>Dasar domain Workspace. Gunakan akaun Gmail khas sekolah.</td></tr>
 <tr><td><i>Fungsi ini hanya boleh dijalankan oleh pemilik</i></td><td>Log keluar daripada akaun Google lain, atau buka Sheet dalam profil pelayar yang hanya menggunakan akaun pemilik.</td></tr>
@@ -189,6 +225,9 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <tr><td>Notis kecil <i>created by a Google Apps Script user</i> di atas halaman</td><td>Notis standard Google dan tidak menjejaskan fungsi. Untuk membuangnya, lihat Lampiran A.</td></tr>
 <tr><td>Import: nama jatuh pada lajur yang salah atau aksara pelik</td><td>Dalam Excel, pilih <b>Save As ▸ CSV UTF-8 (Comma delimited)</b>. Jangan ubah nama lajur pada baris pertama.</td></tr>
 <tr><td>Import: <i>Jawatan tidak dijumpai</i></td><td>Tambah jawatan itu di <b>Jawatan &amp; Merit</b>, atau betulkan ejaan dalam fail. Import semula: baris yang sudah ada akan ditolak sebagai pendua dan tidak digandakan.</td></tr>
+<tr><td>Takwim: <i>Format takwim tidak dikenali</i></td><td>Pastikan lajur pertama ialah nama hari, nama bulan ada pada baris tajuk dan setiap bulan menggunakan dua lajur. Buang helaian lain yang tidak berkaitan atau letakkan takwim pada helaian pertama.</td></tr>
+<tr><td>Takwim: bilangan hari persekolahan terlalu sedikit</td><td>Sistem mengira hari persekolahan daripada tanda <code>1</code> dalam lajur bulan. Tambah tanda itu dalam Excel dan muat naik semula, atau klik tarikh dalam sistem dan tandakan sebagai hari persekolahan.</td></tr>
+<tr><td>Takwim: <i>telah dikemas kini oleh pengguna lain</i></td><td>Pengguna lain menyimpan takwim selepas anda membukanya. Muat semula halaman dan ulang suntingan anda.</td></tr>
 <tr><td>Sistem lambat ketika ramai pengguna</td><td>Had Google Apps Script. Tunggu seketika. Untuk tindakan simpan, sistem memaparkan <i>Sistem sedang sibuk</i> jika perlu menunggu giliran.</td></tr></table>
 </section>
 
@@ -197,7 +236,7 @@ code{background:var(--ul);padding:.2mm 1.2mm;border-radius:1mm;font-family:Conso
 <p>Pilihan sahaja dan memerlukan akaun GitHub. Antara muka dihoskan di GitHub Pages dan terus menggunakan pangkalan data Google Sheet anda.</p>
 <ol>
   <li>Selesaikan semua langkah dalam manual ini dan salin pautan <code>/exec</code>.</li>
-  <li>Dapatkan fail <code>index-sekolah.html</code> daripada pembangun. Buka dengan Notepad, cari <code>ISI_ID_ANDA</code> dan gantikan keseluruhan URL itu dengan pautan <code>/exec</code> anda.</li>
+  <li>Buka fail <code>index-sekolah.html</code> dalam folder <code>5-Pilihan-Lanjutan</code> dengan Notepad, cari <code>ISI_ID_ANDA</code> dan gantikan keseluruhan URL itu dengan pautan <code>/exec</code> anda.</li>
   <li>Namakan fail sebagai <code>index.html</code>, muat naik ke repositori GitHub baharu, kemudian hidupkan <b>Settings ▸ Pages</b>.</li>
 </ol>
 <p><b>Jangan</b> muat naik data staf atau fail eksport CSV ke GitHub. Fail ini hanya mengandungi kod paparan.</p>

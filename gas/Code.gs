@@ -560,7 +560,11 @@ function takwimTeks_(s, maks) { return String(s === undefined || s === null ? ''
 function takwimUrai_(r) {
   var hari = takwimJson_(TAKWIM_PECAHAN_.map(function (k) { return String(r[k] || '').replace(/^~/, ''); }).join(''), {});
   return { tahun: Number(r.tahun), title: String(r.tajuk || ''), months: takwimJson_(r.bulan, []), cats: takwimJson_(r.kategori, []),
-    notes: takwimJson_(r.nota, []), days: hari, dikemaskini: String(r.dikemaskini || ''), oleh: String(r.oleh || '') };
+    notes: takwimJson_(r.nota, []), days: hari, dikemaskini: String(r.dikemaskini || ''), oleh: String(r.oleh || ''), versi: takwimVersi_(r) };
+}
+// Cap versi kandungan tersimpan: simpanan yang berdasarkan salinan lama ditolak supaya edit Editor lain tidak hilang.
+function takwimVersi_(r) {
+  return hash_('takwim', ['tajuk', 'bulan', 'kategori', 'nota'].concat(TAKWIM_PECAHAN_).map(function (k) { return String(r[k] === undefined || r[k] === null ? '' : r[k]); }).join('|')).substring(0, 16);
 }
 function takwimBersih_(t) {
   if (!t || typeof t !== 'object') tolak_('Data takwim tidak sah.');
@@ -611,7 +615,13 @@ function takwimSimpan_(pg, a) {
     nota: takwimSel_(JSON.stringify(t.notes)), dikemaskini: Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', 'yyyy-MM-dd HH:mm'), oleh: pg.emel };
   TAKWIM_PECAHAN_.forEach(function (k, i) { var p = json.substring(i * TAKWIM_SEL_, (i + 1) * TAKWIM_SEL_); baris[k] = p ? takwimSel_(p) : ''; });
   if (!db_().getSheetByName('Takwim')) ciptaHelaian_(); // pemasangan lama yang belum ada helaian Takwim
-  var ada = baca_('Takwim').some(function (r) { return Number(r.tahun) === t.tahun; });
+  var lama = baca_('Takwim').filter(function (r) { return Number(r.tahun) === t.tahun; })[0], ada = !!lama;
+  // versi: '' = takwim baharu (import); rentetan = sunting takwim sedia ada. Tiada versi (klien lama) = tanpa semakan.
+  if (typeof a.versi === 'string') {
+    if (a.versi && !ada) tolak_('Takwim ' + t.tahun + ' telah dipadam oleh pengguna lain. Sila muat semula halaman.');
+    if (a.versi && ada && takwimVersi_(lama) !== a.versi)
+      tolak_('Takwim ' + t.tahun + ' telah dikemas kini oleh ' + (lama.oleh || 'pengguna lain') + ' selepas anda membukanya. Perubahan anda belum disimpan — sila muat semula halaman dan ulang.');
+  }
   if (ada) kemas_('Takwim', 'tahun', t.tahun, baris); else tambah_('Takwim', [baris]);
   var acara = Object.keys(t.days).filter(function (k) { return t.days[k].t; }).length;
   log_(pg.emel, ada ? 'UBAH_TAKWIM' : 'TAMBAH_TAKWIM', 'Takwim', String(t.tahun), '', { tajuk: t.title, bulan: t.months.length, acara: acara });

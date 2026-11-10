@@ -21,7 +21,8 @@ class Helaian {
 }
 
 // muatBenih: true = pemasangan MRSM SAS (BenihData + SekolahIni); false = sama seperti templat sekolah lain.
-function buatPersekitaran({ muatBenih }) {
+// folder: pilihan, baca fail .gs dari folder lain (cth. pakej pelanggan).
+function buatPersekitaran({ muatBenih, folder }) {
   const helaian = {}, urutan = [];
   const ss = {
     nama: 'Templat',
@@ -47,8 +48,9 @@ function buatPersekitaran({ muatBenih }) {
     __aktif: '', __urlWeb: ''   // __aktif kosong = pelawat tanpa log masuk Google
   };
   vm.createContext(kotak);
-  const fail = fs.readdirSync(gas).filter(f => f.endsWith('.gs')).filter(f => muatBenih || !['BenihData.gs', 'SekolahIni.gs'].includes(f));
-  fail.forEach(f => vm.runInContext(fs.readFileSync(path.join(gas, f), 'utf8').replace(/^﻿/, ''), kotak, { filename: f }));
+  const sumberGs = folder || gas;
+  const fail = fs.readdirSync(sumberGs).filter(f => f.endsWith('.gs')).filter(f => muatBenih || !['BenihData.gs', 'SekolahIni.gs'].includes(f));
+  fail.forEach(f => vm.runInContext(fs.readFileSync(path.join(sumberGs, f), 'utf8').replace(/^﻿/, ''), kotak, { filename: f }));
   const jalan = kod => vm.runInContext(kod, kotak);
   // Panggil fungsi global seperti google.script.run; sebagai pelawat tanpa log masuk kecuali emel diberi.
   const rpc = (fn, args, emel) => {

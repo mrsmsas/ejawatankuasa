@@ -38,10 +38,9 @@ function menuSetSemulaKataLaluan() {
 function maklumatPemasang() {
   pemilikSahaja_();
   var dipasang = baca_('Pengguna').length > 0, t = tetapan_();
-  var hasil = { dipasang: dipasang, emel: Session.getEffectiveUser().getEmail(), tahun: new Date().getFullYear(), editor: 'https://script.google.com/d/' + ScriptApp.getScriptId() + '/edit', logoMaks: LOGO_MAKS_, url: '' };
+  var hasil = { dipasang: dipasang, emel: Session.getEffectiveUser().getEmail(), tahun: new Date().getFullYear(), editor: 'https://script.google.com/d/' + ScriptApp.getScriptId() + '/edit', logoMaks: LOGO_MAKS_ };
   if (dipasang) { hasil.namaSekolah = t.namaSekolah; hasil.bilStaf = baca_('Staf').length; hasil.bilJK = baca_('Jawatankuasa').length; hasil.bilPengguna = baca_('Pengguna').length; }
-  // Hanya URL /exec yang sah untuk pengguna; URL /dev ialah pautan ujian pembangun.
-  try { var u = ScriptApp.getService().getUrl(); if (u && /\/exec$/.test(u)) hasil.url = u; } catch (e) {}
+  // Jangan guna ScriptApp.getService().getUrl(): ia memulangkan URL /exec yang 404, walaupun sistem belum atau sudah di-Deploy.
   return hasil;
 }
 
@@ -90,7 +89,7 @@ function tulisHalamanMula_(dipasang) {
   var ss = db_(), sh = ss.getSheetByName(HALAMAN_MULA_) || ss.insertSheet(HALAMAN_MULA_, 0);
   var baris = dipasang ? [
     ['Sistem telah dipasang'],
-    ['Langkah terakhir: terbitkan sistem jika belum. Pilih menu eJawatankuasa ▸ Pasang sistem / Semakan untuk arahan dan pautan.'],
+    ['Langkah terakhir: terbitkan sistem jika belum. Pilih menu eJawatankuasa ▸ Pasang sistem / Semakan untuk arahan. Pautan sistem ada di Extensions ▸ Apps Script ▸ Deploy ▸ Manage deployments.'],
     [''],
     ['PENTING: JANGAN kongsi fail Google Sheet ini. Sesiapa yang boleh menyunting Sheet ini boleh memintas semua kawalan sistem.'],
     ['Staf menggunakan sistem melalui pautan web sahaja. Akaun mereka dicipta di halaman Pengguna dalam sistem.'],

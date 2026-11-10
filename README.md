@@ -1,6 +1,6 @@
 ﻿# Sistem Pengurusan Jawatankuasa (eJawatankuasa)
 
-Digunakan oleh MRSM Sultan Azlan Shah dan boleh dipasang oleh sekolah lain melalui templat Google Sheet: lihat [Manual Pemasangan](docs/manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf).
+Digunakan oleh MRSM Sultan Azlan Shah dan boleh dipasang oleh maktab lain menggunakan pakej pelanggan (`node tools/bina-pakej.js`): lihat [Manual Pemasangan](docs/manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf).
 
 Sistem web (Bahasa Melayu) untuk mengurus jawatankuasa, pelantikan staf dan analisis beban kerja berasaskan **merit berpemberat**.
 
@@ -84,7 +84,7 @@ Semua semakan dibuat di **pelayan** (`LALUAN_` dalam `Code.gs`); menyembunyikan 
 
 ## Pemasangan
 
-- **Sekolah lain:** [Manual Pemasangan](docs/manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf). Buat salinan templat, jalankan wizard dalam Google Sheet, kemudian Deploy.
+- **Sekolah lain:** [Manual Pemasangan](docs/manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf). Cipta Google Sheet, tampal 4 fail daripada pakej pelanggan, jalankan wizard, kemudian Deploy.
 - **Penyelenggaraan pemasangan MRSM SAS dan templat:** [docs/panduan-pemasangan.md](docs/panduan-pemasangan.md).
 
 ## Ujian

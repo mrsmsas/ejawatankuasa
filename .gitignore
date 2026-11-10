@@ -14,3 +14,6 @@ gas/BenihData.gs
 
 # Pakej templat dijana (node tools/bina-templat.js)
 dist/
+
+# Pakej pelanggan dijana (node tools/bina-pakej.js)
+pakej-pelanggan/

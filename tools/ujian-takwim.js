@@ -88,6 +88,26 @@ ujian('Tahun simpanan mengikut pilihan pengguna (±1 tahun sahaja)', () => {
   assert.ok(P.api('takwimSimpan', { takwim: Object.assign(contoh(), { title: 'Diubah' }), tahun: 2027 }, editor).success);
   assert.strictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.takwim.title, 'Diubah');
 });
+ujian('Edit serentak: simpanan berdasarkan salinan lama ditolak, edit pertama tidak hilang', () => {
+  assert.ok(P.api('takwimSimpan', { takwim: contoh(), tahun: 2026 }, editor).success);   // set semula data
+  const a = P.api('takwimDapat', { tahun: 2026 }, editor).data.takwim;   // Editor A buka
+  const b = P.api('takwimDapat', { tahun: 2026 }, admin).data.takwim;    // Admin B buka serentak
+  assert.ok(a.versi && a.versi === b.versi);
+  a.days['2026-04-01'] = { t: 'Edit A' };
+  assert.ok(P.api('takwimSimpan', { takwim: a, tahun: 2026, versi: a.versi }, editor).success);
+  b.days['2026-04-02'] = { t: 'Edit B' };
+  const r = P.api('takwimSimpan', { takwim: b, tahun: 2026, versi: b.versi }, admin);
+  assert.strictEqual(r.success, false); assert.ok(/muat semula/.test(r.message), r.message);
+  const d = P.api('takwimDapat', { tahun: 2026 }, pelihat).data.takwim;
+  assert.strictEqual(d.days['2026-04-01'].t, 'Edit A'); assert.strictEqual(d.days['2026-04-02'], undefined);
+  // Selepas muat semula (versi baharu), B boleh menyimpan dan edit A kekal
+  d.days['2026-04-02'] = { t: 'Edit B' };
+  assert.ok(P.api('takwimSimpan', { takwim: d, tahun: 2026, versi: d.versi }, admin).success);
+  const e = P.api('takwimDapat', { tahun: 2026 }, pelihat).data.takwim;
+  assert.strictEqual(e.days['2026-04-01'].t, 'Edit A'); assert.strictEqual(e.days['2026-04-02'].t, 'Edit B');
+  // Import/ganti Excel (versi '') tetap dibenarkan
+  assert.ok(P.api('takwimSimpan', { takwim: contoh(), tahun: 2026, versi: '' }, editor).success);
+});
 ujian('Admin memadam takwim', () => {
   assert.ok(P.api('takwimPadam', { tahun: 2027 }, admin).success);
   assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.senarai.map(x => x.tahun), [2026]);

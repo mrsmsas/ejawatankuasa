@@ -81,23 +81,16 @@ code{background:#eaf0fa;padding:1px 5px;border-radius:4px}
 <section data-l="3" class="h">
   <h2>4. Terbitkan sistem</h2>
   <p class="lead" id="ringkasan"></p>
-  <div id="sudahTerbit" class="h">
-    <div class="nota">Sistem telah diterbitkan. Kongsikan pautan ini dengan staf:</div>
-    <a id="pautan" class="pautan"></a>
-  </div>
-  <div id="belumTerbit">
-    <p><b>Satu langkah terakhir.</b> Google memerlukan langkah ini dibuat sendiri oleh pemilik:</p>
-    <ol>
-      <li><a id="pautanEditor">Buka editor Apps Script</a> (tab baharu).</li>
-      <li>Klik butang biru <b>Deploy</b> di kanan atas, kemudian <b>New deployment</b>.</li>
-      <li>Klik ikon gear di sebelah <b>Select type</b> dan pilih <b>Web app</b>.</li>
-      <li>Tetapkan <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>.</li>
-      <li>Klik <b>Deploy</b>. Benarkan kebenaran jika diminta.</li>
-      <li>Salin <b>Web app URL</b> yang berakhir dengan <code>/exec</code>. Itulah pautan sistem anda.</li>
-    </ol>
-    <button class="btn" id="btnSemak" type="button">Saya sudah terbitkan — semak</button>
-    <div id="tiadaUrl" class="nota h">Pautan belum dapat dikesan di sini. Jika anda sudah menyalin Web app URL, sistem sudah sedia digunakan. Pautan juga ada di <b>Deploy ▸ Manage deployments</b>.</div>
-  </div>
+  <p><b>Satu langkah terakhir.</b> Google memerlukan langkah ini dibuat sendiri oleh pemilik. Abaikan jika anda sudah menerbitkan sistem.</p>
+  <ol>
+    <li><a id="pautanEditor" target="_blank" rel="noopener">Buka editor Apps Script</a> (tab baharu).</li>
+    <li>Klik butang biru <b>Deploy</b> di kanan atas, kemudian <b>New deployment</b>.</li>
+    <li>Pastikan jenis ialah <b>Web app</b>. Jika tiada, klik ikon gear di sebelah <b>Select type</b> dan pilih <b>Web app</b>.</li>
+    <li>Pastikan <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>.</li>
+    <li>Klik <b>Deploy</b>. Benarkan kebenaran jika diminta.</li>
+    <li>Salin <b>Web app URL</b> yang berakhir dengan <code>/exec</code>. Itulah pautan sistem anda.</li>
+  </ol>
+  <div class="nota">Pautan hanya boleh diambil daripada kotak Deploy, atau kemudian daripada <b>Deploy ▸ Manage deployments</b>.</div>
   <div class="nota bahaya"><b>Jangan kongsi fail Google Sheet ini.</b> Staf hanya perlukan pautan web. Akaun mereka dicipta di halaman Pengguna selepas log masuk.</div>
 </section>
 
@@ -143,8 +136,6 @@ function paparTerbit(d) {
   info = d;
   $('ringkasan').textContent = (d.namaSekolah || '') + (d.bilStaf !== undefined ? ' — ' + d.bilStaf + ' staf, ' + d.bilJK + ' rekod jawatankuasa, ' + d.bilPengguna + ' pengguna.' : '');
   $('pautanEditor').href = d.editor;
-  $('sudahTerbit').classList.toggle('h', !d.url); $('belumTerbit').classList.toggle('h', !!d.url);
-  if (d.url) { $('pautan').href = d.url; $('pautan').textContent = d.url; }
   papar(3);
 }
 function gagal(e) { ralat(String(e && e.message || e)); $('btnTerus').disabled = false; }
@@ -165,11 +156,6 @@ $('btnTerus').addEventListener('click', function () {
 });
 $('btnKembali').addEventListener('click', function () { papar(langkah - 1); });
 $('jenis').addEventListener('change', isiJenis);
-$('btnSemak').addEventListener('click', function () {
-  $('btnSemak').disabled = true;
-  google.script.run.withSuccessHandler(function (d) { $('btnSemak').disabled = false; paparTerbit(Object.assign(info, d)); $('tiadaUrl').classList.toggle('h', !!d.url); })
-    .withFailureHandler(function (e) { $('btnSemak').disabled = false; ralat(String(e && e.message || e)); }).maklumatPemasang();
-});
 $('failLogo').addEventListener('change', function () {
   var f = this.files[0]; logo = ''; $('pratonton').classList.add('h'); ralat(''); if (!f) return;
   var input = this;

@@ -180,12 +180,15 @@ async function paparTakwim() {
   var kandungan = h('div', { class: 'tkw' });
 
   // Jalur status: setiap tahun dalam sistem, ada / belum ada takwim. Klik untuk tukar tahun (sama seperti menu Tahun di atas).
-  var semuaTahun = unikNombor((S.asas.tahun || []).concat(tahunAda));
+  var semuaTahun = unikNombor((S.asas.tahun || []).concat(tahunAda, [S.tahun]));
   var jalur = h('div', { class: 'tkw-tahun', role: 'tablist', 'aria-label': 'Tahun takwim' }, semuaTahun.map(function (t) {
     var ada = tahunAda.indexOf(t) >= 0;
     return h('button', { class: 'btn kecil' + (t === S.tahun ? ' aktif' : ''), role: 'tab', 'aria-selected': t === S.tahun ? 'true' : 'false', title: ada ? 'Takwim ' + t + ' tersedia' : 'Belum ada takwim ' + t,
       onclick: function () { tukarTahunTakwim(t); } }, (ada ? '✓ ' : '○ ') + t);
   }));
+  // Takwim tahun hadapan biasanya diterima sebelum jawatankuasa tahun itu dicipta; benarkan Editor membuka tahun seterusnya.
+  var tahunDepan = Math.max(semuaTahun[semuaTahun.length - 1], new Date().getFullYear()) + 1;
+  if (editor && tahunDepan <= 2100) jalur.appendChild(h('button', { class: 'btn kecil', title: 'Sediakan takwim ' + tahunDepan, onclick: function () { tukarTahunTakwim(tahunDepan); } }, '＋ ' + tahunDepan));
   var alat = h('div', { class: 'baris-alat' }, h('span', { class: 'diam' }, 'Tahun:'), jalur);
   alat = h('div', null, alat, h('div', { class: 'baris-alat' }));
   var alat2 = alat.lastChild;
@@ -199,7 +202,7 @@ async function paparTakwim() {
     alat2.appendChild(h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / PDF'));
     if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: function () { dialogKategoriTakwim(d); } }, '🎨 Kategori & tajuk'));
   }
-  if (editor) alat2.appendChild(h('button', { class: 'btn' + (d ? '' : ' utama'), onclick: pilihFailTakwim }, (d ? '⬆ Ganti Excel takwim ' : '⬆ Muat naik Excel takwim ') + TKW.tahun));
+  if (editor) alat2.appendChild(h('button', { class: 'btn' + (d ? '' : ' utama'), onclick: pilihFailTakwim, title: 'Tahun dikesan secara automatik daripada fail Excel' }, d ? '⬆ Ganti Excel takwim ' + TKW.tahun : '⬆ Muat naik Excel takwim'));
   if (d && boleh('PENTADBIR')) alat2.appendChild(h('button', { class: 'btn bahaya', onclick: ujiTindakan(async function () {
     if (!(await sahkan('Padam takwim ' + d.tahun + ' daripada sistem? Fail Excel asal tidak terjejas.', { bahaya: true, label: 'Padam' }))) return;
     toast((await panggil('takwimPadam', { tahun: d.tahun }, { penuh: true })).message, 'berjaya'); render();
@@ -215,8 +218,8 @@ async function paparTakwim() {
   if (!d) {
     kandungan.appendChild(h('div', { class: 'kad kosong' },
       h('p', null, 'Belum ada takwim untuk tahun ' + TKW.tahun + '.'),
-      editor ? h('div', null, h('p', { class: 'diam' }, 'Muat naik fail Excel takwim ' + TKW.tahun + ' apabila diterima. Sistem membaca tarikh, acara, warna kategori dan jumlah hari persekolahan secara automatik — tiada kemasukan manual.'),
-        h('button', { class: 'btn utama', onclick: pilihFailTakwim }, '⬆ Muat naik Excel takwim ' + TKW.tahun))
+      editor ? h('div', null, h('p', { class: 'diam' }, 'Muat naik fail Excel takwim apabila diterima — untuk ' + TKW.tahun + ' atau tahun lain (klik ＋ untuk tahun seterusnya). Sistem mengesan tahun, tarikh, acara, warna kategori dan jumlah hari persekolahan secara automatik — tiada kemasukan manual.'),
+        h('button', { class: 'btn utama', onclick: pilihFailTakwim }, '⬆ Muat naik Excel takwim'))
         : h('p', { class: 'diam' }, 'Sila hubungi Editor atau System Admin untuk memuat naik takwim.'),
       tahunAda.length ? h('p', null, 'Takwim tersedia: ', tahunAda.map(function (t) { return h('button', { class: 'btn kecil', style: 'margin:0 .25rem', onclick: function () { tukarTahunTakwim(t); } }, String(t)); })) : null));
   } else {
@@ -267,10 +270,14 @@ function lukisSenaraiTakwim(bekas, d) {
 }
 
 /* ---------- Simpan ---------- */
-function salinTakwim(d) { return { tahun: d.tahun, title: d.title, months: d.months, cats: JSON.parse(JSON.stringify(d.cats)), notes: d.notes, days: JSON.parse(JSON.stringify(d.days)) }; }
-// t.tahun = tahun simpanan (kunci). Selepas simpan, paparan beralih ke tahun itu.
+function salinTakwim(d) { return { tahun: d.tahun, versi: d.versi || '', title: d.title, months: d.months, cats: JSON.parse(JSON.stringify(d.cats)), notes: d.notes, days: JSON.parse(JSON.stringify(d.days)) }; }
+// t.tahun = tahun simpanan (kunci). t.versi = versi takwim yang sedang disunting ('' untuk import baharu/ganti).
+// Selepas simpan, paparan beralih ke tahun itu.
 async function simpanTakwim(t) {
-  var r = await panggil('takwimSimpan', { takwim: t, tahun: t.tahun }, { penuh: true }); toast(r.message, 'berjaya');
+  var r;
+  // Jika ditolak (cth. Editor lain baru menyimpan), lukis semula dengan data terkini supaya pengguna boleh terus ulang.
+  try { r = await panggil('takwimSimpan', { takwim: t, tahun: t.tahun, versi: t.versi || '' }, { penuh: true }); }
+  catch (e) { if (t.versi) render(); throw e; } toast(r.message, 'berjaya');
   if (r.data.tahun !== S.tahun) tukarTahunTakwim(r.data.tahun); else render();
 }
 
@@ -292,13 +299,17 @@ async function importTakwim(fail) {
   var mula = hasil.months[0], akhir = hasil.months[hasil.months.length - 1], acara = tkSenaraiAcara(hasil).length;
   var jumHari = hasil.months.reduce(function (s, mo) { return s + tkHariSekolah(hasil, mo); }, 0);
   // Tahun simpanan = tahun dipilih di bar atas (seperti Jawatankuasa). Tahun dikesan daripada Excel diberi sebagai pilihan jika berbeza.
-  var dipilih = S.tahun, dikesan = mula.y, tahunAda = (await panggil('takwimDapat', { tahun: dipilih })).senarai.map(function (x) { return x.tahun; });
-  var pilihan = unikNombor([dipilih, dikesan]);
-  var selTahun = h('select', null, pilihan.map(function (t) { return h('option', { value: t, selected: t === dipilih }, 'Takwim ' + t + (t === dikesan ? ' (dikesan daripada Excel)' : '') + (t === dipilih ? ' (tahun dipilih)' : '')); }));
+  // Tahun dikesan = tahun yang paling banyak bulannya dalam Excel (takwim boleh bermula Disember tahun sebelumnya).
+  var kiraY = {}; hasil.months.forEach(function (mo) { kiraY[mo.y] = (kiraY[mo.y] || 0) + 1; });
+  var dikesan = mula.y; Object.keys(kiraY).forEach(function (y) { if (kiraY[y] > kiraY[dikesan]) dikesan = Number(y); });
+  // Pilihan mesti dalam ±1 tahun daripada bulan pertama (semakan pelayan). Lalai: tahun dikesan, bukan tahun di bar atas.
+  var dipilih = S.tahun, tahunAda = (await panggil('takwimDapat', { tahun: dipilih })).senarai.map(function (x) { return x.tahun; });
+  var pilihan = unikNombor([dipilih, dikesan]).filter(function (t) { return Math.abs(t - mula.y) <= 1; });
+  var selTahun = h('select', null, pilihan.map(function (t) { return h('option', { value: t, selected: t === dikesan }, 'Takwim ' + t + (t === dikesan ? ' (dikesan daripada Excel)' : '') + (t === dipilih ? ' (tahun dipilih di atas)' : '')); }));
   var amaranTahun = h('div', { class: 'amaran-kotak' }), btnSimpan;
   function kemaskini() {
     var t = Number(selTahun.value), ganti = tahunAda.indexOf(t) >= 0, mesej = [];
-    if (t !== dikesan) mesej.push('⚠ Excel ini bermula ' + mula.label + ' ' + mula.y + ', bukan tahun ' + t + '. Pastikan fail yang betul — tarikh dalam takwim tidak akan diubah.');
+    if (t !== dikesan) mesej.push('⚠ Excel ini ialah takwim ' + dikesan + ' (' + mula.label + ' ' + mula.y + ' – ' + akhir.label + ' ' + akhir.y + '), bukan tahun ' + t + '. Pastikan fail yang betul — tarikh dalam takwim tidak akan diubah.');
     if (ganti) mesej.push('Takwim ' + t + ' sudah ada dalam sistem dan akan DIGANTIKAN.');
     amaranTahun.textContent = mesej.join(' '); amaranTahun.classList.toggle('tersembunyi', !mesej.length);
     if (btnSimpan) btnSimpan.textContent = (ganti ? 'Ganti takwim ' : 'Simpan takwim ') + t;

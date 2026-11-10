@@ -2,6 +2,10 @@
 
 > **Sekolah lain:** gunakan [Manual Pemasangan](manual-pemasangan/Manual-Pemasangan-eJawatankuasa.pdf). Dokumen ini untuk pembangun.
 
+## Pakej pelanggan
+
+Pakej dalam satu folder dan ZIP untuk diserahkan kepada pelanggan: `node tools/bina-pakej.js`, kemudian `node tools/ujian-pakej.js`. Hasilnya di `pakej-pelanggan/` (tidak dalam git). Kod digabungkan kepada 4 fail untuk ditampal; manual PDF dijana semula daripada `manual-pemasangan.html`. Bina semula selepas mengubah `gas/`.
+
 ## Templat sekolah lain
 
 - Google Sheet templat: https://docs.google.com/spreadsheets/d/1Q4kTtZYCb5INDn3rwbYSBLJrtZXKBX0FeJfF96XsIHA (pautan salinan: tambah `/copy`). Mesti dikongsi *Anyone with the link: Viewer*.
