@@ -1,17 +1,17 @@
 <script>
 /* ===== Menu & penghalaan ===== */
 var MENU = [
-  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PELIHAT' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
-  { id: 'laporan', ikon: '🖨', label: 'Laporan JK Induk', min: 'PELIHAT' }, { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PELIHAT' },
+  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PENGURUS' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
+  { id: 'laporan', ikon: '🖨', label: 'Laporan JK Induk', min: 'PELIHAT' }, { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PENGURUS' },
   { id: 'takwim', ikon: '📅', label: 'Takwim Sekolah', min: 'PELIHAT' },
-  { sep: 'Surat Rasmi' }, { id: 'suratLantik', ikon: '✉', label: 'Surat Perlantikan', min: 'PENGURUS' }, { id: 'suratMesyuarat', ikon: '📨', label: 'Surat Panggilan Mesyuarat', min: 'PENGURUS' },
-  { sep: 'Konfigurasi' }, { id: 'posisi', ikon: '🏷', label: 'Jawatan & Merit', min: 'PELIHAT' }, { id: 'import', ikon: '⇅', label: 'Import / Eksport', min: 'PELIHAT' },
+  { sep: 'Surat Rasmi' }, { id: 'suratLantik', ikon: '✉', label: 'Surat Perlantikan AJK', min: 'PELIHAT' }, { id: 'suratMesyuarat', ikon: '📨', label: 'Surat Panggilan Mesyuarat', min: 'PELIHAT' },
+  { sep: 'Konfigurasi' }, { id: 'posisi', ikon: '🏷', label: 'Jawatan & Merit', min: 'PENGURUS' }, { id: 'import', ikon: '⇅', label: 'Import / Eksport', min: 'PENGURUS' },
   { sep: 'Pentadbiran' }, { id: 'pengguna', ikon: '🔑', label: 'Pengguna', min: 'PENTADBIR' }, { id: 'tetapan', ikon: '⚙', label: 'Tetapan', min: 'PENTADBIR' }, { id: 'audit', ikon: '📜', label: 'Log Audit', min: 'PENTADBIR' }
 ];
 var PAPARAN = {
   papan: [function () { return paparPapan(); }, 'Papan Pemuka'], jk: [function (p) { return p ? paparJKButiran(p) : paparJK(); }, 'Jawatankuasa'], staf: [function () { return paparStaf(); }, 'Staf & Guru'],
   laporan: [function () { return paparLaporan(); }, 'Laporan JK Induk'], takwim: [function () { return paparTakwim(); }, 'Takwim Sekolah'],
-  suratLantik: [function () { return paparSuratLantik(); }, 'Surat Perlantikan'], suratMesyuarat: [function () { return paparSuratMesyuarat(); }, 'Surat Panggilan Mesyuarat'],
+  suratLantik: [function () { return paparSuratLantik(); }, 'Surat Perlantikan AJK'], suratMesyuarat: [function () { return paparSuratMesyuarat(); }, 'Surat Panggilan Mesyuarat'],
   profil: [function (p) { return paparProfil(p); }, 'Profil Merit Staf'], analisis: [function () { return paparAnalisis(); }, 'Analisis Beban'], posisi: [function () { return paparPosisi(); }, 'Jawatan & Merit'],
   import: [function () { return paparImport(); }, 'Import / Eksport'], pengguna: [function () { return paparPengguna(); }, 'Pengguna'], tetapan: [function () { return paparTetapan(); }, 'Tetapan'], audit: [function () { return paparAudit(); }, 'Log Audit']
 };
@@ -25,9 +25,13 @@ function lukisMenu() {
     nav.appendChild(h('button', { class: m.id === asal ? 'aktif' : '', 'aria-current': m.id === asal ? 'page' : null, onclick: function () { pergi(m.id); document.body.classList.remove('sisi-buka'); } }, h('span', { class: 'ikon' }, m.ikon), h('span', { class: 'label' }, m.label)));
   });
 }
+// Halaman yang dibenarkan untuk peranan semasa (profil staf ikut kebenaran Staf & Guru)
+function halamanDibenar(id) { var m = MENU.filter(function (x) { return x.id === (id === 'profil' ? 'staf' : id); })[0]; return !!m && boleh(m.min); }
+function halamanMula() { return boleh('PENGURUS') ? 'papan' : 'jk'; }
 function pergi(paparan, param) { S.paparan = paparan; S.param = param || null; render(); window.scrollTo(0, 0); }
 var jenisRender = 0;
 async function render() {
+  if (!halamanDibenar(S.paparan)) { S.paparan = halamanMula(); S.param = null; }
   var no = ++jenisRender, k = $('#kandungan'); lupusCarta(); lukisMenu();
   $('#tajukAtas').textContent = (PAPARAN[S.paparan] || ['', ''])[1];
   try {
@@ -60,7 +64,7 @@ async function masukApl(data) {
   S.token = data.token; simpanToken(S.token); S.pengguna = data.pengguna;
   $('#logmasuk').classList.add('tersembunyi'); $('#apl').classList.remove('tersembunyi');
   $('#infoPengguna').textContent = S.pengguna.nama + ' (' + { PENTADBIR: 'System Admin', PENGURUS: 'Editor', PELIHAT: 'Viewer' }[S.pengguna.peranan] + ')';
-  await muatAsas(); S.paparan = 'papan'; S.param = null; render();
+  await muatAsas(); S.paparan = halamanMula(); S.param = null; render();
 }
 function dialogTukarKata() {
   var l = h('input', { type: 'password', autocomplete: 'current-password' }), b = h('input', { type: 'password', autocomplete: 'new-password' }), b2 = h('input', { type: 'password', autocomplete: 'new-password' });

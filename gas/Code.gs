@@ -219,7 +219,7 @@ function muatAsas_(pg, a) {
   return ok_({
     tahunAktif: Number(t.tahunAktif), tahun: senaraiTahun_(d), tetapan: t,
     staf: d.staf.map(function (s) { return terhad ? { staffId: s.staffId, nama: s.nama, jawatan: s.jawatan, jabatan: s.jabatan, kategori: s.kategori, status: s.status, pemegangId: s.pemegangId } : s; }),
-    posisi: d.posisi, kategoriJK: unik_(d.jawatankuasa.map(function (j) { return j.kategori; })),
+    posisi: terhad ? d.posisi.map(function (p) { return { posisiId: p.posisiId, nama: p.nama, urutan: p.urutan, aktif: p.aktif }; }) : d.posisi, kategoriJK: unik_(d.jawatankuasa.map(function (j) { return j.kategori; })),
     jabatan: unik_(d.staf.map(function (s) { return s.jabatan; })), pengguna: profilPengguna_(pg)
   });
 }
@@ -241,10 +241,11 @@ function senaraiJK_(pg, a) {
     var p = pMap[x.posisiId]; if (!p || Number(p.merit) < 8 || !sMap[x.staffId]) return;
     (ketua[x.jkId] = ketua[x.jkId] || []).push({ p: p.nama, n: sMap[x.staffId].nama, m: Number(p.merit) });
   });
+  var terhad = pg.peranan === 'PELIHAT';
   return ok_(jk.map(function (j) {
     var k = kom[j.jkId] || {}; var kk = (ketua[j.jkId] || []).sort(function (x, y) { return y.m - x.m; }).slice(0, 2);
     return { jkId: j.jkId, kod: j.kod, nama: j.nama, kategori: j.kategori, status: j.status, keterangan: j.keterangan, posisiWajib: j.posisiWajib,
-      bil: k.bil || 0, merit: k.merit || 0, lengkap: k.lengkap !== false, kurang: k.kurang || [], pemegangTempat: !!k.pemegangTempat,
+      bil: k.bil || 0, merit: terhad ? null : (k.merit || 0), lengkap: k.lengkap !== false, kurang: k.kurang || [], pemegangTempat: !!k.pemegangTempat,
       pemimpin: kk.map(function (x) { return x.p + ': ' + x.n; }).join('; ') };
   }));
 }
@@ -261,7 +262,9 @@ function butiranJK_(pg, a) {
   }).sort(function (x, y) { return (y.merit - x.merit) || (x.urutan - y.urutan) || String(x.nama).localeCompare(y.nama); });
   var aktif = ahli.filter(function (x) { return x.status === 'AKTIF'; });
   var lg = jkLengkap_(jk, d.tugasan.filter(function (x) { return x.jkId === jk.jkId && x.status === 'AKTIF'; }), sMap, pMap, t);
-  return ok_({ jk: jk, ahli: ahli, bil: aktif.length, jumlahMerit: aktif.reduce(function (s, x) { return s + x.merit; }, 0), lengkap: lg });
+  var jumlah = aktif.reduce(function (s, x) { return s + x.merit; }, 0);
+  if (pg.peranan === 'PELIHAT') { ahli.forEach(function (x) { delete x.merit; }); jumlah = null; } // Viewer: tanpa merit
+  return ok_({ jk: jk, ahli: ahli, bil: aktif.length, jumlahMerit: jumlah, lengkap: lg });
 }
 function senaraiStaf_(pg, a) {
   var d = semuaData_(), tahun = tahunAktif_(a), t = tetapan_();
@@ -270,7 +273,7 @@ function senaraiStaf_(pg, a) {
   return ok_(d.staf.map(function (s) {
     var x = rk[s.staffId], k = m[s.staffId] || { total: 0, bil: 0 };
     return { staffId: s.staffId, nama: s.nama, jawatan: s.jawatan, emel: terhad ? '' : s.emel, telefon: terhad ? '' : s.telefon, jabatan: s.jabatan, kategori: s.kategori, status: s.status,
-      pemegangId: s.pemegangId, catatan: terhad ? '' : s.catatan, bil: k.bil, total: k.total, kedudukan: x ? x.kedudukan : null, beban: x ? x.status : '', dianalisis: masukAnalisis(s) };
+      pemegangId: s.pemegangId, catatan: terhad ? '' : s.catatan, bil: k.bil, total: terhad ? null : k.total, kedudukan: terhad || !x ? null : x.kedudukan, beban: terhad || !x ? '' : x.status, dianalisis: masukAnalisis(s) };
   }));
 }
 function profilStaf_(pg, a) {
@@ -282,6 +285,9 @@ function profilStaf_(pg, a) {
   var pembanding = r.ranking.filter(function (y) { return y.kategori === s.kategori; }), purataKat = pembanding.length ? pembanding.reduce(function (p, y) { return p + y.total; }, 0) / pembanding.length : 0;
   var m = kiraMerit(d, tahun)[s.staffId] || { total: 0, bil: 0, butiran: [] };
   var terhad = pg.peranan === 'PELIHAT'; if (terhad) { s = JSON.parse(JSON.stringify(s)); s.emel = ''; s.telefon = ''; s.catatan = ''; }
+  if (terhad) // Viewer: senarai pelantikan sahaja, tanpa merit/kedudukan/beban
+    return ok_({ staf: s, tahun: tahun, terhad: true, bil: m.bil, dianalisis: masukAnalisis(s),
+      butiran: m.butiran.map(function (b) { return { jkId: b.jkId, jkNama: b.jkNama, posisiNama: b.posisiNama, kualifikasi: b.kualifikasi }; }).sort(function (p, q) { return String(p.jkNama).localeCompare(String(q.jkNama)); }) });
   return ok_({ staf: s, tahun: tahun, total: m.total, bil: m.bil, butiran: m.butiran.sort(function (p, q) { return q.merit - p.merit; }), kedudukan: x ? x.kedudukan : null, daripada: r.ranking.length,
     beban: x ? x.status : '', purataKategori: purataKat, sasaranMin: t['sasaranMin_' + s.kategori], sasaranMax: t['sasaranMax_' + s.kategori], sejarah: sejarah, dianalisis: masukAnalisis(s) });
 }
@@ -305,6 +311,7 @@ function laporanInduk_(pg, a) {
   var jk = d.jawatankuasa.filter(function (j) { return Number(j.tahun) === tahun && j.status !== 'TIDAK AKTIF'; })
     .sort(function (x, y) { return String(x.kod || 'ZZZ').localeCompare(String(y.kod || 'ZZZ'), 'ms', { numeric: true }); })
     .map(function (j) { return { jkId: j.jkId, kod: j.kod, nama: j.nama, kategori: j.kategori || 'Lain-lain', ahli: ahli[j.jkId] || [] }; });
+  if (pg.peranan === 'PELIHAT') jk.forEach(function (j) { j.ahli.forEach(function (x) { delete x.merit; }); });
   return ok_({ tahun: tahun, jk: jk });
 }
 function eksportTugasan_(pg, a) {
@@ -694,9 +701,9 @@ var LALUAN_ = {
   takwimDapat: { min: 'PELIHAT', fn: takwimDapat_ }, takwimSimpan: { min: 'PENGURUS', fn: takwimSimpan_, tulis: true },
   takwimPadam: { min: 'PENTADBIR', fn: takwimPadam_, tulis: true },
   takwimLampiranDapat: { min: 'PELIHAT', fn: takwimLampiranDapat_ }, takwimLampiranSimpan: { min: 'PENGURUS', fn: takwimLampiranSimpan_, tulis: true }, tukarKata: { min: 'PELIHAT', fn: tukarKata_ },
-  muatAsas: { min: 'PELIHAT', fn: muatAsas_ }, dashboard: { min: 'PELIHAT', fn: dashboard_ }, senaraiJK: { min: 'PELIHAT', fn: senaraiJK_ },
+  muatAsas: { min: 'PELIHAT', fn: muatAsas_ }, dashboard: { min: 'PENGURUS', fn: dashboard_ }, senaraiJK: { min: 'PELIHAT', fn: senaraiJK_ },
   butiranJK: { min: 'PELIHAT', fn: butiranJK_ }, senaraiStaf: { min: 'PELIHAT', fn: senaraiStaf_ }, profilStaf: { min: 'PELIHAT', fn: profilStaf_ },
-  senaraiPosisi: { min: 'PELIHAT', fn: senaraiPosisi_ }, eksportTugasan: { min: 'PELIHAT', fn: eksportTugasan_ }, laporanInduk: { min: 'PELIHAT', fn: laporanInduk_ }, banding: { min: 'PELIHAT', fn: banding_ },
+  senaraiPosisi: { min: 'PENGURUS', fn: senaraiPosisi_ }, eksportTugasan: { min: 'PENGURUS', fn: eksportTugasan_ }, laporanInduk: { min: 'PELIHAT', fn: laporanInduk_ }, banding: { min: 'PENGURUS', fn: banding_ },
   cadangan: { min: 'PENGURUS', fn: cadangan_ }, pratonton: { min: 'PENGURUS', fn: pratonton_ },
   simpanTugasan: { min: 'PENGURUS', fn: simpanTugasan_, tulis: true }, gantiStaf: { min: 'PENGURUS', fn: gantiStaf_, tulis: true },
   padamTugasan: { min: 'PENGURUS', fn: padamTugasan_, tulis: true }, simpanJK: { min: 'PENGURUS', fn: simpanJK_, tulis: true },

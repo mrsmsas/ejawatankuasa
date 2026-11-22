@@ -64,7 +64,7 @@ async function paparLaporan() {
   return h('div', null,
     h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Laporan JK Induk ' + d.tahun), h('p', null, nf(d.jk.length) + ' jawatankuasa · ' + nf(jumlahAhli) + ' pelantikan. Susunan ahli sama seperti fail JK Induk asal.'))),
     h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, h('div', { class: 'baris-alat' },
-      h('label', null, 'Paparkan ', f.kat), h('label', null, f.merit, ' Sertakan lajur merit'),
+      h('label', null, 'Paparkan ', f.kat), boleh('PENGURUS') ? h('label', null, f.merit, ' Sertakan lajur merit') : null,
       h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / Simpan PDF'),
       h('button', { class: 'btn', onclick: ujiTindakan(excel) }, '📗 Muat turun Excel (.xlsx)')),
       h('p', { class: 'diam', style: 'margin:.3rem 0 0' }, 'Untuk PDF: tekan "Cetak / Simpan PDF", pilih destinasi "Save as PDF" (kertas A4). Setiap bahagian bermula pada halaman baharu.')),
