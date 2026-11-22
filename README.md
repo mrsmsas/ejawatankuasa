@@ -61,6 +61,7 @@ mrsmsas-jk-2027/
 - Tarikh dikira mengikut kedudukan baris (bukan nombor dalam sel), jadi sel tarikh yang dibiarkan kosong dalam Excel tetap betul. Tahun diambil daripada tajuk ("SESI 2026 / 2027") — berfungsi untuk mana-mana tahun.
 - Tiga paparan cetak: **Format Excel** (1 halaman A3 landskap), **Kalendar Bulanan** (A4, 2 bulan sehalaman), **Senarai Acara** (A4, cari/tapis, muat turun Excel).
 - Pembetulan: klik tarikh (Editor ke atas). Padam takwim: System Admin. Viewer baca sahaja. Semua perubahan direkod dalam Log Audit.
+- **Lampiran takwim (sub-modul):** jika fail Excel yang sama mengandungi helaian `4 ZON`, `CADANGAN TUAN RUMAH`, `MRSM IKUT NEGERI`, `KALENDAR AKADEMIK` dan `HARI PERSEKOLAHAN`, ia dibaca sekali gus ketika memuat naik takwim (atau melalui butang **⬆ Muat naik lampiran** tanpa menggantikan takwim utama) dan muncul sebagai tab di bawah tahun berkenaan (cth. 2027). Setiap tab boleh dicari, dicetak dan dimuat turun sebagai Excel. Tahun yang tiada lampiran tidak memaparkan tab. Lampiran diganti sepenuhnya apabila dimuat naik semula; padam takwim (System Admin) turut memadam lampirannya. Storan: helaian `TakwimLampiran` (satu baris setiap tahun + bahagian, dicipta automatik). Selepas mengemas kini `Code.gs`, **Deploy ▸ Manage deployments ▸ New version** supaya API baharu aktif.
 - Storan: helaian `Takwim`, satu baris setahun (data hari JSON dipecah ke `hari1..hari4`, setiap sel diawali `~` supaya tidak dianggap formula). Helaian dicipta automatik pada simpanan pertama — pemasangan sedia ada tidak perlu dipasang semula.
 
 ## Peranan
@@ -92,7 +93,7 @@ Semua semakan dibuat di **pelayan** (`LALUAN_` dalam `Code.gs`); menyembunyikan 
 ```
 node tools/ujian.js                    # 14 ujian logik merit
 node tools/ujian-pasang.js             # 15 ujian pemasangan sekolah baharu dan keselamatan
-node tools/ujian-takwim.js             # 8 ujian modul Takwim (simpan, peranan, had sel, input tidak sah)
+node tools/ujian-takwim.js             # ujian modul Takwim (simpan, peranan, had sel, input tidak sah, lampiran)
 node tools/pelayan-ujian.js            # sistem penuh dengan data benih di http://localhost:8765
 node tools/pelayan-ujian.js --kosong   # seperti templat baharu; wizard di http://localhost:8765/pemasang
 ```

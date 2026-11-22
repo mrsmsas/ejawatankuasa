@@ -178,6 +178,15 @@ tr.klik{cursor:pointer}
 .tkw-kal td.luar{background:#fafafa}
 .tkw-senarai td{font-size:13px}
 .tkw-katbaris{display:flex;gap:8px;align-items:center;margin-bottom:6px}.tkw-katbaris input[type=text]{flex:1}
+.tkw-sub{display:flex;flex-wrap:wrap;gap:.35rem;margin:.55rem 0}.tkw-sub .btn.aktif{background:var(--hijau);border-color:var(--hijau);color:#fff}
+.tkw-h3{margin:16px 0 6px;font-size:14px}
+.tkw-jad{width:100%;font-size:12.5px}
+.tkw-jad th{background:#d9e2f3;color:#000;border:1px solid #777;padding:4px 6px;text-align:left;font-size:12px;vertical-align:bottom}
+.tkw-jad td{border:1px solid #999;padding:3px 6px;white-space:pre-line;vertical-align:top}
+.tkw-jad td.n{text-align:center}
+.tkw-jad tr.tebal td{font-weight:700;background:#f2f2f2}
+.tkw-jad tbody tr:nth-child(even):not(.tebal) td{background:#fafafa}
+.tkw-lamp-nota{font-size:11.5px;color:var(--teks-2);margin:6px 0}
 @page tkwA3{size:A3 landscape;margin:8mm}
 @page surat{size:A4;margin:22mm 12mm 10mm 30mm}
 @media print{
@@ -186,6 +195,7 @@ tr.klik{cursor:pointer}
   .tkw-v-grid{page:tkwA3}.tkw-v-grid .tkw-grid{min-width:0;font-size:8px}.tkw-v-grid .tkw-grid td.hk{height:auto}
   .tkw-bulan-senarai{display:block}.tkw-bulan{break-inside:avoid;margin-bottom:8mm}.tkw-bulan:nth-child(2n){break-after:page}
   .tkw-kal td{height:56px}
+  .tkw-v-lebar{page:tkwA3}.tkw-v-lebar .tkw-jad{font-size:8px}.tkw-jad{font-size:9pt}.tkw-jad th,.tkw-jad td{padding:2px 4px}.tkw-jad tr{break-inside:avoid}
   @page{size:A4;margin:12mm}
   #laporan .kumpulan{break-before:page}#laporan .kumpulan:first-of-type{break-before:auto}
   #laporan .blok-jk{break-inside:avoid}
@@ -1186,7 +1196,7 @@ async function paparSuratMesyuarat() {
 /* ===== Takwim Sekolah =====
    Muat naik Excel takwim tahunan (format grid: lajur Hari + 2 lajur setiap bulan, legend berwarna di bawah)
    -> dibaca terus dalam pelayar -> disimpan melalui API takwimSimpan -> dipaparkan & dicetak seperti Excel asal. */
-var TKW = { paparan: 'grid', tahun: null, ikutTahun: null, tapis: { q: '', c: '' } };
+var TKW = { paparan: 'grid', sub: 'takwim', tahun: null, ikutTahun: null, tapis: { q: '', c: '' } };
 var TKW_BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
 var TKW_HARI = ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu', 'Ahad'];
 var TKW_KAT_ASAL = [
@@ -1299,6 +1309,158 @@ function tkSenaraiAcara(d) {
   return out;
 }
 
+/* ---------- Pembaca lampiran Excel (helaian selain grid takwim) ----------
+   Setiap helaian dibaca menjadi modul seragam: { tajuk, ket, bahagian: [ { tajuk, lajur, baris, tebal, nota } ] }.
+   Helaian dikenali melalui namanya; helaian yang tiada dilangkau. */
+var TKW_LAMP = [
+  { k: 'zon', ikon: '🧭', label: '4 Zon', nama: /^\s*4\s*zon/i, baca: tkBacaZon },
+  { k: 'tuanrumah', ikon: '🏠', label: 'Cadangan Tuan Rumah', nama: /tuan\s*rumah/i, baca: tkBacaTuanRumah },
+  { k: 'negeri', ikon: '📍', label: 'MRSM Ikut Negeri', nama: /ikut\s*negeri|mengikut\s*negeri/i, baca: tkBacaNegeri },
+  { k: 'akademik', ikon: '🎓', label: 'Kalendar Akademik', nama: /kalendar\s*akademik/i, baca: tkBacaAkademik },
+  { k: 'hari', ikon: '🏫', label: 'Hari Persekolahan', nama: /hari\s*persekolahan/i, baca: tkBacaHariSekolah, lebar: true }
+];
+function tkLamp(k) { for (var i = 0; i < TKW_LAMP.length; i++) if (TKW_LAMP[i].k === k) return TKW_LAMP[i]; return null; }
+// Teks sel untuk lampiran: tarikh (format tarikh Excel) -> "4 Jan 2027"; selain itu teks terformat, baris baharu dikekalkan.
+function tkTeksLamp(X, c) {
+  if (!c) return '';
+  if (c.t === 'n' && c.z && !/^general$/i.test(c.z) && /d/i.test(String(c.z).replace(/\\./g, '').replace(/"[^"]*"/g, '')) && /y/i.test(String(c.z).replace(/\\./g, '').replace(/"[^"]*"/g, ''))) {
+    var d = X.SSF.parse_date_code(c.v); if (d && d.y) return d.d + ' ' + TKW_BULAN[d.m - 1].slice(0, 3) + ' ' + d.y;
+  }
+  var v = c.w != null ? c.w : c.v; return v == null ? '' : tkBersih(v);
+}
+function tkLampKonteks(X, ws) {
+  var jl = X.utils.decode_range(ws['!ref'] || 'A1');
+  return { jl: jl, t: function (r, c) { return tkTeksLamp(X, ws[X.utils.encode_cell({ r: r, c: c })]); } };
+}
+function tkCariTeks(K, padan, r1, r2, c1, c2) {
+  for (var r = r1 == null ? K.jl.s.r : r1; r <= (r2 == null ? K.jl.e.r : r2); r++)
+    for (var c = c1 == null ? K.jl.s.c : c1; c <= (c2 == null ? K.jl.e.c : c2); c++) { var t = K.t(r, c); if (t && padan(t)) return { r: r, c: c, t: t }; }
+  return null;
+}
+function tkTajukAtas(K, rHad) { for (var r = K.jl.s.r; r < rHad; r++) for (var c = K.jl.s.c; c <= K.jl.e.c; c++) { var t = K.t(r, c); if (t) return t; } return ''; }
+function tkBarisKosong(K, r, c1, c2) { for (var c = c1; c <= c2; c++) if (K.t(r, c)) return false; return true; }
+function tkLajurKepala(K, r, c1) { var lj = [], c = c1; while (c <= K.jl.e.c && K.t(r, c)) { lj.push(K.t(r, c)); c++; } return lj; }
+function tkJadualBiasa(K, rKepala, c1, ruang) {
+  var lajur = tkLajurKepala(K, rKepala, c1), baris = [];
+  for (var r = rKepala + 1; r <= K.jl.e.r; r++) {
+    var b = []; for (var i = 0; i < lajur.length; i++) b.push(K.t(r, c1 + i));
+    if (b.every(function (x) { return !x; })) { if (ruang === false) continue; break; }
+    baris.push(b);
+  }
+  return { lajur: lajur, baris: baris };
+}
+function tkBacaTuanRumah(X, ws) {
+  var K = tkLampKonteks(X, ws), p = tkCariTeks(K, function (t) { return /^program$/i.test(t); }, 0, 30);
+  if (!p) throw new Error('Tiada lajur "PROGRAM".');
+  var j = tkJadualBiasa(K, p.r, p.c);
+  return { tajuk: '', ket: '', bahagian: [{ tajuk: '', lajur: j.lajur, baris: j.baris, tebal: [], nota: [] }] };
+}
+function tkBacaNegeri(X, ws) {
+  var K = tkLampKonteks(X, ws), p = tkCariTeks(K, function (t) { return /^bil\.?$/i.test(t); }, 0, 30);
+  if (!p) throw new Error('Tiada lajur "Bil".');
+  var lajur = tkLajurKepala(K, p.r, p.c), cNegeri = 1, cMrsm = 2, baris = [], kini = null;
+  lajur.forEach(function (l, i) { if (/^negeri$/i.test(l)) cNegeri = i; if (/^mrsm$/i.test(l)) cMrsm = i; });
+  for (var r = p.r + 1; r <= K.jl.e.r; r++) {
+    var n = K.t(r, p.c + cNegeri), m = K.t(r, p.c + cMrsm);
+    if (n) { kini = [K.t(r, p.c), n, [], K.t(r, p.c + 3)]; for (var x = 4; x < lajur.length; x++) kini.push(K.t(r, p.c + x)); baris.push(kini); }
+    if (m && kini) kini[2].push(m);
+    if (!n && !m && tkBarisKosong(K, r, p.c, p.c + lajur.length - 1)) break;
+  }
+  baris.forEach(function (b) { b[2] = b[2].join('\n'); });
+  return { tajuk: tkTajukAtas(K, p.r), ket: '', bahagian: [{ tajuk: '', lajur: lajur, baris: baris, tebal: [], nota: [] }] };
+}
+function tkBacaZon(X, ws) {
+  var K = tkLampKonteks(X, ws), ZON = ['UTARA', 'BARAT', 'SELATAN', 'TIMUR'], bah = [], k0 = null;
+  for (var r = K.jl.s.r; r <= Math.min(K.jl.e.r, 30) && !k0; r++) for (var c = K.jl.s.c; c <= K.jl.e.c - 3; c++)
+    if (ZON.every(function (z, i) { return K.t(r, c + i).toUpperCase() === z; })) { k0 = { r: r, c: c }; break; }
+  if (!k0) throw new Error('Tiada lajur UTARA / BARAT / SELATAN / TIMUR.');
+  // 1) Senarai MRSM mengikut zon, kemudian baris ringkasan bilangan negeri (cth. "5 NEGERI", "Perlis - 2")
+  var senarai = [], ringkas = [], bahagian2 = false, r2;
+  for (r2 = k0.r + 1; r2 <= K.jl.e.r; r2++) {
+    var b = [0, 1, 2, 3].map(function (i) { return K.t(r2, k0.c + i); });
+    if (b.every(function (x) { return !x; })) { if (!senarai.length) continue; if (bahagian2 || ringkas.length) break; bahagian2 = true; continue; }
+    (bahagian2 ? ringkas : senarai).push(b);
+  }
+  bah.push({ tajuk: 'Pecahan MRSM mengikut zon', lajur: ZON.slice(), baris: senarai, tebal: [], nota: [] });
+  if (ringkas.length) bah.push({ tajuk: 'Bilangan negeri dan MRSM mengikut zon', lajur: ZON.slice(), baris: ringkas, tebal: [0], nota: [] });
+  // 2) Ringkasan bilangan MRSM mengikut negeri & zon (jadual di sebelah kanan: Negeri | UTARA | BARAT | SELATAN | TIMUR | JUMLAH)
+  var rk = null;
+  for (var rr = K.jl.s.r; rr <= Math.min(K.jl.e.r, 30) && !rk; rr++) for (var cc = k0.c + 4; cc <= K.jl.e.c - 4; cc++)
+    if (/^negeri$/i.test(K.t(rr, cc)) && K.t(rr, cc + 1).toUpperCase() === 'UTARA' && K.t(rr, cc + 4).toUpperCase() === 'TIMUR') { rk = { r: rr, c: cc }; break; }
+  if (rk) {
+    var lj = tkLajurKepala(K, rk.r, rk.c), br = [], tb = [];
+    for (var r3 = rk.r + 1; r3 <= K.jl.e.r; r3++) {
+      var row = lj.map(function (_, i) { return K.t(r3, rk.c + i); });
+      if (!row[0]) break;
+      if (/^(jumlah|bil\.)/i.test(row[0])) tb.push(br.length);
+      br.push(row);
+    }
+    bah.push({ tajuk: 'Ringkasan bilangan MRSM mengikut negeri dan zon', lajur: lj, baris: br, tebal: tb, nota: [] });
+  }
+  // 3) Senarai program / catatan di lajur penanda + program (di antara jadual zon dan jadual ringkasan)
+  var cP = -1;
+  for (var cx = k0.c + 5; cx <= K.jl.e.c && cP < 0; cx++) if (tkCariTeks(K, function (t) { return t.length > 10; }, k0.r + 1, K.jl.e.r, cx, cx)) cP = cx;
+  if (cP > 0) {
+    var prog = []; for (var r4 = k0.r + 1; r4 <= K.jl.e.r; r4++) { var pr = K.t(r4, cP); if (pr) prog.push([K.t(r4, cP - 1), pr]); }
+    if (prog.length) bah.push({ tajuk: 'Senarai program / catatan', lajur: ['Penanda', 'Program / catatan'], baris: prog, tebal: [], nota: [] });
+  }
+  return { tajuk: tkTajukAtas(K, k0.r), ket: '', bahagian: bah };
+}
+function tkBacaAkademik(X, ws) {
+  var K = tkLampKonteks(X, ws), tajukKal = '', bah = [], mula = [];
+  for (var r = K.jl.s.r; r <= K.jl.e.r; r++) {
+    var tx = K.t(r, K.jl.s.c); if (!tajukKal && /^kalendar/i.test(tx)) tajukKal = tx;
+    for (var c = K.jl.s.c; c <= Math.min(K.jl.s.c + 2, K.jl.e.c); c++) if (/^mrsm\s+negeri\s+kumpulan/i.test(K.t(r, c))) { mula.push({ r: r, c: c, t: K.t(r, c) }); break; }
+  }
+  if (!mula.length) throw new Error('Tiada jadual "MRSM Negeri Kumpulan ...".');
+  mula.forEach(function (g, gi) {
+    var akhir = gi + 1 < mula.length ? mula[gi + 1].r - 1 : K.jl.e.r, rk = g.r + 1;
+    while (rk <= akhir && !/^semester$/i.test(K.t(rk, g.c))) rk++;
+    if (rk > akhir) return;
+    var lajur = tkLajurKepala(K, rk, g.c), baris = [], tebal = [], cuti = [], tajukCuti = '', nota = [];
+    var kn = tkCariTeks(K, function (t) { return /^tarikh$/i.test(t); }, rk, rk + 2, g.c + lajur.length, K.jl.e.c);
+    for (var r2 = rk + 1; r2 <= akhir; r2++) {
+      var sem = K.t(r2, g.c), perkara = K.t(r2, g.c + 1), d1 = K.t(r2, g.c + 2), d2 = K.t(r2, g.c + 3), jh = K.t(r2, g.c + 4), jm = K.t(r2, g.c + 5);
+      if (!d1 && !jh) continue;
+      if (/^jumlah/i.test(perkara)) tebal.push(baris.length);
+      baris.push([sem, perkara || 'Sesi persekolahan', d1, d2, jh, jm]);
+    }
+    if (kn) {
+      tajukCuti = K.t(g.r, kn.c); var ket = K.t(g.r + 1, kn.c); if (ket && !/^tarikh$/i.test(ket)) nota.push(ket);
+      for (var r3 = kn.r + 1; r3 <= akhir; r3++) { var t1 = K.t(r3, kn.c), t2 = K.t(r3, kn.c + 1); if (t1 || t2) cuti.push([t1, t2]); }
+    }
+    var kump = (g.t.match(/kumpulan\s+([A-Z])/i) || [])[1] || String(gi + 1);
+    bah.push({ tajuk: g.t, lajur: lajur, baris: baris, tebal: tebal, nota: [] });
+    if (cuti.length) bah.push({ tajuk: tajukCuti || ('Senarai cuti — Kumpulan ' + kump.toUpperCase()), lajur: ['Tarikh', 'Keterangan'], baris: cuti, tebal: [], nota: nota });
+  });
+  return { tajuk: tajukKal, ket: '', bahagian: bah };
+}
+function tkBacaHariSekolah(X, ws) {
+  var K = tkLampKonteks(X, ws), p = tkCariTeks(K, function (t) { return /^bil\.?$/i.test(t); }, 0, 30);
+  if (!p) throw new Error('Tiada lajur "Bil".');
+  var lajur = tkLajurKepala(K, p.r, p.c), baris = [], tebal = [], r, nota = [], tajuk = [];
+  for (r = K.jl.s.r; r < p.r; r++) { var tt = K.t(r, K.jl.s.c); if (tt) tajuk.push(tt); }
+  for (r = p.r + 1; r <= K.jl.e.r; r++) {
+    var nm = K.t(r, p.c + 1); if (!nm) break;
+    if (/^(minimum|maksimum)$/i.test(nm)) tebal.push(baris.length);
+    baris.push(lajur.map(function (_, i) { return K.t(r, p.c + i); }));
+  }
+  var catat = false;
+  for (; r <= K.jl.e.r; r++) { var a = K.t(r, p.c); if (/^catatan/i.test(a)) { catat = true; continue; } if (catat && a) nota.push(a); }
+  return { tajuk: tajuk[0] || '', ket: tajuk.slice(1).join(' '), bahagian: [{ tajuk: '', lajur: lajur, baris: baris, tebal: tebal, nota: nota }] };
+}
+// Baca semua lampiran yang ada dalam buku kerja. Pulangan: { hasil: {kunci: modul}, ralat: [teks] }
+function tkBacaLampiran(X, wb) {
+  var hasil = {}, ralat = [];
+  TKW_LAMP.forEach(function (def) {
+    var nama = null; wb.SheetNames.forEach(function (n) { if (!nama && def.nama.test(n)) nama = n; });
+    if (!nama || !wb.Sheets[nama] || !wb.Sheets[nama]['!ref']) return;
+    try { var m = def.baca(X, wb.Sheets[nama]); if (m && m.bahagian.some(function (b) { return b.baris.length; })) { m.helaian = nama; hasil[def.k] = m; } else ralat.push(def.label + ': helaian kosong.'); }
+    catch (e) { ralat.push(def.label + ' (' + nama + '): ' + e.message); }
+  });
+  return { hasil: hasil, ralat: ralat };
+}
+
 /* ---------- Bantuan paparan ---------- */
 function tkKat(d, id) { for (var i = 0; i < d.cats.length; i++) if (d.cats[i].id === id) return d.cats[i]; return null; }
 function tkWarnaTeks(hex) { hex = hex.replace('#', ''); var r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16); return (0.299 * r + 0.587 * g + 0.114 * b) < 140 ? '#fff' : '#000'; }
@@ -1360,6 +1522,7 @@ async function paparTakwim() {
   // Tahun sentiasa mengikut pilihan "Tahun" di bar atas, sama seperti halaman Jawatankuasa.
   TKW.tahun = S.tahun;
   var res = await panggil('takwimDapat', { tahun: TKW.tahun }), d = res.takwim, editor = boleh('PENGURUS');
+  var lamp = res.lampiran || []; if (TKW.sub !== 'takwim' && lamp.indexOf(TKW.sub) < 0) TKW.sub = 'takwim';
   var tahunAda = res.senarai.map(function (x) { return x.tahun; });
   var kandungan = h('div', { class: 'tkw' });
 
@@ -1374,9 +1537,13 @@ async function paparTakwim() {
   var tahunDepan = Math.max(semuaTahun[semuaTahun.length - 1], new Date().getFullYear()) + 1;
   if (editor && tahunDepan <= 2100) jalur.appendChild(h('button', { class: 'btn kecil', title: 'Sediakan takwim ' + tahunDepan, onclick: function () { tukarTahunTakwim(tahunDepan); } }, '＋ ' + tahunDepan));
   var alat = h('div', { class: 'baris-alat' }, h('span', { class: 'diam' }, 'Tahun:'), jalur);
-  alat = h('div', null, alat, h('div', { class: 'baris-alat' }));
+  // Sub-modul: Takwim BPM (utama) + lampiran daripada Excel yang sama (hanya muncul jika tahun itu mempunyai lampiran).
+  var subBar = lamp.length ? h('div', { class: 'tkw-sub', role: 'tablist', 'aria-label': 'Sub-modul takwim' }, [['takwim', '📅 Takwim BPM']].concat(lamp.map(function (k) { var def = tkLamp(k); return [k, def.ikon + ' ' + def.label]; })).map(function (p) {
+    return h('button', { class: 'btn' + (TKW.sub === p[0] ? ' aktif' : ''), role: 'tab', 'aria-selected': TKW.sub === p[0] ? 'true' : 'false', onclick: function () { TKW.sub = p[0]; render(); } }, p[1]);
+  })) : null;
+  alat = h('div', null, alat, subBar, h('div', { class: 'baris-alat' }));
   var alat2 = alat.lastChild;
-  if (d) {
+  if (d && TKW.sub === 'takwim') {
     var seg = h('div', { class: 'tkw-seg', role: 'tablist' });
     [['grid', 'Format Excel'], ['bulan', 'Kalendar Bulanan'], ['senarai', 'Senarai Acara']].forEach(function (p) {
       seg.appendChild(h('button', { class: 'btn' + (TKW.paparan === p[0] ? ' aktif' : ''), role: 'tab', 'aria-selected': TKW.paparan === p[0] ? 'true' : 'false',
@@ -1387,9 +1554,10 @@ async function paparTakwim() {
     if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: function () { dialogKategoriTakwim(d); } }, '🎨 Kategori & tajuk'));
   }
   if (editor) alat2.appendChild(h('button', { class: 'btn' + (d ? '' : ' utama'), onclick: pilihFailTakwim, title: 'Tahun dikesan secara automatik daripada fail Excel' }, d ? '⬆ Ganti Excel takwim ' + TKW.tahun : '⬆ Muat naik Excel takwim'));
-  if (d && boleh('PENTADBIR')) alat2.appendChild(h('button', { class: 'btn bahaya', onclick: ujiTindakan(async function () {
-    if (!(await sahkan('Padam takwim ' + d.tahun + ' daripada sistem? Fail Excel asal tidak terjejas.', { bahaya: true, label: 'Padam' }))) return;
-    toast((await panggil('takwimPadam', { tahun: d.tahun }, { penuh: true })).message, 'berjaya'); render();
+  if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: pilihFailLampiran, title: 'Baca helaian 4 Zon, Cadangan Tuan Rumah, MRSM Ikut Negeri, Kalendar Akademik dan Hari Persekolahan — takwim utama tidak diganti' }, '⬆ Muat naik lampiran'));
+  if ((d || lamp.length) && boleh('PENTADBIR') && TKW.sub === 'takwim') alat2.appendChild(h('button', { class: 'btn bahaya', onclick: ujiTindakan(async function () {
+    if (!(await sahkan('Padam takwim ' + TKW.tahun + (lamp.length ? ' beserta lampirannya' : '') + ' daripada sistem? Fail Excel asal tidak terjejas.', { bahaya: true, label: 'Padam' }))) return;
+    toast((await panggil('takwimPadam', { tahun: TKW.tahun }, { penuh: true })).message, 'berjaya'); render();
   }) }, 'Padam'));
 
   var bantuan = d
@@ -1399,6 +1567,11 @@ async function paparTakwim() {
   var kepala = h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Takwim Sekolah'),
     h('p', null, d ? d.title + (d.dikemaskini ? ' · dikemas kini ' + d.dikemaskini + (d.oleh && editor ? ' oleh ' + d.oleh : '') : '') : 'Kalendar akademik tahunan sekolah.')));
 
+  if (TKW.sub !== 'takwim') {
+    var L = await paparLampiran(TKW.sub, TKW.tahun);
+    return h('div', null, h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Takwim Sekolah'), h('p', null, L.ket))),
+      h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, alat), L.badan);
+  }
   if (!d) {
     kandungan.appendChild(h('div', { class: 'kad kosong' },
       h('p', null, 'Belum ada takwim untuk tahun ' + TKW.tahun + '.'),
@@ -1458,10 +1631,15 @@ function salinTakwim(d) { return { tahun: d.tahun, versi: d.versi || '', title: 
 // t.tahun = tahun simpanan (kunci). t.versi = versi takwim yang sedang disunting ('' untuk import baharu/ganti).
 // Selepas simpan, paparan beralih ke tahun itu.
 async function simpanTakwim(t) {
-  var r;
+  var r, lamp = t.lampiran, bersih = Object.assign({}, t); delete bersih.lampiran;
   // Jika ditolak (cth. Editor lain baru menyimpan), lukis semula dengan data terkini supaya pengguna boleh terus ulang.
-  try { r = await panggil('takwimSimpan', { takwim: t, tahun: t.tahun, versi: t.versi || '' }, { penuh: true }); }
+  try { r = await panggil('takwimSimpan', { takwim: bersih, tahun: t.tahun, versi: t.versi || '' }, { penuh: true }); }
   catch (e) { if (t.versi) render(); throw e; } toast(r.message, 'berjaya');
+  // Lampiran (helaian lain dalam Excel yang sama) disimpan selepas takwim utama berjaya; kegagalan tidak membatalkan takwim.
+  if (lamp && Object.keys(lamp).length) {
+    try { toast((await panggil('takwimLampiranSimpan', { tahun: r.data.tahun, lampiran: lamp }, { penuh: true, senyap: true })).message, 'berjaya'); }
+    catch (e) { toast('Takwim disimpan, tetapi lampiran gagal disimpan: ' + (e && e.message) + ' (pastikan kod pelayan Code.gs sudah dikemas kini dan diterbitkan semula). Gunakan "⬆ Muat naik lampiran" untuk cuba lagi.', 'ralat'); }
+  }
   if (r.data.tahun !== S.tahun) tukarTahunTakwim(r.data.tahun); else render();
 }
 
@@ -1475,11 +1653,12 @@ async function importTakwim(fail) {
   var X = await muatXLSX(); beban(1);
   var wb, hasil = null, ralat = [];
   try {
-    wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true });
+    wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true, cellNF: true });
     for (var i = 0; i < wb.SheetNames.length && !hasil; i++) { try { hasil = tkBacaHelaian(X, wb, wb.SheetNames[i]); } catch (e) { ralat.push(wb.SheetNames[i] + ': ' + e.message); } }
   } catch (e) { ralat.push(e.message); } finally { beban(-1); }
   if (!hasil) { modal({ tajuk: 'Fail tidak dapat dibaca', isi: h('div', null, h('p', null, 'Format takwim tidak dikenali.'), h('ul', null, ralat.map(function (r) { return h('li', null, r); })),
     h('p', { class: 'diam' }, 'Format yang disokong: lajur pertama nama hari (Isnin…Ahad), baris tajuk dengan nama bulan, setiap bulan dua lajur (tarikh + acara, dan "1" untuk hari persekolahan), legend berwarna di bawah jadual.')), butang: [{ label: 'Tutup' }] }); return; }
+  var lamp = tkBacaLampiran(X, wb); if (Object.keys(lamp.hasil).length) hasil.lampiran = lamp.hasil;
   var mula = hasil.months[0], akhir = hasil.months[hasil.months.length - 1], acara = tkSenaraiAcara(hasil).length;
   var jumHari = hasil.months.reduce(function (s, mo) { return s + tkHariSekolah(hasil, mo); }, 0);
   // Tahun simpanan = tahun dipilih di bar atas (seperti Jawatankuasa). Tahun dikesan daripada Excel diberi sebagai pilihan jika berbeza.
@@ -1503,13 +1682,95 @@ async function importTakwim(fail) {
     h('p', null, h('b', null, hasil.title || '(tiada tajuk)')),
     h('ul', null, h('li', null, 'Tempoh: ' + mula.label + ' ' + mula.y + ' – ' + akhir.label + ' ' + akhir.y + ' (' + hasil.months.length + ' bulan)'),
       h('li', null, acara + ' acara · ' + jumHari + ' hari persekolahan'), h('li', null, 'Helaian: ' + hasil.helaian),
+      Object.keys(lamp.hasil).length ? h('li', null, 'Lampiran turut disimpan: ' + TKW_LAMP.filter(function (x) { return lamp.hasil[x.k]; }).map(function (x) { return x.label; }).join(', ')) : null,
       h('li', null, 'Kategori: ', hasil.cats.map(function (c) { return h('span', { style: 'margin-right:.6rem;white-space:nowrap' }, h('i', { class: 'tkw-cip', style: 'background:' + c.color }), c.name); }))),
-    hasil.warnings.length ? h('div', { class: 'amaran-kotak' }, '⚠ ' + hasil.warnings.join(' ')) : null,
+    hasil.warnings.length || lamp.ralat.length ? h('div', { class: 'amaran-kotak' }, '⚠ ' + hasil.warnings.concat(lamp.ralat).join(' ')) : null,
     medan('Simpan sebagai', selTahun), amaranTahun,
     h('p', { class: 'diam' }, 'Pembetulan kecil boleh dibuat selepas ini dengan klik pada tarikh.')),
     butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () { hasil.tahun = Number(selTahun.value); await simpanTakwim(hasil); }) }] });
   btnSimpan = $('#lapis footer .btn.utama');
   kemaskini();
+}
+
+/* ---------- Paparan lampiran ---------- */
+function tkJanaModul(m, def, tahun) {
+  var bekas = h('div', { class: 'tkw tkw-lamp tkw-v-' + (def.lebar ? 'lebar' : 'biasa') }), jadual = [];
+  var q = h('input', { type: 'search', placeholder: 'Cari…' }), bil = h('span', { class: 'diam' });
+  function tapis() {
+    var k = q.value.trim().toLowerCase(), n = 0, jum = 0;
+    jadual.forEach(function (tr) { var tunjuk = !k || tr.getAttribute('data-q').indexOf(k) >= 0; tr.style.display = tunjuk ? '' : 'none'; jum++; if (tunjuk) n++; });
+    bil.textContent = k ? n + ' daripada ' + jum + ' baris' : '';
+  }
+  q.addEventListener('input', tapis);
+  async function excel() {
+    var X = await muatXLSX(), rows = [[m.tajuk || def.label + ' ' + tahun]];
+    if (m.ket) rows.push([m.ket]);
+    m.bahagian.forEach(function (b) {
+      rows.push([]); if (b.tajuk) rows.push([b.tajuk]); rows.push(b.lajur);
+      b.baris.forEach(function (r) { rows.push(r.map(function (x) { var n = /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : x; return n; })); });
+      b.nota.forEach(function (n) { rows.push([n]); });
+    });
+    var ws = X.utils.aoa_to_sheet(rows), wb = X.utils.book_new(); ws['!cols'] = [{ wch: 34 }, { wch: 28 }, { wch: 28 }, { wch: 28 }, { wch: 24 }, { wch: 24 }];
+    X.utils.book_append_sheet(wb, ws, def.label.slice(0, 31)); X.writeFile(wb, 'Takwim-' + def.label.replace(/\s+/g, '-') + '-' + tahun + '.xlsx'); toast('Fail Excel dimuat turun.', 'berjaya');
+  }
+  bekas.appendChild(h('div', { class: 'baris-alat tiada-cetak' }, q, bil, h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / PDF'),
+    h('button', { class: 'btn', onclick: ujiTindakan(excel) }, '📗 Muat turun Excel')));
+  bekas.appendChild(h('p', { class: 'tkw-tajuk' }, m.tajuk || (def.label + ' ' + tahun)));
+  if (m.ket) bekas.appendChild(h('p', { class: 'diam', style: 'text-align:center;margin:-4px 0 8px' }, m.ket));
+  m.bahagian.forEach(function (b) {
+    if (b.tajuk) bekas.appendChild(h('h3', { class: 'tkw-h3' }, b.tajuk));
+    var badan = h('tbody');
+    b.baris.forEach(function (r, i) {
+      var tr = h('tr', { class: b.tebal.indexOf(i) >= 0 ? 'tebal' : '', 'data-q': r.join(' ').toLowerCase().replace(/\s+/g, ' ') },
+        r.map(function (x) { return h('td', { class: /^-?\d+([.,]\d+)?$/.test(x) ? 'n' : '' }, x); }));
+      badan.appendChild(tr); if (b.tebal.indexOf(i) < 0) jadual.push(tr);
+    });
+    bekas.appendChild(h('div', { class: 'tkw-skrol' }, h('table', { class: 'tkw-jad' }, h('thead', null, h('tr', null, b.lajur.map(function (l) { return h('th', null, l); }))), badan)));
+    b.nota.forEach(function (n) { bekas.appendChild(h('p', { class: 'tkw-lamp-nota' }, n)); });
+  });
+  return bekas;
+}
+// Muat satu lampiran daripada pelayan dan lukis. Pulangan: { ket, badan }
+async function paparLampiran(kunci, tahun) {
+  var def = tkLamp(kunci), r = await panggil('takwimLampiranDapat', { tahun: tahun, kunci: kunci });
+  if (!r.data) return { ket: def.label, badan: h('div', { class: 'kad kosong' }, h('p', null, 'Belum ada data ' + def.label + ' untuk tahun ' + tahun + '.')) };
+  return { ket: def.label + ' · ' + tahun + (r.dikemaskini ? ' · dikemas kini ' + r.dikemaskini + (r.oleh && boleh('PENGURUS') ? ' oleh ' + r.oleh : '') : ''), badan: tkJanaModul(r.data, def, tahun) };
+}
+
+/* ---------- Muat naik lampiran sahaja (tanpa menggantikan takwim utama) ---------- */
+function pilihFailLampiran() {
+  var inp = h('input', { type: 'file', accept: '.xlsx,.xls,.xlsm' });
+  inp.addEventListener('change', ujiTindakan(async function () { if (inp.files[0]) await importLampiran(inp.files[0]); }));
+  inp.click();
+}
+async function bacaBukuLampiran(fail) {
+  var X = await muatXLSX(); beban(1);
+  try { var wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true, cellNF: true }); return tkBacaLampiran(X, wb); }
+  catch (e) { return { hasil: {}, ralat: [e.message] }; } finally { beban(-1); }
+}
+function senaraiLampiranUi(hasil) {
+  return TKW_LAMP.filter(function (d) { return hasil[d.k]; }).map(function (d) {
+    var m = hasil[d.k], br = m.bahagian.reduce(function (s, b) { return s + b.baris.length; }, 0);
+    return h('li', null, d.ikon + ' ' + d.label + ' — ' + br + ' baris (helaian "' + m.helaian + '")');
+  });
+}
+async function importLampiran(fail) {
+  var lamp = await bacaBukuLampiran(fail), hasil = lamp.hasil, ada = Object.keys(hasil);
+  if (!ada.length) { modal({ tajuk: 'Tiada lampiran dijumpai', isi: h('div', null, h('p', null, 'Fail ini tidak mengandungi helaian lampiran takwim.'),
+    lamp.ralat.length ? h('ul', null, lamp.ralat.map(function (r) { return h('li', null, r); })) : null,
+    h('p', { class: 'diam' }, 'Nama helaian yang dikenali: "4 ZON", "CADANGAN TUAN RUMAH", "MRSM IKUT NEGERI", "KALENDAR AKADEMIK", "HARI PERSEKOLAHAN".')), butang: [{ label: 'Tutup' }] }); return; }
+  var dikesan = (String(fail.name).match(/20\d\d/) || [])[0], pilihan = unikNombor([S.tahun, dikesan ? Number(dikesan) : 0]);
+  var selTahun = h('select', null, pilihan.map(function (t) { return h('option', { value: t, selected: t === (dikesan ? Number(dikesan) : S.tahun) }, 'Takwim ' + t + (t === S.tahun ? ' (tahun dipilih di atas)' : '')); }));
+  modal({ tajuk: 'Muat naik lampiran takwim', lebar: true, isi: h('div', null,
+    h('p', null, 'Helaian yang dijumpai dalam ', h('b', null, fail.name), ':'), h('ul', null, senaraiLampiranUi(hasil)),
+    lamp.ralat.length ? h('div', { class: 'amaran-kotak' }, '⚠ ' + lamp.ralat.join(' ')) : null,
+    medan('Simpan sebagai lampiran tahun', selTahun),
+    h('p', { class: 'diam' }, 'Lampiran sedia ada bagi tahun itu akan digantikan. Takwim utama (kalendar BPM) tidak diubah.')),
+    butang: [{ label: 'Batal' }, { label: 'Simpan lampiran', kelas: 'utama', onClick: ujiTindakan(async function () {
+      var t = Number(selTahun.value);
+      var r = await panggil('takwimLampiranSimpan', { tahun: t, lampiran: hasil }, { penuh: true });
+      toast(r.message, 'berjaya'); if (t !== S.tahun) tukarTahunTakwim(t); else render();
+    }) }] });
 }
 
 /* ---------- Sunting hari ---------- */

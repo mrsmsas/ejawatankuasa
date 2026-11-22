@@ -11,7 +11,10 @@ var SKEMA = {
   LogAudit: ['masa', 'pengguna', 'tindakan', 'entiti', 'idEntiti', 'sebelum', 'selepas'],
   Tetapan: ['kunci', 'nilai'],
   // Satu baris bagi setiap tahun takwim. Data hari (JSON) dipecah ke hari1..hari4 kerana had 50,000 aksara satu sel.
-  Takwim: ['tahun', 'tajuk', 'bulan', 'kategori', 'nota', 'hari1', 'hari2', 'hari3', 'hari4', 'dikemaskini', 'oleh']
+  Takwim: ['tahun', 'tajuk', 'bulan', 'kategori', 'nota', 'hari1', 'hari2', 'hari3', 'hari4', 'dikemaskini', 'oleh'],
+  // Lampiran takwim (4 Zon, Cadangan Tuan Rumah, MRSM Ikut Negeri, Kalendar Akademik, Hari Persekolahan): satu baris bagi setiap tahun + modul.
+  // id = tahun|kunci. Data modul (JSON) dipecah ke data1..data4 kerana had 50,000 aksara satu sel.
+  TakwimLampiran: ['id', 'tahun', 'kunci', 'data1', 'data2', 'data3', 'data4', 'dikemaskini', 'oleh']
 };
 var TEKS_ = ['staffId', 'asgId', 'jkId', 'posisiId', 'kod', 'telefon', 'emel', 'tarikhEfektif', 'tarikhLantik'];
 var PERANAN = { PENTADBIR: 3, PENGURUS: 2, PELIHAT: 1 };
@@ -599,7 +602,9 @@ function takwimDapat_(pg, a) {
   var semua = baca_('Takwim'), tahun = Number(a.tahun);
   var senarai = semua.map(function (r) { return { tahun: Number(r.tahun), tajuk: String(r.tajuk || '') }; }).sort(function (x, y) { return x.tahun - y.tahun; });
   var r = semua.filter(function (x) { return Number(x.tahun) === tahun; })[0];
-  return ok_({ senarai: senarai, takwim: r ? takwimUrai_(r) : null });
+  var lampiran = baca_('TakwimLampiran').filter(function (x) { return Number(x.tahun) === tahun; }).map(function (x) { return String(x.kunci); })
+    .filter(function (k) { return TAKWIM_LAMPIRAN_.indexOf(k) >= 0; }).sort(function (x, y) { return TAKWIM_LAMPIRAN_.indexOf(x) - TAKWIM_LAMPIRAN_.indexOf(y); });
+  return ok_({ senarai: senarai, takwim: r ? takwimUrai_(r) : null, lampiran: lampiran });
 }
 function takwimSimpan_(pg, a) {
   var t = takwimBersih_(a.takwim), json = JSON.stringify(t.days);
@@ -629,14 +634,66 @@ function takwimSimpan_(pg, a) {
 }
 function takwimPadam_(pg, a) {
   var tahun = Number(a.tahun); if (!tahun) tolak_('Tahun tidak sah.');
-  padam_('Takwim', 'tahun', tahun);
+  var ada = baca_('Takwim').some(function (r) { return Number(r.tahun) === tahun; });
+  if (ada) padam_('Takwim', 'tahun', tahun);
+  var lamp = baca_('TakwimLampiran').filter(function (r) { return Number(r.tahun) === tahun; });
+  if (!ada && !lamp.length) tolak_('Takwim ' + tahun + ' tidak dijumpai.');
+  lamp.forEach(function (r) { padam_('TakwimLampiran', 'id', r.id); });
   log_(pg.emel, 'PADAM_TAKWIM', 'Takwim', String(tahun), '', ''); return ok_(null, 'Takwim ' + tahun + ' dipadam.');
+}
+
+// ---------- Lampiran takwim ----------
+// Setiap modul: { tajuk, ket, bahagian: [ { tajuk, lajur: [teks], baris: [[teks]], tebal: [indeks baris], nota: [teks] } ] }. Dibaca daripada Excel di pelayar.
+var TAKWIM_LAMPIRAN_ = ['zon', 'tuanrumah', 'negeri', 'akademik', 'hari'];
+function takwimLampiranBersih_(m) {
+  if (!m || typeof m !== 'object') tolak_('Data lampiran tidak sah.');
+  var senarai = function (a, maks) { return Array.isArray(a) ? a.slice(0, maks) : []; };
+  var teks = function (x, maks) { return takwimTeks_(x, maks); };
+  var bahagian = senarai(m.bahagian, 12).map(function (b) {
+    b = b || {};
+    var lajur = senarai(b.lajur, 30).map(function (x) { return teks(x, 80); });
+    var baris = senarai(b.baris, 300).map(function (r) { return senarai(r, 30).map(function (x) { return teks(x, 600); }); });
+    var tebal = senarai(b.tebal, 300).map(Number).filter(function (n) { return Math.floor(n) === n && n >= 0 && n < baris.length; });
+    return { tajuk: teks(b.tajuk, 200), lajur: lajur, baris: baris, tebal: tebal, nota: senarai(b.nota, 20).map(function (x) { return teks(x, 600); }).filter(Boolean) };
+  }).filter(function (b) { return b.baris.length; });
+  if (!bahagian.length) tolak_('Lampiran kosong.');
+  return { tajuk: teks(m.tajuk, 200), ket: teks(m.ket, 400), bahagian: bahagian };
+}
+function takwimLampiranDapat_(pg, a) {
+  var tahun = Number(a.tahun), kunci = String(a.kunci || '');
+  if (TAKWIM_LAMPIRAN_.indexOf(kunci) < 0) tolak_('Lampiran tidak dikenali.');
+  var r = baca_('TakwimLampiran').filter(function (x) { return String(x.id) === tahun + '|' + kunci; })[0];
+  if (!r) return ok_({ data: null });
+  var data = takwimJson_(['data1', 'data2', 'data3', 'data4'].map(function (k) { return String(r[k] || '').replace(/^~/, ''); }).join(''), null);
+  return ok_({ data: data, dikemaskini: String(r.dikemaskini || ''), oleh: String(r.oleh || '') });
+}
+function takwimLampiranSimpan_(pg, a) {
+  var tahun = Number(a.tahun);
+  if (Math.floor(tahun) !== tahun || tahun < 2000 || tahun > 2100) tolak_('Tahun tidak sah.');
+  var masuk = a.lampiran; if (!masuk || typeof masuk !== 'object') tolak_('Tiada lampiran untuk disimpan.');
+  var kunci = Object.keys(masuk); if (!kunci.length) tolak_('Tiada lampiran untuk disimpan.');
+  kunci.forEach(function (k) { if (TAKWIM_LAMPIRAN_.indexOf(k) < 0) tolak_('Lampiran tidak dikenali: ' + takwimTeks_(k, 30)); });
+  var bersih = {}, bahagianData = ['data1', 'data2', 'data3', 'data4'];
+  kunci.forEach(function (k) {
+    bersih[k] = JSON.stringify(takwimLampiranBersih_(masuk[k]));
+    if (bersih[k].length > TAKWIM_SEL_ * bahagianData.length) tolak_('Lampiran ' + k + ' terlalu besar untuk disimpan.');
+  });
+  if (!db_().getSheetByName('TakwimLampiran')) ciptaHelaian_(); // pemasangan lama yang belum ada helaian ini
+  var tarikh = Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', 'yyyy-MM-dd HH:mm'), ada = baca_('TakwimLampiran');
+  kunci.forEach(function (k) {
+    var id = tahun + '|' + k, json = bersih[k], baris = { id: id, tahun: tahun, kunci: k, dikemaskini: tarikh, oleh: pg.emel };
+    bahagianData.forEach(function (c, i) { var p = json.substring(i * TAKWIM_SEL_, (i + 1) * TAKWIM_SEL_); baris[c] = p ? takwimSel_(p) : ''; });
+    if (ada.some(function (r) { return String(r.id) === id; })) kemas_('TakwimLampiran', 'id', id, baris); else tambah_('TakwimLampiran', [baris]);
+  });
+  log_(pg.emel, 'UBAH_LAMPIRAN_TAKWIM', 'TakwimLampiran', String(tahun), '', { lampiran: kunci });
+  return ok_({ tahun: tahun, lampiran: kunci }, 'Lampiran takwim ' + tahun + ' disimpan (' + kunci.length + ' bahagian).');
 }
 
 var LALUAN_ = {
   logout: { min: 'PELIHAT', fn: logout_ },
   takwimDapat: { min: 'PELIHAT', fn: takwimDapat_ }, takwimSimpan: { min: 'PENGURUS', fn: takwimSimpan_, tulis: true },
-  takwimPadam: { min: 'PENTADBIR', fn: takwimPadam_, tulis: true }, tukarKata: { min: 'PELIHAT', fn: tukarKata_ },
+  takwimPadam: { min: 'PENTADBIR', fn: takwimPadam_, tulis: true },
+  takwimLampiranDapat: { min: 'PELIHAT', fn: takwimLampiranDapat_ }, takwimLampiranSimpan: { min: 'PENGURUS', fn: takwimLampiranSimpan_, tulis: true }, tukarKata: { min: 'PELIHAT', fn: tukarKata_ },
   muatAsas: { min: 'PELIHAT', fn: muatAsas_ }, dashboard: { min: 'PELIHAT', fn: dashboard_ }, senaraiJK: { min: 'PELIHAT', fn: senaraiJK_ },
   butiranJK: { min: 'PELIHAT', fn: butiranJK_ }, senaraiStaf: { min: 'PELIHAT', fn: senaraiStaf_ }, profilStaf: { min: 'PELIHAT', fn: profilStaf_ },
   senaraiPosisi: { min: 'PELIHAT', fn: senaraiPosisi_ }, eksportTugasan: { min: 'PELIHAT', fn: eksportTugasan_ }, laporanInduk: { min: 'PELIHAT', fn: laporanInduk_ }, banding: { min: 'PELIHAT', fn: banding_ },

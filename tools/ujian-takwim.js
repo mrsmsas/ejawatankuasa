@@ -25,7 +25,7 @@ console.log('Ujian Takwim');
 ujian('Helaian Takwim belum wujud: bacaan pulangkan kosong', () => {
   delete P.helaian.Takwim;
   const r = P.api('takwimDapat', { tahun: 2026 }, pelihat);
-  assert.ok(r.success, r.message); assert.deepStrictEqual(r.data, { senarai: [], takwim: null });
+  assert.ok(r.success, r.message); assert.deepStrictEqual(r.data, { senarai: [], takwim: null, lampiran: [] });
 });
 ujian('Viewer tidak boleh menyimpan; Editor tidak boleh memadam', () => {
   assert.strictEqual(P.api('takwimSimpan', { takwim: contoh() }, pelihat).code, 'TIADA_AKSES');
@@ -108,8 +108,47 @@ ujian('Edit serentak: simpanan berdasarkan salinan lama ditolak, edit pertama ti
   // Import/ganti Excel (versi '') tetap dibenarkan
   assert.ok(P.api('takwimSimpan', { takwim: contoh(), tahun: 2026, versi: '' }, editor).success);
 });
+const modul = (tajuk, n) => ({ tajuk, ket: 'ket', bahagian: [{ tajuk: 'Bahagian A', lajur: ['A', 'B'], baris: Array.from({ length: n || 3 }, (_, i) => ['=SUM(1)', 'baris ' + i + '\nbaris dua']), tebal: [0, 99], nota: ['nota 1'] }] });
+ujian('Lampiran takwim: simpan, baca, kebenaran, input tidak sah', () => {
+  const lamp = { zon: modul('4 ZON'), hari: modul('HARI', 5) };
+  assert.strictEqual(P.api('takwimLampiranSimpan', { tahun: 2027, lampiran: lamp }, pelihat).code, 'TIADA_AKSES');
+  assert.ok(P.api('takwimLampiranSimpan', { tahun: 2027, lampiran: lamp }, editor).success);
+  assert.ok(P.helaian.TakwimLampiran, 'helaian dicipta automatik');
+  P.helaian.TakwimLampiran.d.slice(1).forEach(b => b.forEach(x => assert.ok(!/^[=+\-@]/.test(String(x)), 'sel formula: ' + x)));
+  assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.lampiran, ['zon', 'hari']);
+  assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2026 }, pelihat).data.lampiran, []);
+  const r = P.api('takwimLampiranDapat', { tahun: 2027, kunci: 'hari' }, pelihat).data;
+  assert.strictEqual(r.data.bahagian[0].baris.length, 5); assert.strictEqual(r.data.bahagian[0].baris[0][1], 'baris 0\nbaris dua');
+  assert.deepStrictEqual(r.data.bahagian[0].tebal, [0]);             // indeks di luar julat dibuang
+  assert.strictEqual(r.data.bahagian[0].baris[0][0], '=SUM(1)');       // teks dikekalkan (tidak jadi formula)
+  assert.strictEqual(P.api('takwimLampiranDapat', { tahun: 2027, kunci: 'negeri' }, pelihat).data.data, null);
+  assert.strictEqual(P.api('takwimLampiranDapat', { tahun: 2027, kunci: 'x' }, pelihat).success, false);
+  // Simpan semula = ganti (tiada pendua) dan bahagian lain tidak terjejas
+  assert.ok(P.api('takwimLampiranSimpan', { tahun: 2027, lampiran: { zon: modul('4 ZON baharu', 2) } }, editor).success);
+  assert.strictEqual(P.helaian.TakwimLampiran.d.length, 3);
+  assert.strictEqual(P.api('takwimLampiranDapat', { tahun: 2027, kunci: 'zon' }, pelihat).data.data.tajuk, '4 ZON baharu');
+  assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.lampiran, ['zon', 'hari']);
+  [{ tahun: 1999, lampiran: lamp }, { tahun: 2027, lampiran: {} }, { tahun: 2027, lampiran: { lain: modul('x') } }, { tahun: 2027, lampiran: { zon: null } },
+    { tahun: 2027, lampiran: { zon: { bahagian: [] } } }, { tahun: 2027 }].forEach(u => assert.strictEqual(P.api('takwimLampiranSimpan', u, editor).success, false, JSON.stringify(u).slice(0, 80)));
+});
+ujian('Lampiran besar dipecah ke beberapa sel; terlalu besar ditolak', () => {
+  const m = modul('BESAR', 1); m.bahagian[0].baris = Array.from({ length: 300 }, (_, i) => Array.from({ length: 6 }, () => 'Y'.repeat(60) + i));
+  assert.ok(P.api('takwimLampiranSimpan', { tahun: 2027, lampiran: { tuanrumah: m } }, editor).success);
+  const d = P.api('takwimLampiranDapat', { tahun: 2027, kunci: 'tuanrumah' }, pelihat).data.data;
+  assert.strictEqual(d.bahagian[0].baris.length, 300); assert.ok(d.bahagian[0].baris[299][5].endsWith('299'));
+  m.bahagian[0].baris = Array.from({ length: 300 }, () => Array.from({ length: 30 }, () => 'Z'.repeat(600)));
+  assert.strictEqual(P.api('takwimLampiranSimpan', { tahun: 2027, lampiran: { tuanrumah: m } }, editor).success, false);
+});
 ujian('Admin memadam takwim', () => {
   assert.ok(P.api('takwimPadam', { tahun: 2027 }, admin).success);
   assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.senarai.map(x => x.tahun), [2026]);
+});
+ujian('Padam takwim turut memadam lampiran tahun itu; tahun tanpa takwim tetapi ada lampiran masih boleh dipadam', () => {
+  assert.deepStrictEqual(P.api('takwimDapat', { tahun: 2027 }, pelihat).data.lampiran, []);
+  assert.strictEqual(P.helaian.TakwimLampiran.d.length, 1);               // hanya baris tajuk
+  assert.ok(P.api('takwimLampiranSimpan', { tahun: 2028, lampiran: { negeri: modul('N') } }, editor).success);
+  assert.ok(P.api('takwimPadam', { tahun: 2028 }, admin).success);
+  assert.strictEqual(P.helaian.TakwimLampiran.d.length, 1);
+  assert.strictEqual(P.api('takwimPadam', { tahun: 2028 }, admin).success, false);
 });
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
