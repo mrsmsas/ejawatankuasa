@@ -48,6 +48,39 @@ function tkUraiSel(raw) {
   var d = s.match(/^\s*(\d{1,2})(?!\d)\s*([\s\S]*)$/);
   return d ? { mk: mk, d: +d[1], t: tkBersih(d[2]) } : null;
 }
+/* SheetJS tidak membaca isian gradient (sel dua warna menyerong = dua program bertindih) dan indeks isian rata selepas gradient menjadi tersasar,
+   jadi apabila fail ada gradient, SEMUA warna sel dibaca terus daripada XML mentah dalam .xlsx.
+   Pulangan: { 'G14': { a: 'WARNA1' } } (rata) atau { a, b, d: darjah } (dua warna) untuk helaian itu; null jika fail tiada gradient (guna SheetJS biasa). */
+function tkTeksFail(wb, laluan) {
+  var f = wb && wb.files && wb.files[laluan]; if (!f || f.content == null) return '';
+  try { return typeof f.content === 'string' ? f.content : new TextDecoder('utf-8').decode(f.content); } catch (e) { return ''; }
+}
+function tkAttr(tag, nama) { var m = tag.match(new RegExp('\\b' + nama + '="([^"]*)"')); return m ? m[1].replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') : null; }
+function tkPetaIsian(wb, namaHelaian) {
+  var gaya = tkTeksFail(wb, 'xl/styles.xml'); if (gaya.indexOf('<gradientFill') < 0) return null;
+  var isian = [], blokIsian = gaya.match(/<fills\b[^>]*>([\s\S]*?)<\/fills>/); if (!blokIsian) return null;
+  blokIsian[1].replace(/<fill>([\s\S]*?)<\/fill>/g, function (_, dalam) {
+    var g = dalam.match(/<gradientFill\b([^>]*)>([\s\S]*?)<\/gradientFill>/), hasil = null, rata = dalam.match(/<patternFill\b[^>]*\bpatternType="solid"[^>]*>[\s\S]*?<fgColor\b[^>]*\brgb="([0-9A-Fa-f]{6,8})"/);
+    if (rata) { var wr = rata[1].slice(-6).toUpperCase(); if (wr !== 'FFFFFF' && wr !== '000000') hasil = { a: wr }; }
+    if (g) {
+      var warna = []; g[2].replace(/<color\b[^>]*\brgb="([0-9A-Fa-f]{6,8})"/g, function (_2, rgb) { rgb = rgb.slice(-6).toUpperCase(); if (warna[warna.length - 1] !== rgb) warna.push(rgb); return ''; });
+      var a = warna[0], b = null; for (var i = 1; i < warna.length; i++) if (warna[i] !== a) b = warna[i];
+      if (a && b) hasil = { a: a, b: b, d: Number(tkAttr(g[1], 'degree')) || 0 };
+    }
+    isian.push(hasil); return '';
+  });
+  var blokXf = gaya.match(/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/); if (!blokXf) return null;
+  var xf = []; blokXf[1].replace(/<xf\b[^>]*?(?:\/>|>[\s\S]*?<\/xf>)/g, function (t) { xf.push(isian[Number(tkAttr(t, 'fillId'))] || null); return ''; });
+  if (!xf.some(Boolean)) return null;
+  // Cari fail helaian: xl/workbook.xml (nama -> r:id) + xl/_rels/workbook.xml.rels (r:id -> sasaran)
+  var idRel = null; tkTeksFail(wb, 'xl/workbook.xml').replace(/<sheet\b[^>]*>/g, function (t) { if (tkAttr(t, 'name') === namaHelaian) idRel = tkAttr(t, 'r:id'); return ''; });
+  var sasaran = null; if (idRel) tkTeksFail(wb, 'xl/_rels/workbook.xml.rels').replace(/<Relationship\b[^>]*>/g, function (t) { if (tkAttr(t, 'Id') === idRel) sasaran = tkAttr(t, 'Target'); return ''; });
+  if (!sasaran) return null;
+  var xml = tkTeksFail(wb, sasaran.charAt(0) === '/' ? sasaran.slice(1) : 'xl/' + sasaran); if (!xml) return null;
+  var peta = {}, ada = false;
+  xml.replace(/<c\b[^>]*>/g, function (t) { var r = tkAttr(t, 'r'), si = tkAttr(t, 's'); if (r && si != null && xf[Number(si)]) { peta[r] = xf[Number(si)]; ada = true; } return ''; });
+  return ada ? peta : null;
+}
 function tkBacaHelaian(X, wb, namaHelaian) {
   var ws = wb.Sheets[namaHelaian];
   if (!ws || !ws['!ref']) throw new Error('Helaian kosong.');
@@ -69,6 +102,8 @@ function tkBacaHelaian(X, wb, namaHelaian) {
     sebelum = m; return { y: y, m: m, label: TKW_BULAN[m], col: col };
   });
   // Tarikh dikira ikut kedudukan baris (baris pertama grid = Isnin minggu pertama) kerana sesetengah sel tarikh dibiarkan kosong.
+  var peta = null; try { peta = tkPetaIsian(wb, namaHelaian); } catch (e) { amaran.push('Warna sel tidak dapat dibaca terus daripada fail: ' + e.message); }
+  var isianSel = function (r, c, cl) { if (peta) return peta[X.utils.encode_cell({ r: r, c: c })] || null; var w = tkWarnaSel(cl); return w ? { a: w } : null; };
   var hari = {}, warnaGuna = {}, akhirGrid = kepala, tidakPadan = 0, mula = false, gi = -1;
   for (r = kepala + 1; r <= jl.e.r; r++) {
     var hw = tkHariDariTeks(tkTeksSel(sel(r, jl.s.c)));
@@ -82,7 +117,8 @@ function tkBacaHelaian(X, wb, namaHelaian) {
       if (p && p.d !== d) tidakPadan++;
       if (!p) p = { mk: '', t: raw.trim() && !/^\s*\[/.test(raw) ? tkBersih(raw) : '' };
       var rek = {}; if (p.t) rek.t = p.t; if (p.mk) rek.mk = p.mk;
-      var w = tkWarnaSel(cl); if (w) { rek.c = w; warnaGuna[w] = 1; }
+      var gr = isianSel(r, mo.col, cl);
+      if (gr) { rek.c = gr.a; warnaGuna[gr.a] = 1; if (gr.b) { rek.c2 = gr.b; if (gr.d !== 45) rek.gd = gr.d; warnaGuna[gr.b] = 1; } }
       if (tkTeksSel(sel(r, mo.col + 1)).trim() === '1') rek.s = 1;
       hari[tkIso(mo.y, mo.m, d)] = rek;
     });
@@ -93,13 +129,13 @@ function tkBacaHelaian(X, wb, namaHelaian) {
   for (r = akhirGrid + 1; r <= jl.e.r; r++) for (c = jl.s.c; c <= jl.e.c; c++) {
     var s2 = sel(r, c), t2 = tkBersih(tkTeksSel(s2)).replace(/\n/g, ' ');
     if (!t2 || /^\d+$/.test(t2)) continue;
-    var w2 = tkWarnaSel(s2);
+    var g2 = isianSel(r, c, s2), w2 = g2 ? g2.a : null;
     if (w2) { if (!legend[w2]) legend[w2] = t2; } else if (nota.indexOf(t2) < 0) nota.push(t2);
   }
   var kat = Object.keys(legend).map(function (k) { return { id: k, name: legend[k], color: '#' + k, legend: true }; });
   Object.keys(warnaGuna).forEach(function (k) {
     if (legend[k]) return;
-    var contoh = ''; for (var dk in hari) if (hari[dk].c === k && hari[dk].t) { contoh = hari[dk].t.split('\n')[0].replace(/\(.*$/, '').trim(); break; }
+    var contoh = ''; for (var dk in hari) if ((hari[dk].c === k || hari[dk].c2 === k) && hari[dk].t) { contoh = hari[dk].t.split('\n')[0].replace(/\(.*$/, '').trim(); break; }
     kat.push({ id: k, name: contoh ? 'Lain: ' + contoh : 'Warna #' + k, color: '#' + k, legend: false });
   });
   return { title: tajuk, months: bulan.map(function (b) { return { y: b.y, m: b.m, label: b.label }; }), days: hari, cats: kat, notes: nota, warnings: amaran, helaian: namaHelaian };
@@ -110,7 +146,7 @@ function tkSenaraiAcara(d) {
     var r = d.days[k]; if (!r.t) return;
     var akhir = k, n = tkEsok(k);
     while (r.c && d.days[n] && !d.days[n].t && d.days[n].c === r.c) { akhir = n; n = tkEsok(n); }
-    out.push({ mula: k, akhir: akhir, teks: r.t, kat: r.c || '' });
+    out.push({ mula: k, akhir: akhir, teks: r.t, kat: r.c || '', kat2: r.c2 || '' });
   });
   return out;
 }
@@ -270,13 +306,21 @@ function tkBacaLampiran(X, wb) {
 /* ---------- Bantuan paparan ---------- */
 function tkKat(d, id) { for (var i = 0; i < d.cats.length; i++) if (d.cats[i].id === id) return d.cats[i]; return null; }
 function tkWarnaTeks(hex) { hex = hex.replace('#', ''); var r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16); return (0.299 * r + 0.587 * g + 0.114 * b) < 140 ? '#fff' : '#000'; }
-function tkGaya(d, rek) { var c = rek && tkKat(d, rek.c); return c ? ' data-c="1" style="background:' + c.color + ';color:' + tkWarnaTeks(c.color) + '"' : ''; }
+// Dua program bertindih: sel dibelah menyerong dua warna (sama seperti isian gradient dalam Excel). Arah ikut darjah Excel (45 = kiri atas -> kanan bawah).
+var TKW_ARAH = { 0: 'to right', 45: 'to bottom right', 90: 'to bottom', 135: 'to bottom left', 180: 'to left', 225: 'to top left', 270: 'to top', 315: 'to top right' };
+function tkLatarDua(w1, w2, darjah) { var n = (Math.round(((((Number(darjah) || 45) % 360) + 360) % 360) / 45) * 45) % 360; return 'linear-gradient(' + TKW_ARAH[n] + ',' + w1 + ' 50%,' + w2 + ' 50%)'; }
+function tkGaya(d, rek) {
+  var c = rek && tkKat(d, rek.c); if (!c) return '';
+  var c2 = rek.c2 && tkKat(d, rek.c2);
+  if (c2) return ' data-c="1" data-c2="1" style="background:' + tkLatarDua(c.color, c2.color, rek.gd == null ? 45 : rek.gd) + ';color:' + (tkWarnaTeks(c.color) === '#fff' && tkWarnaTeks(c2.color) === '#fff' ? '#fff' : '#000') + '"';
+  return ' data-c="1" style="background:' + c.color + ';color:' + tkWarnaTeks(c.color) + '"';
+}
 function tkIsiHari(n, rek) { return (rek && rek.mk ? '<span class="tkw-mk">[' + tkEsc(rek.mk) + ']</span> ' : '') + '<b>' + n + '</b>' + (rek && rek.t ? ' ' + tkEsc(rek.t) : ''); }
 function tkHariSekolah(d, mo) { var n = 0; for (var i = 1; i <= tkBilHari(mo.y, mo.m); i++) { var r = d.days[tkIso(mo.y, mo.m, i)]; if (r && r.s) n++; } return n; }
 function tkLegend(d, kecil) {
   var h2 = '<div class="tkw-legend' + (kecil ? ' kecil' : '') + '">';
   d.cats.filter(function (c) { return !kecil || c.legend; }).forEach(function (c) { h2 += '<span><i style="background:' + c.color + '"></i>' + tkEsc(c.name) + '</span>'; });
-  if (!kecil) h2 += '<span><i style="background:#e3e3e3"></i>Hujung minggu</span><span><b class="tkw-mk">[α] [β]</b> Penanda minggu</span>';
+  if (!kecil) h2 += '<span><i style="background:linear-gradient(to bottom right,#bbb 50%,#fff 50%)"></i>Dua warna serong = program bertindih</span><span><i style="background:#e3e3e3"></i>Hujung minggu</span><span><b class="tkw-mk">[α] [β]</b> Penanda minggu</span>';
   h2 += '</div>';
   if (!kecil && d.notes && d.notes.length) h2 += '<div class="tkw-nota">' + d.notes.map(function (n) { return '<span>' + tkEsc(n) + '</span>'; }).join('') + '</div>';
   return h2;
@@ -410,19 +454,19 @@ function lukisSenaraiTakwim(bekas, d) {
   var bil = h('span', { class: 'diam' }), badan = h('tbody');
   function lukis() {
     TKW.tapis.q = q.value; TKW.tapis.c = k.value;
-    var ev = tkSenaraiAcara(d).filter(function (e) { return (!k.value || e.kat === k.value) && (!q.value || e.teks.toLowerCase().indexOf(q.value.toLowerCase()) >= 0); });
+    var ev = tkSenaraiAcara(d).filter(function (e) { return (!k.value || e.kat === k.value || e.kat2 === k.value) && (!q.value || e.teks.toLowerCase().indexOf(q.value.toLowerCase()) >= 0); });
     bil.textContent = ev.length + ' acara'; kosongkan(badan);
     ev.forEach(function (e) {
-      var c = tkKat(d, e.kat);
+      var c = tkKat(d, e.kat), c2 = e.kat2 && tkKat(d, e.kat2);
       badan.appendChild(h('tr', boleh('PENGURUS') ? { style: 'cursor:pointer', onclick: function () { dialogHariTakwim(d, e.mula); } } : null,
         h('td', { style: 'white-space:nowrap' }, tkTarikh(e.mula) + (e.akhir !== e.mula ? ' – ' + tkTarikh(e.akhir) : '')), h('td', null, tkHariDari(e.mula)),
-        h('td', { style: 'white-space:pre-line' }, e.teks), h('td', null, c ? h('span', null, h('i', { class: 'tkw-cip', style: 'background:' + c.color }), c.name) : '')));
+        h('td', { style: 'white-space:pre-line' }, e.teks), h('td', null, c ? h('span', null, h('i', { class: 'tkw-cip', style: 'background:' + c.color }), c.name) : '', c2 ? h('span', { style: 'display:block' }, h('i', { class: 'tkw-cip', style: 'background:' + c2.color }), c2.name) : '')));
     });
   }
   q.addEventListener('input', lukis); k.addEventListener('change', lukis);
   async function excel() {
     var X = await muatXLSX(), rows = [['Tarikh Mula', 'Tarikh Tamat', 'Hari', 'Acara', 'Kategori']];
-    tkSenaraiAcara(d).forEach(function (e) { var c = tkKat(d, e.kat); rows.push([e.mula, e.akhir, tkHariDari(e.mula), e.teks.replace(/\n/g, ' / '), c ? c.name : '']); });
+    tkSenaraiAcara(d).forEach(function (e) { var c = tkKat(d, e.kat); var c2 = e.kat2 && tkKat(d, e.kat2); rows.push([e.mula, e.akhir, tkHariDari(e.mula), e.teks.replace(/\n/g, ' / '), c ? c.name + (c2 ? ' + ' + c2.name : '') : '']); });
     var ws = X.utils.aoa_to_sheet(rows), wb = X.utils.book_new(); ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 9 }, { wch: 60 }, { wch: 22 }];
     X.utils.book_append_sheet(wb, ws, 'Takwim ' + d.tahun); X.writeFile(wb, 'Senarai-Acara-Takwim-' + d.tahun + '.xlsx'); toast('Fail Excel dimuat turun.', 'berjaya');
   }
@@ -459,7 +503,7 @@ async function importTakwim(fail) {
   var X = await muatXLSX(); beban(1);
   var wb, hasil = null, ralat = [];
   try {
-    wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true, cellNF: true });
+    wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true, cellNF: true, bookFiles: true });
     for (var i = 0; i < wb.SheetNames.length && !hasil; i++) { try { hasil = tkBacaHelaian(X, wb, wb.SheetNames[i]); } catch (e) { ralat.push(wb.SheetNames[i] + ': ' + e.message); } }
   } catch (e) { ralat.push(e.message); } finally { beban(-1); }
   if (!hasil) { modal({ tajuk: 'Fail tidak dapat dibaca', isi: h('div', null, h('p', null, 'Format takwim tidak dikenali.'), h('ul', null, ralat.map(function (r) { return h('li', null, r); })),
@@ -584,17 +628,18 @@ function dialogHariTakwim(d, k) {
   var rek = d.days[k] || {};
   var teks = h('textarea', { rows: 3, value: rek.t || '' });
   var kat = pilihSelect(d.cats.map(function (c) { return { nilai: c.id, label: c.name }; }), rek.c || '', '— Tiada warna —');
+  var kat2 = pilihSelect(d.cats.map(function (c) { return { nilai: c.id, label: c.name }; }), rek.c2 || '', '— Tiada (satu program sahaja) —');
   var mk = pilihSelect([{ nilai: 'α', label: 'α' }, { nilai: 'β', label: 'β' }], rek.mk || '', '—');
   var sek = h('input', { type: 'checkbox', checked: !!rek.s }), hingga = h('input', { type: 'date', min: k });
   modal({ tajuk: tkHariDari(k) + ', ' + tkTarikh(k), isi: h('div', null,
-    medan('Acara / catatan (Enter = baris baharu)', teks), medan('Kategori (warna)', kat), medan('Penanda minggu', mk),
+    medan('Acara / catatan (Enter = baris baharu)', teks), medan('Kategori (warna)', kat), medan('Warna kedua — jika dua program bertindih (sel dibelah dua serong)', kat2), medan('Penanda minggu', mk),
     h('label', { style: 'display:flex;gap:.4rem;align-items:center;margin:.5rem 0' }, sek, 'Hari persekolahan (dikira dalam jumlah hari)'),
     medan('Warnakan hingga tarikh (pilihan)', hingga)),
     butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () {
       var t = salinTakwim(d), baru = {}, v = teks.value.trim();
-      if (v) baru.t = v; if (kat.value) baru.c = kat.value; if (mk.value) baru.mk = mk.value; if (sek.checked) baru.s = 1;
+      if (v) baru.t = v; if (kat.value) baru.c = kat.value; if (kat.value && kat2.value && kat2.value !== kat.value) { baru.c2 = kat2.value; if (rek.gd != null && rek.c2) baru.gd = rek.gd; } if (mk.value) baru.mk = mk.value; if (sek.checked) baru.s = 1;
       t.days[k] = baru;
-      if (hingga.value && hingga.value > k) for (var n = tkEsok(k); n <= hingga.value; n = tkEsok(n)) { var r = t.days[n] || (t.days[n] = {}); if (kat.value) r.c = kat.value; else delete r.c; }
+      if (hingga.value && hingga.value > k) for (var n = tkEsok(k); n <= hingga.value; n = tkEsok(n)) { var r = t.days[n] || (t.days[n] = {}); if (kat.value) { r.c = kat.value; if (baru.c2) r.c2 = baru.c2; else delete r.c2; delete r.gd; } else { delete r.c; delete r.c2; delete r.gd; } }
       await simpanTakwim(t);
     }) }] });
 }

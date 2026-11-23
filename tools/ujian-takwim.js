@@ -45,6 +45,23 @@ ujian('Editor menyimpan takwim; helaian dicipta automatik; data dibersihkan', ()
   // Tiada sel bermula dengan aksara formula
   P.helaian.Takwim.d.slice(1).forEach(b => b.forEach(x => assert.ok(!/^[=+\-@]/.test(String(x)), 'sel formula: ' + x)));
 });
+ujian('Dua program bertindih: warna kedua (c2) dan arah (gd) disimpan; nilai tidak sah dibuang', () => {
+  const t = contoh(); t.cats.push({ id: '00B050', name: 'KELEPASAN', color: '#00B050', legend: true });
+  t.days['2026-02-18'] = { t: 'Bertindih', c: 'FF0000', c2: '00B050' };               // lalai 45 darjah: gd tidak disimpan
+  t.days['2026-02-19'] = { t: 'Arah lain', c: 'FF0000', c2: '00B050', gd: 315 };
+  t.days['2026-02-20'] = { t: 'c2 tiada dalam kategori', c: 'FF0000', c2: 'TIADA', gd: 10 };
+  t.days['2026-02-23'] = { t: 'c2 sama dengan c', c: 'FF0000', c2: 'FF0000' };
+  t.days['2026-02-24'] = { t: 'c2 tanpa c', c2: '00B050' };
+  t.days['2026-02-25'] = { t: 'gd tidak sah', c: 'FF0000', c2: '00B050', gd: 400 };
+  assert.ok(P.api('takwimSimpan', { takwim: t }, editor).success);
+  const d = P.api('takwimDapat', { tahun: 2026 }, pelihat).data.takwim.days;
+  assert.deepStrictEqual(d['2026-02-18'], { t: 'Bertindih', c: 'FF0000', c2: '00B050' });
+  assert.deepStrictEqual(d['2026-02-19'], { t: 'Arah lain', c: 'FF0000', c2: '00B050', gd: 315 });
+  assert.deepStrictEqual(d['2026-02-20'], { t: 'c2 tiada dalam kategori', c: 'FF0000' });
+  assert.deepStrictEqual(d['2026-02-23'], { t: 'c2 sama dengan c', c: 'FF0000' });
+  assert.deepStrictEqual(d['2026-02-24'], { t: 'c2 tanpa c' });
+  assert.deepStrictEqual(d['2026-02-25'], { t: 'gd tidak sah', c: 'FF0000', c2: '00B050' });
+});
 ujian('Simpan semula tahun sama menggantikan baris (tiada pendua) dan direkod dalam audit', () => {
   const t = contoh(); t.days['2026-02-18'] = { t: 'Acara baharu' };
   assert.ok(P.api('takwimSimpan', { takwim: t }, editor).success);

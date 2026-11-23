@@ -57,6 +57,7 @@ mrsmsas-jk-2027/
 
 ## Modul Takwim Sekolah
 
+- **Program bertindih**: sel Excel berisian gradient dua warna (belang serong) dikesan automatik semasa muat naik dan dipaparkan sebagai sel dua warna menyerong (medan `c2`/`gd` pada hari). Apabila fail ada gradient, semua warna sel dibaca terus daripada XML `.xlsx` kerana SheetJS tersasar indeks isian selepas gradient. Boleh juga ditetapkan secara manual melalui dialog hari ("Warna kedua"). **Code.gs mesti diterbitkan dahulu** sebelum antara muka baharu, kerana pelayan lama membuang `c2`.
 - Menu **📅 Takwim Sekolah**. Editor/System Admin memuat naik fail Excel takwim tahunan (format grid biasa: lajur Hari, dua lajur setiap bulan, legend berwarna di bawah). Fail dibaca **dalam pelayar** (SheetJS dari cdnjs): tarikh, acara, penanda minggu [α]/[β], warna → kategori (nama dari legend), jumlah hari persekolahan dan nota. Tiada kemasukan manual.
 - Tarikh dikira mengikut kedudukan baris (bukan nombor dalam sel), jadi sel tarikh yang dibiarkan kosong dalam Excel tetap betul. Tahun diambil daripada tajuk ("SESI 2026 / 2027") — berfungsi untuk mana-mana tahun.
 - Tiga paparan cetak: **Format Excel** (1 halaman A3 landskap), **Kalendar Bulanan** (A4, 2 bulan sehalaman), **Senarai Acara** (A4, cari/tapis, muat turun Excel).

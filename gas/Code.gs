@@ -598,6 +598,8 @@ function takwimBersih_(t) {
     var r = t.days[k] || {}, o = {}, teks = takwimTeks_(r.t, 400);
     if (teks) o.t = teks;
     if (r.c && idKat[r.c]) o.c = String(r.c);
+    // Dua program bertindih: warna kedua (sel dibelah menyerong) + arah dalam darjah (lalai 45 = kiri atas -> kanan bawah).
+    if (o.c && r.c2 && r.c2 !== r.c && idKat[r.c2]) { o.c2 = String(r.c2); var gd = Number(r.gd); if (gd >= 0 && gd < 360 && Math.floor(gd) === gd && gd !== 45) o.gd = gd; }
     if (r.mk === 'α' || r.mk === 'β') o.mk = r.mk;
     if (r.s) o.s = 1;
     if (o.t || o.c || o.mk || o.s) hari[k] = o;
