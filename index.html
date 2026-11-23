@@ -1607,6 +1607,7 @@ async function paparTakwim() {
     });
     alat2.appendChild(seg);
     alat2.appendChild(h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / PDF'));
+    if (TKW.paparan !== 'senarai') alat2.appendChild(h('button', { class: 'btn', onclick: ujiTindakan(function () { return muatTurunExcelTakwim(d); }), title: 'Muat turun takwim sebagai fail Excel berwarna (grid + senarai acara)' }, '📗 Muat turun Excel'));
     if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: function () { dialogKategoriTakwim(d); } }, '🎨 Kategori & tajuk'));
     if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: function () { pilihFailWarna(d); }, title: 'Baca Excel dan hanya tambah warna dua serong (program bertindih) pada hari yang sepadan — tiada data lain diubah' }, '🎨 Gabung warna bertindih (Excel)'));
   }
@@ -1854,6 +1855,101 @@ async function gabungWarnaTakwim(fail, d) {
       pr.tambah.forEach(function (x) { var r = t.days[x.k]; r.c2 = x.c2; if (x.gd != null) r.gd = x.gd; else delete r.gd; });
       await simpanTakwim(t);
     }) }] });
+}
+
+/* ---------- Muat turun Excel berwarna (sama seperti paparan Format Excel) ----------
+   SheetJS percuma tidak boleh menulis warna sel, jadi ExcelJS digunakan (dimuat hanya apabila butang ditekan).
+   Helaian 1 = grid takwim (warna, sel dua warna serong, jumlah hari, legend); Helaian 2 = senarai acara.
+   tkBinaBukuExcel ialah fungsi tulen: menerima pustaka ExcelJS dan takwim, memulangkan buku kerja (tidak menyentuh DOM). */
+var EXCELJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+function muatExcelJS() {
+  return new Promise(function (res, rej) {
+    if (window.ExcelJS) return res(window.ExcelJS);
+    var sk = document.createElement('script'); sk.src = EXCELJS_URL;
+    sk.onload = function () { res(window.ExcelJS); }; sk.onerror = function () { rej(new Error('Pustaka Excel tidak dapat dimuatkan. Semak sambungan internet.')); };
+    document.head.appendChild(sk);
+  });
+}
+function tkArgb(hex) { return 'FF' + String(hex).replace('#', '').toUpperCase(); }
+function tkIsianExcel(warna, warna2, darjah) {
+  if (!warna) return null;
+  if (!warna2) return { type: 'pattern', pattern: 'solid', fgColor: { argb: tkArgb(warna) } };
+  // Dua warna serong: gradient linear dengan perbatasan keras di tengah (sama seperti sel bertindih dalam Excel asal).
+  return { type: 'gradient', gradient: 'angle', degree: darjah == null ? 45 : darjah,
+    stops: [{ position: 0, color: { argb: tkArgb(warna) } }, { position: 0.5, color: { argb: tkArgb(warna) } }, { position: 0.5, color: { argb: tkArgb(warna2) } }, { position: 1, color: { argb: tkArgb(warna2) } }] };
+}
+function tkFontExcel(w1, w2) { var gelap = tkWarnaTeks(w1) === '#fff' && (!w2 || tkWarnaTeks(w2) === '#fff'); return gelap ? 'FFFFFFFF' : 'FF000000'; }
+function tkBinaBukuExcel(E, d) {
+  var wb = new E.Workbook(); wb.creator = 'eJawatankuasa'; wb.created = new Date();
+  var nb = d.months.length, jl = 2 + nb * 2, ofs = d.months.map(function (mo) { return tkDow(mo.y, mo.m, 1); }), baris = 0;
+  d.months.forEach(function (mo, i) { baris = Math.max(baris, ofs[i] + tkBilHari(mo.y, mo.m)); });
+  var ws = wb.addWorksheet('Takwim ' + d.tahun, { views: [{ state: 'frozen', ySplit: 2 }],
+    pageSetup: { paperSize: 8, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } } });
+  var garis = { style: 'thin', color: { argb: 'FF555555' } }, sempadan = { top: garis, left: garis, bottom: garis, right: garis };
+  var FONT = 'Arial', abu = tkIsianExcel('D9D9D9'), abuMuda = tkIsianExcel('F2F2F2'), hujungMinggu = tkIsianExcel('E3E3E3');
+  ws.getColumn(1).width = 9; ws.getColumn(jl).width = 9;
+  for (var i = 0; i < nb; i++) { ws.getColumn(2 + i * 2).width = 38; ws.getColumn(3 + i * 2).width = 3.5; }
+  // Tajuk
+  ws.mergeCells(1, 1, 1, jl); var t = ws.getCell(1, 1); t.value = d.title; t.font = { name: FONT, size: 14, bold: true }; t.alignment = { horizontal: 'center', vertical: 'middle' }; ws.getRow(1).height = 26;
+  // Kepala bulan
+  function kepala(c, teks) { var x = ws.getCell(2, c); x.value = teks; x.font = { name: FONT, size: 11, bold: true }; x.fill = abu; x.border = sempadan; x.alignment = { horizontal: 'center', vertical: 'middle' }; }
+  kepala(1, 'Hari'); kepala(jl, 'Hari');
+  d.months.forEach(function (mo, i) { var c = 2 + i * 2; ws.mergeCells(2, c, 2, c + 1); kepala(c, mo.label + (i > 0 && mo.y !== d.months[0].y ? ' ' + mo.y : '')); ws.getCell(2, c + 1).border = sempadan; });
+  // Grid
+  for (var r = 0; r < baris; r++) {
+    var dw = r % 7, hm = dw >= 5, br = 3 + r;
+    [1, jl].forEach(function (c) { var x = ws.getCell(br, c); x.value = TKW_HARI[dw]; x.font = { name: FONT, size: 9, bold: true }; x.fill = hm ? hujungMinggu : abuMuda; x.border = sempadan; x.alignment = { vertical: 'top' }; });
+    d.months.forEach(function (mo, i) {
+      var n = r - ofs[i] + 1, c = 2 + i * 2, sel = ws.getCell(br, c), bil = ws.getCell(br, c + 1);
+      sel.border = sempadan; bil.border = sempadan;
+      if (n < 1 || n > tkBilHari(mo.y, mo.m)) return;
+      var rek = d.days[tkIso(mo.y, mo.m, n)] || {}, k1 = tkKat(d, rek.c), k2 = rek.c2 && tkKat(d, rek.c2);
+      var warnaFont = k1 ? tkFontExcel(k1.color, k2 && k2.color) : 'FF000000', rt = [];
+      if (rek.mk) rt.push({ text: '[' + rek.mk + '] ', font: { name: FONT, size: 8, bold: true, color: { argb: k1 ? warnaFont : 'FF1F4E9E' } } });
+      rt.push({ text: String(n), font: { name: FONT, size: 9, bold: true, color: { argb: warnaFont } } });
+      if (rek.t) rt.push({ text: ' ' + rek.t, font: { name: FONT, size: 9, color: { argb: warnaFont } } });
+      sel.value = { richText: rt }; sel.alignment = { wrapText: true, vertical: 'top' };
+      if (k1) sel.fill = tkIsianExcel(k1.color, k2 && k2.color, rek.gd); else if (hm) sel.fill = hujungMinggu;
+      if (hm) bil.fill = hujungMinggu;
+      if (rek.s) { bil.value = 1; bil.font = { name: FONT, size: 8, color: { argb: 'FF444444' } }; bil.alignment = { horizontal: 'center', vertical: 'top' }; }
+    });
+  }
+  // Jumlah hari persekolahan
+  var rj = 3 + baris, jum = 0; var tj = ws.getCell(rj, 1); tj.value = 'Jumlah';
+  d.months.forEach(function (mo, i) { var c = 2 + i * 2, n = tkHariSekolah(d, mo); jum += n; ws.mergeCells(rj, c, rj, c + 1); ws.getCell(rj, c).value = n + ' hari'; ws.getCell(rj, c + 1).border = sempadan; });
+  ws.getCell(rj, jl).value = jum;
+  for (var cj = 1; cj <= jl; cj++) { var xj = ws.getCell(rj, cj); xj.font = { name: FONT, size: 9, bold: true }; xj.fill = abuMuda; xj.border = sempadan; xj.alignment = { horizontal: 'center', vertical: 'middle' }; }
+  // Legend: satu kategori sebuah sel (warna + nama), disusun dalam lajur bulan
+  var rl = rj + 2, lj = 0;
+  d.cats.forEach(function (c) { var x = ws.getCell(rl + Math.floor(lj / nb), 2 + (lj % nb) * 2); lj++; x.value = c.name; x.fill = tkIsianExcel(c.color); x.font = { name: FONT, size: 9, color: { argb: tkWarnaTeks(c.color) === '#fff' ? 'FFFFFFFF' : 'FF000000' } }; x.border = sempadan; x.alignment = { vertical: 'middle' }; });
+  var ada2 = Object.keys(d.days).some(function (k) { return d.days[k].c2; });
+  var lain = [['Hujung minggu', hujungMinggu]]; if (ada2) lain.push(['Dua warna serong = program bertindih', null]);
+  lain.forEach(function (p) { var x = ws.getCell(rl + Math.floor(lj / nb), 2 + (lj % nb) * 2); lj++; x.value = p[0]; if (p[1]) x.fill = p[1]; x.font = { name: FONT, size: 9, italic: !p[1] }; if (p[1]) x.border = sempadan; });
+  var rn = rl + Math.ceil(lj / nb) + 1;
+  ws.getCell(rn, 2).value = '[α] [β] = Penanda minggu'; ws.getCell(rn, 2).font = { name: FONT, size: 9, bold: true }; rn++;
+  (d.notes || []).forEach(function (nt) { var x = ws.getCell(rn++, 2); x.value = nt; x.font = { name: FONT, size: 9 }; });
+  // Helaian 2: senarai acara
+  var w2 = wb.addWorksheet('Senarai Acara', { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  [['Tarikh Mula', 13], ['Tarikh Tamat', 13], ['Hari', 9], ['Acara', 64], ['Kategori', 30]].forEach(function (p, i) {
+    w2.getColumn(i + 1).width = p[1]; var x = w2.getCell(1, i + 1); x.value = p[0]; x.font = { name: FONT, size: 10, bold: true }; x.fill = abu; x.border = sempadan; x.alignment = { vertical: 'middle' };
+  });
+  tkSenaraiAcara(d).forEach(function (e, i) {
+    var k1 = tkKat(d, e.kat), k2 = e.kat2 && tkKat(d, e.kat2), br = 2 + i;
+    [e.mula, e.akhir, tkHariDari(e.mula), e.teks.replace(/\n/g, ' / '), k1 ? k1.name + (k2 ? ' + ' + k2.name : '') : ''].forEach(function (v, j) {
+      var x = w2.getCell(br, j + 1); x.value = v; x.font = { name: FONT, size: 10 }; x.border = sempadan; x.alignment = { vertical: 'top', wrapText: j >= 3 };
+    });
+    if (k1) { var kc = w2.getCell(br, 5); kc.fill = tkIsianExcel(k1.color, k2 && k2.color); kc.font = { name: FONT, size: 10, color: { argb: tkFontExcel(k1.color, k2 && k2.color) } }; }
+  });
+  return wb;
+}
+async function muatTurunExcelTakwim(d) {
+  var E = await muatExcelJS(); beban(1);
+  try {
+    var buf = await tkBinaBukuExcel(E, d).xlsx.writeBuffer(), nama = 'Takwim-' + d.tahun + '.xlsx';
+    var a = h('a', { href: URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })), download: nama });
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Fail ' + nama + ' dimuat turun.', 'berjaya');
+  } finally { beban(-1); }
 }
 
 /* ---------- Muat naik lampiran sahaja (tanpa menggantikan takwim utama) ---------- */
