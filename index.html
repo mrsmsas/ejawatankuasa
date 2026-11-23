@@ -1608,6 +1608,7 @@ async function paparTakwim() {
     alat2.appendChild(seg);
     alat2.appendChild(h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / PDF'));
     if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: function () { dialogKategoriTakwim(d); } }, '🎨 Kategori & tajuk'));
+    if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: function () { pilihFailWarna(d); }, title: 'Baca Excel dan hanya tambah warna dua serong (program bertindih) pada hari yang sepadan — tiada data lain diubah' }, '🎨 Gabung warna bertindih (Excel)'));
   }
   if (editor) alat2.appendChild(h('button', { class: 'btn' + (d ? '' : ' utama'), onclick: pilihFailTakwim, title: 'Tahun dikesan secara automatik daripada fail Excel' }, d ? '⬆ Ganti Excel takwim ' + TKW.tahun : '⬆ Muat naik Excel takwim'));
   if (editor) alat2.appendChild(h('button', { class: 'btn', onclick: pilihFailLampiran, title: 'Baca helaian 4 Zon, Cadangan Tuan Rumah, MRSM Ikut Negeri, Kalendar Akademik dan Hari Persekolahan — takwim utama tidak diganti' }, '⬆ Muat naik lampiran'));
@@ -1791,6 +1792,68 @@ async function paparLampiran(kunci, tahun) {
   var def = tkLamp(kunci), r = await panggil('takwimLampiranDapat', { tahun: tahun, kunci: kunci });
   if (!r.data) return { ket: def.label, badan: h('div', { class: 'kad kosong' }, h('p', null, 'Belum ada data ' + def.label + ' untuk tahun ' + tahun + '.')) };
   return { ket: def.label + ' · ' + tahun + (r.dikemaskini ? ' · dikemas kini ' + r.dikemaskini + (r.oleh && boleh('PENGURUS') ? ' oleh ' + r.oleh : '') : ''), badan: tkJanaModul(r.data, def, tahun) };
+}
+
+/* ---------- Gabung warna bertindih daripada Excel (tanpa menggantikan takwim) ----------
+   Hanya MENAMBAH warna kedua (c2/gd) pada hari yang sama. Teks, warna utama, penanda minggu dan hari persekolahan yang sudah disunting TIDAK diubah.
+   d = takwim dalam sistem; hasil = takwim yang dibaca daripada Excel (tkBacaHelaian). Fungsi tulen: tidak mengubah d. */
+function tkRancangGabung(d, hasil) {
+  var tambah = [], langkau = [], sudah = 0, katBaru = [], ada = {};
+  Object.keys(hasil.days).sort().forEach(function (k) {
+    var x = hasil.days[k]; if (!x.c2) return;
+    var sd = d.days[k], gd0 = x.gd == null ? 45 : x.gd, c2 = null, gd = null;
+    if (!sd) { langkau.push({ k: k, sebab: 'tiada rekod hari ini dalam sistem' }); return; }
+    if (sd.c2) { sudah++; return; }
+    if (sd.c === x.c) { c2 = x.c2; gd = gd0; }
+    else if (sd.c === x.c2) { c2 = x.c; gd = (gd0 + 180) % 360; }   // susunan warna terbalik: arah dipusing supaya rupa sama seperti Excel
+    else { langkau.push({ k: k, sebab: sd.c ? 'warna utama sudah diubah pengguna' : 'hari ini tiada warna dalam sistem' }); return; }
+    tambah.push({ k: k, c2: c2, gd: gd === 45 ? null : gd });
+    if (!tkKat(d, c2) && !ada[c2]) {
+      ada[c2] = 1; var dr = null; hasil.cats.forEach(function (c) { if (c.id === c2) dr = c; });
+      katBaru.push(dr ? { id: dr.id, name: dr.name, color: dr.color, legend: !!dr.legend } : { id: c2, name: 'Warna #' + c2, color: '#' + c2, legend: false });
+    }
+  });
+  return { tambah: tambah, langkau: langkau, sudah: sudah, katBaru: katBaru };
+}
+function pilihFailWarna(d) {
+  var inp = h('input', { type: 'file', accept: '.xlsx,.xls,.xlsm' });
+  inp.addEventListener('change', ujiTindakan(async function () { if (inp.files[0]) await gabungWarnaTakwim(inp.files[0], d); }));
+  inp.click();
+}
+async function gabungWarnaTakwim(fail, d) {
+  var X = await muatXLSX(); beban(1);
+  var hasil = null, ralat = [];
+  try {
+    var wb = X.read(new Uint8Array(await fail.arrayBuffer()), { type: 'array', cellStyles: true, cellNF: true, bookFiles: true });
+    for (var i = 0; i < wb.SheetNames.length && !hasil; i++) { try { hasil = tkBacaHelaian(X, wb, wb.SheetNames[i]); } catch (e) { ralat.push(wb.SheetNames[i] + ': ' + e.message); } }
+  } catch (e) { ralat.push(e.message); } finally { beban(-1); }
+  if (!hasil) { modal({ tajuk: 'Fail tidak dapat dibaca', isi: h('div', null, h('p', null, 'Format takwim tidak dikenali.'), h('ul', null, ralat.map(function (r) { return h('li', null, r); }))), butang: [{ label: 'Tutup' }] }); return; }
+  var pr = tkRancangGabung(d, hasil);
+  var ringkas = function (k) { var sd = d.days[k], t = sd && sd.t ? sd.t.split('\n')[0] : ''; return t.length > 70 ? t.slice(0, 70) + '…' : t; };
+  if (!pr.tambah.length) {
+    modal({ tajuk: 'Tiada hari untuk digabung', isi: h('div', null,
+      h('p', null, pr.sudah ? 'Semua hari bertindih dalam Excel ini (' + pr.sudah + ') sudah mempunyai warna kedua dalam sistem.' : 'Tiada sel dua warna (gradient) dijumpai dalam helaian "' + hasil.helaian + '", atau tiada yang boleh dipadankan.'),
+      pr.langkau.length ? h('p', { class: 'diam' }, pr.langkau.length + ' hari dilangkau (' + pr.langkau.slice(0, 5).map(function (x) { return tkTarikh(x.k); }).join(', ') + (pr.langkau.length > 5 ? '…' : '') + ').') : null,
+      h('p', { class: 'diam' }, 'Tiada apa-apa data diubah.')), butang: [{ label: 'Tutup' }] }); return;
+  }
+  var baris = pr.tambah.map(function (x) {
+    var sd = d.days[x.k], c1 = tkKat(d, sd.c), c2 = tkKat(d, x.c2) || pr.katBaru.filter(function (c) { return c.id === x.c2; })[0];
+    return h('tr', null, h('td', { style: 'white-space:nowrap' }, tkTarikh(x.k)), h('td', null, ringkas(x.k)),
+      h('td', null, h('i', { class: 'tkw-cip', style: 'width:34px;background:' + tkLatarDua(c1.color, c2.color, x.gd == null ? 45 : x.gd) }), c1.name + ' + ' + c2.name));
+  });
+  modal({ tajuk: 'Gabung warna bertindih', lebar: true, isi: h('div', null,
+    h('p', null, h('b', null, pr.tambah.length + ' hari'), ' akan ditambah warna kedua (sel dibelah dua serong). Hanya warna kedua ditambah — teks, warna utama dan suntingan lain tidak diubah.'),
+    pr.katBaru.length ? h('p', { class: 'diam' }, 'Kategori warna baharu ditambah ke senarai: ' + pr.katBaru.map(function (c) { return c.name; }).join(', ') + '.') : null,
+    h('div', { class: 'bungkus-jadual', style: 'max-height:45vh;overflow:auto' }, h('table', { class: 'tkw-senarai' }, h('thead', null, h('tr', null, h('th', null, 'Tarikh'), h('th', null, 'Acara'), h('th', null, 'Warna'))), h('tbody', null, baris))),
+    pr.sudah ? h('p', { class: 'diam' }, pr.sudah + ' hari sudah mempunyai warna kedua (tidak disentuh).') : null,
+    pr.langkau.length ? h('div', { class: 'amaran-kotak' }, '⚠ ' + pr.langkau.length + ' hari dilangkau: ' + pr.langkau.map(function (x) { return tkTarikh(x.k) + ' (' + x.sebab + ')'; }).join('; ') + '.') : null,
+    hasil.warnings.length ? h('div', { class: 'amaran-kotak' }, '⚠ ' + hasil.warnings.join(' ')) : null),
+    butang: [{ label: 'Batal' }, { label: 'Gabung ' + pr.tambah.length + ' hari', kelas: 'utama', onClick: ujiTindakan(async function () {
+      var t = salinTakwim(d);
+      pr.katBaru.forEach(function (c) { t.cats.push(c); });
+      pr.tambah.forEach(function (x) { var r = t.days[x.k]; r.c2 = x.c2; if (x.gd != null) r.gd = x.gd; else delete r.gd; });
+      await simpanTakwim(t);
+    }) }] });
 }
 
 /* ---------- Muat naik lampiran sahaja (tanpa menggantikan takwim utama) ---------- */
