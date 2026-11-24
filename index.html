@@ -1523,9 +1523,11 @@ function tkGaya(d, rek) {
 }
 function tkIsiHari(n, rek) { return (rek && rek.mk ? '<span class="tkw-mk">[' + tkEsc(rek.mk) + ']</span> ' : '') + '<b>' + n + '</b>' + (rek && rek.t ? ' ' + tkEsc(rek.t) : ''); }
 function tkHariSekolah(d, mo) { var n = 0; for (var i = 1; i <= tkBilHari(mo.y, mo.m); i++) { var r = d.days[tkIso(mo.y, mo.m, i)]; if (r && r.s) n++; } return n; }
+// Kategori yang disembunyikan daripada legend (paparan grid Excel, kalendar bulanan & muat turun Excel); warna hari kekal.
+function tkLegendTampil(c) { return c.legend && !/^Lain:/i.test(c.name) && !/^PEPERIKSAAN\s*\/\s*LISAN\s*\/\s*AMALI\s*T[45]\b/i.test(c.name); }
 function tkLegend(d, kecil) {
   var h2 = '<div class="tkw-legend' + (kecil ? ' kecil' : '') + '">';
-  d.cats.filter(function (c) { return !kecil || c.legend; }).forEach(function (c) { h2 += '<span><i style="background:' + c.color + '"></i>' + tkEsc(c.name) + '</span>'; });
+  d.cats.filter(tkLegendTampil).forEach(function (c) { h2 += '<span><i style="background:' + c.color + '"></i>' + tkEsc(c.name) + '</span>'; });
   if (!kecil) h2 += '<span><i style="background:linear-gradient(to bottom right,#bbb 50%,#fff 50%)"></i>Dua warna serong = program bertindih</span><span><i style="background:#e3e3e3"></i>Hujung minggu</span><span><b class="tkw-mk">[α] [β]</b> Penanda minggu</span>';
   h2 += '</div>';
   if (!kecil && d.notes && d.notes.length) h2 += '<div class="tkw-nota">' + d.notes.map(function (n) { return '<span>' + tkEsc(n) + '</span>'; }).join('') + '</div>';
@@ -1921,7 +1923,7 @@ function tkBinaBukuExcel(E, d) {
   for (var cj = 1; cj <= jl; cj++) { var xj = ws.getCell(rj, cj); xj.font = { name: FONT, size: 9, bold: true }; xj.fill = abuMuda; xj.border = sempadan; xj.alignment = { horizontal: 'center', vertical: 'middle' }; }
   // Legend: satu kategori sebuah sel (warna + nama), disusun dalam lajur bulan
   var rl = rj + 2, lj = 0;
-  d.cats.forEach(function (c) { var x = ws.getCell(rl + Math.floor(lj / nb), 2 + (lj % nb) * 2); lj++; x.value = c.name; x.fill = tkIsianExcel(c.color); x.font = { name: FONT, size: 9, color: { argb: tkWarnaTeks(c.color) === '#fff' ? 'FFFFFFFF' : 'FF000000' } }; x.border = sempadan; x.alignment = { vertical: 'middle' }; });
+  d.cats.filter(tkLegendTampil).forEach(function (c) { var x = ws.getCell(rl + Math.floor(lj / nb), 2 + (lj % nb) * 2); lj++; x.value = c.name; x.fill = tkIsianExcel(c.color); x.font = { name: FONT, size: 9, color: { argb: tkWarnaTeks(c.color) === '#fff' ? 'FFFFFFFF' : 'FF000000' } }; x.border = sempadan; x.alignment = { vertical: 'middle' }; });
   var ada2 = Object.keys(d.days).some(function (k) { return d.days[k].c2; });
   var lain = [['Hujung minggu', hujungMinggu]]; if (ada2) lain.push(['Dua warna serong = program bertindih', null]);
   lain.forEach(function (p) { var x = ws.getCell(rl + Math.floor(lj / nb), 2 + (lj % nb) * 2); lj++; x.value = p[0]; if (p[1]) x.fill = p[1]; x.font = { name: FONT, size: 9, italic: !p[1] }; if (p[1]) x.border = sempadan; });
