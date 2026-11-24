@@ -170,7 +170,7 @@ tr.klik{cursor:pointer}
 .tkw-legend.kecil{font-size:9px;margin-top:4px}.tkw-legend.kecil i{width:14px;height:9px}
 .tkw-nota{font-size:11px;display:flex;gap:18px;flex-wrap:wrap}
 .tkw-bulan-senarai{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:18px}
-.tkw-bulan h3{display:flex;justify-content:space-between;margin:0 0 4px;font-size:15px}.tkw-bulan h3 small{font-weight:400;color:var(--teks-2);font-size:12px}
+.tkw-bulan h3{display:flex;justify-content:space-between;margin:0 0 4px;font-size:15px}
 .tkw-kal{width:100%;table-layout:fixed;font-size:10px}
 .tkw-kal th{background:#d9d9d9;color:#000;border:1px solid #777;padding:3px;font-size:11px;text-align:center}
 .tkw-kal td{border:1px solid #777;height:64px;padding:2px 3px;white-space:pre-line;word-wrap:break-word;font-size:10px}
@@ -1559,7 +1559,7 @@ function tkJanaBulanan(d) {
   var s = '<p class="tkw-tajuk">' + tkEsc(d.title) + '</p><div class="tiada-cetak">' + tkLegend(d) + '</div><div class="tkw-bulan-senarai">';
   d.months.forEach(function (mo) {
     var of = tkDow(mo.y, mo.m, 1), n = tkBilHari(mo.y, mo.m), sel = Math.ceil((of + n) / 7) * 7;
-    s += '<div class="tkw-bulan"><h3>' + mo.label + ' ' + mo.y + ' <small>' + tkHariSekolah(d, mo) + ' hari persekolahan</small></h3><table class="tkw-kal"><thead><tr>';
+    s += '<div class="tkw-bulan"><h3>' + mo.label + ' ' + mo.y + '</h3><table class="tkw-kal"><thead><tr>';
     TKW_HARI.forEach(function (x) { s += '<th>' + x + '</th>'; });
     s += '</tr></thead><tbody>';
     for (var i = 0; i < sel; i++) {

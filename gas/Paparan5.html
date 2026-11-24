@@ -355,7 +355,7 @@ function tkJanaBulanan(d) {
   var s = '<p class="tkw-tajuk">' + tkEsc(d.title) + '</p><div class="tiada-cetak">' + tkLegend(d) + '</div><div class="tkw-bulan-senarai">';
   d.months.forEach(function (mo) {
     var of = tkDow(mo.y, mo.m, 1), n = tkBilHari(mo.y, mo.m), sel = Math.ceil((of + n) / 7) * 7;
-    s += '<div class="tkw-bulan"><h3>' + mo.label + ' ' + mo.y + ' <small>' + tkHariSekolah(d, mo) + ' hari persekolahan</small></h3><table class="tkw-kal"><thead><tr>';
+    s += '<div class="tkw-bulan"><h3>' + mo.label + ' ' + mo.y + '</h3><table class="tkw-kal"><thead><tr>';
     TKW_HARI.forEach(function (x) { s += '<th>' + x + '</th>'; });
     s += '</tr></thead><tbody>';
     for (var i = 0; i < sel; i++) {
