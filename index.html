@@ -140,6 +140,38 @@ tr.klik{cursor:pointer}
 .surat-tutup{break-inside:avoid;margin-top:1.2em}.surat-tutup .ttd{height:54px}
 .surat-ahli{margin:1em 0 0 4mm;border-collapse:collapse;line-height:1.5}.surat-ahli td{padding:0 6px 0 0;vertical-align:top}.surat-ahli .aj{width:40%}
 .surat-butir td,.surat-ahli td{border:0}.surat-butir tr:hover,.surat-ahli tr:hover{background:transparent}
+/* Banding Jawatankuasa */
+.bdg{--k1:#1f5fa8;--k2:#8a5a00;--k3:#1b7a3d}
+.bdg-kepala,.bdg-hero,.bdg-sel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem}
+.bdg-kepala{position:sticky;top:53px;z-index:15;background:var(--latar);padding:.6rem 0;border-bottom:1px solid var(--garis)}
+.bdg-pilih{display:flex;align-items:center;gap:.45rem;min-width:0}.bdg-pilih .cb{flex:1;min-width:0}.bdg-pilih .cb input{text-overflow:ellipsis;font-weight:600}
+.bdg-pilih.kosong-slot .cb input{border-style:dashed;font-weight:400}
+.bdg-no{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;color:#fff;font-size:.72rem;font-weight:700;flex-shrink:0}
+.bdg-no.n1{background:var(--k1)}.bdg-no.n2{background:var(--k2)}.bdg-no.n3{background:var(--k3)}
+.bdg-alat{margin:.75rem 0}.bdg-petunjuk{display:inline-flex;align-items:center;gap:.4rem;color:var(--teks-2);font-size:.82rem;margin-left:auto}
+.bdg-petunjuk i{width:14px;height:14px;border-radius:4px;margin-left:.5rem}.bdg-petunjuk .t2{background:#fff1d6;border:1px solid #e0b565}.bdg-petunjuk .t3{background:#fbdcd8;border:1px solid #d98880}
+.bdg-kad,.bdg-kad-kosong{background:var(--kad);border:1px solid var(--garis);border-radius:16px;padding:1.1rem 1rem;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.35rem;min-width:0}
+.bdg-kad-kosong{background:none;border-style:dashed;border-width:2px;justify-content:center;min-height:200px}.bdg-tambah{font-size:1.8rem;color:var(--teks-2);line-height:1}
+.bdg-kod{font-size:1.9rem;font-weight:800;line-height:1}.bdg-kad.n1 .bdg-kod{color:var(--k1)}.bdg-kad.n2 .bdg-kod{color:var(--k2)}.bdg-kad.n3 .bdg-kod{color:var(--k3)}
+.bdg-kad h2{margin:.2rem 0 0;font-size:1.02rem;overflow-wrap:anywhere}.bdg-besar{font-size:2rem;font-weight:700;margin-top:auto;padding-top:.5rem}.bdg-besar small{font-size:.9rem;font-weight:400;color:var(--teks-2)}
+.bdg-sek{margin-top:1.5rem}.bdg-hero+.kad{margin-top:1rem}.bdg-sek>h2{font-size:1.3rem;padding-bottom:.5rem;border-bottom:2px solid var(--hijau);margin:0}
+.bdg-baris{padding:.8rem 0 .9rem;border-bottom:1px solid var(--garis)}
+.bdg-label{font-size:.78rem;font-weight:700;color:var(--teks-2);letter-spacing:.03em;margin-bottom:.4rem}
+.bdg-sel>*{min-width:0;overflow-wrap:anywhere}.bdg-baris.angka .bdg-sel>*{font-size:1.15rem;font-weight:600}.bdg-baris .blok{display:block;font-size:.78rem;font-weight:400}
+.bdg-tiada{color:#a9b4cb}
+.bdg-ahli{padding:.32rem .55rem;margin:.25rem 0;border-radius:8px;border:1px solid transparent;line-height:1.3}
+.bdg-ahli a{color:inherit;text-decoration:none}.bdg-ahli a:hover{text-decoration:underline}.bdg-ahli small{display:block}
+.bdg-ahli.tindih2{background:#fff1d6;border-color:#e0b565}.bdg-ahli.tindih3{background:#fbdcd8;border-color:#d98880}
+.bdg-ahli.serlah{outline:2px solid var(--hijau);outline-offset:0}
+.bdg-juga{display:flex;align-items:center;gap:.25rem;font-size:.75rem;color:var(--teks-2);margin-top:.15rem}.bdg-juga .bdg-no{width:16px;height:16px;font-size:.65rem}
+@media (max-width:860px){
+  .bdg-kepala,.bdg-hero,.bdg-sel{gap:.4rem}.bdg{font-size:12px}
+  .bdg-pilih{flex-wrap:wrap;gap:.25rem}.bdg-pilih .cb{flex-basis:100%;order:3}.bdg-pilih .cb input{font-size:12px;padding:.35rem .4rem}
+  .bdg-pilih .cb ul{width:min(86vw,340px);right:auto}.bdg-pilih:nth-child(2) .cb ul{left:50%;transform:translateX(-50%)}.bdg-pilih:nth-child(3) .cb ul{left:auto;right:0}
+  .bdg-pilih .btn.kecil{margin-left:auto}
+  .bdg-kad,.bdg-kad-kosong{padding:.8rem .4rem;border-radius:12px}.bdg-kod{font-size:1.4rem}.bdg-kad h2{font-size:.7rem}.bdg-kad .btn{padding:.2rem .35rem;font-size:.72rem;white-space:nowrap}.bdg-besar{font-size:1.4rem}
+  .bdg-ahli{padding:.25rem .3rem;margin:.15rem 0}.bdg-petunjuk{margin-left:0;flex-wrap:wrap}
+}
 /* Laporan JK Induk */
 #laporan .tajuk-bahagian{background:var(--hijau);color:#fff;padding:.5rem .8rem;border-radius:8px;margin:1.2rem 0 .6rem;font-size:1rem}
 #laporan .blok-jk{margin-bottom:1.1rem}
@@ -187,6 +219,7 @@ tr.klik{cursor:pointer}
 .tkw-jad tbody tr:nth-child(even):not(.tebal) td{background:#fafafa}
 .tkw-lamp-nota{font-size:11.5px;color:var(--teks-2);margin:6px 0}
 @page tkwA3{size:A3 landscape;margin:8mm}
+@page bdg{size:A4 landscape;margin:10mm}
 @page surat{size:A4;margin:22mm 12mm 10mm 30mm}
 @media print{
   .tkw{border:0;padding:0}.tkw-skrol{overflow:visible}
@@ -196,6 +229,7 @@ tr.klik{cursor:pointer}
   .tkw-kal td{height:56px}
   .tkw-v-lebar{page:tkwA3}.tkw-v-lebar .tkw-jad{font-size:8px}.tkw-jad{font-size:9pt}.tkw-jad th,.tkw-jad td{padding:2px 4px}.tkw-jad tr{break-inside:avoid}
   @page{size:A4;margin:12mm}
+  .bdg{page:bdg;font-size:9pt}.bdg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}.bdg-kad{padding:8px;border-radius:8px}.bdg-kod{font-size:14pt}.bdg-besar{font-size:14pt}.bdg-sek{margin-top:10px}.bdg-baris{padding:4px 0}.bdg-ahli{padding:1px 5px;margin:1px 0;break-inside:avoid}.bdg-sek>h2{break-after:avoid}.bdg-label{break-after:avoid}
   #laporan .kumpulan{break-before:page}#laporan .kumpulan:first-of-type{break-before:auto}
   #laporan .blok-jk{break-inside:avoid}
   #laporan .tajuk-bahagian{background:#fff!important;color:#000!important;border:1.5px solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -2113,9 +2147,169 @@ function dialogKategoriTakwim(d) {
 </script>
 
   <script>
+/* ===== Banding Jawatankuasa: sehingga 3 jawatankuasa sebelah-menyebelah ===== */
+var BANDING_MAKS = 3;
+S.banding = null;   // [{jkId, kod} | null] mengikut slot
+function bacaBanding() { try { return JSON.parse(sessionStorage.getItem('jk_banding')) || []; } catch (e) { return []; } }
+function simpanBanding() { try { sessionStorage.setItem('jk_banding', JSON.stringify(S.banding)); } catch (e) {} }
+
+async function paparBanding() {
+  var hasil = await Promise.all([panggil('laporanInduk', { tahun: S.tahun }), panggil('senaraiJK', { tahun: S.tahun })]);
+  var semua = hasil[0].jk, info = {}, peta = {}, nampakMerit = boleh('PENGURUS'), stafMap = {}, urutPosisi = {};
+  hasil[1].forEach(function (j) { info[j.jkId] = j; });
+  (S.asas.staf || []).forEach(function (s) { stafMap[s.staffId] = s; });
+  (S.asas.posisi || []).forEach(function (p) { urutPosisi[String(p.nama).toUpperCase()] = Number(p.urutan) || 99; });
+  semua.forEach(function (j) {
+    peta[j.jkId] = j;
+    j.senarai = urutAhliJK(j.ahli.map(function (a) {
+      var i = a.jawatan.indexOf(' — '), posisi = i < 0 ? a.jawatan : a.jawatan.slice(0, i);
+      // Orang yang sama dikenal pasti melalui pemegang sebenar jika jawatan rasmi (cth. Pengetua) mempunyai pemegang.
+      return { orang: String(a.pemegangId || a.staffId), staffId: a.staffId, nama: namaPaparan(a), posisi: posisi, kualifikasi: i < 0 ? '' : a.jawatan.slice(i + 3), merit: a.merit, kategori: a.kategori, urutan: urutPosisi[posisi] || 99 };
+    }));
+  });
+  // Pilihan asal kekal; jika tahun ditukar, padankan semula melalui kod jawatankuasa.
+  var simpanan = S.banding || bacaBanding(), guna = {};
+  S.banding = [0, 1, 2].map(function (i) {
+    var p = simpanan[i]; if (!p) return null;
+    var j = peta[p.jkId] || semua.filter(function (x) { return x.kod && x.kod === p.kod; })[0];
+    if (!j || guna[j.jkId]) return null; guna[j.jkId] = 1; return { jkId: j.jkId, kod: j.kod };
+  });
+
+  var mod = 'semua', cari = '', akar = h('div', { class: 'bdg' }), kepala = h('div', { class: 'bdg-kepala tiada-cetak' }), badan = h('div');
+  function pilihan() { return S.banding.map(function (p) { return p ? peta[p.jkId] : null; }); }
+  function tetap(i, jkId) { S.banding[i] = jkId ? { jkId: jkId, kod: peta[jkId].kod } : null; simpanBanding(); lukisKepala(); lukis(); }
+
+  /* --- Bar pemilih (melekat di atas semasa skrol) --- */
+  function lukisKepala() {
+    kosongkan(kepala);
+    S.banding.forEach(function (p, i) {
+      var lain = S.banding.filter(function (x, n) { return x && n !== i; }).map(function (x) { return x.jkId; });
+      var cb = combobox({ pilihan: semua.filter(function (j) { return lain.indexOf(j.jkId) < 0; }).map(function (j) { return { nilai: j.jkId, label: (j.kod ? j.kod + ' · ' : '') + j.nama.replace(/^JAWATANKUASAs+/i, ''), sub: j.kategori + ' · ' + j.ahli.length + ' ahli' }; }),
+        nilai: p ? p.jkId : '', placeholder: p ? 'Tukar jawatankuasa…' : '＋ Pilih jawatankuasa ' + (i + 1), onPilih: function (n) { if (n && n !== (p && p.jkId)) tetap(i, n); } });
+      kepala.appendChild(h('div', { class: 'bdg-pilih' + (p ? '' : ' kosong-slot') }, h('span', { class: 'bdg-no n' + (i + 1) }, i + 1), cb,
+        p ? h('button', { class: 'btn kecil', 'aria-label': 'Buang jawatankuasa ' + (i + 1) + ' daripada perbandingan', title: 'Buang', onclick: function () { tetap(i, null); } }, '✕') : null));
+    });
+  }
+
+  /* --- Pertindihan ahli --- */
+  function petaTindih(pil) {
+    var t = {};
+    pil.forEach(function (j, i) { if (j) j.senarai.forEach(function (a) { var e = t[a.orang] || (t[a.orang] = { nama: a.nama, staffId: a.staffId, di: {} }); (e.di[i] = e.di[i] || []).push(a); }); });
+    return t;
+  }
+  function bilDi(e) { return Object.keys(e.di).length; }
+  function serlah(orang, hidup) { akar.querySelectorAll('[data-orang]').forEach(function (n) { n.classList.toggle('serlah', hidup && n.getAttribute('data-orang') === orang); }); }
+
+  function selAhli(a, i, tindih, pil) {
+    var e = tindih[a.orang], n = bilDi(e), lain = Object.keys(e.di).map(Number).filter(function (x) { return x !== i; });
+    return h('div', { class: 'bdg-ahli' + (n > 1 ? ' tindih' + n : ''), 'data-orang': a.orang, onmouseenter: function () { serlah(a.orang, true); }, onmouseleave: function () { serlah(a.orang, false); } },
+      h('a', { href: '#', onclick: function (ev) { ev.preventDefault(); pergi('profil', a.staffId); } }, a.nama),
+      a.kualifikasi ? h('small', { class: 'diam' }, a.kualifikasi) : null,
+      lain.length ? h('span', { class: 'bdg-juga' }, 'Juga di ', lain.map(function (x) { return h('span', { class: 'bdg-no n' + (x + 1), title: pil[x].nama + ' — ' + e.di[x].map(function (y) { return y.posisi; }).join(', ') }, x + 1); })) : null);
+  }
+  function baris(label, sel, kelas) { return h('div', { class: 'bdg-baris ' + (kelas || '') }, h('div', { class: 'bdg-label' }, label), h('div', { class: 'bdg-sel' }, sel)); }
+  function kosongSel() { return h('div', { class: 'bdg-tiada', 'aria-label': 'Tiada' }, '—'); }
+
+  function lukis() {
+    kosongkan(badan);
+    var pil = pilihan(), ada = pil.filter(Boolean), tindih = petaTindih(pil);
+    btnCetak.disabled = btnExcel.disabled = !ada.length;
+
+    /* Hero: identiti setiap jawatankuasa */
+    badan.appendChild(h('div', { class: 'bdg-hero' }, pil.map(function (j, i) {
+      if (!j) return h('div', { class: 'bdg-kad-kosong tiada-cetak' }, h('span', { class: 'bdg-tambah' }, '＋'), h('b', null, 'Jawatankuasa ' + (i + 1)), h('small', { class: 'diam' }, 'Taip kod atau nama dalam kotak di atas'));
+      return h('div', { class: 'bdg-kad n' + (i + 1) }, h('div', { class: 'bdg-kod' }, j.kod || '—'), h('h2', null, j.nama), h('div', { class: 'diam' }, j.kategori),
+        h('div', { class: 'bdg-besar' }, nf(j.senarai.length), h('small', null, ' ahli')),
+        h('button', { class: 'btn kecil tiada-cetak', onclick: function () { pergi('jk', j.jkId); } }, 'Buka butiran ›'));
+    })));
+    if (!ada.length) { badan.appendChild(h('div', { class: 'kad kosong' }, 'Pilih dua atau tiga jawatankuasa untuk membandingkan senarai ahli.')); return; }
+
+    /* Ringkasan */
+    var bagi = function (fn) { return pil.map(function (j, i) { return j ? h('div', null, fn(j, i)) : kosongSel(); }); };
+    var kira = function (j, k) { return j.senarai.filter(function (a) { return k ? a.kategori === k : a.kategori !== 'GURU' && a.kategori !== 'SOKONGAN'; }).length; };
+    var lainMana = pil.map(function (j, i) { return j ? Object.keys(tindih).filter(function (o) { return tindih[o].di[i] && bilDi(tindih[o]) > 1; }).length : 0; });
+    var secRingkas = h('section', { class: 'bdg-sek' }, h('h2', null, 'Ringkasan'),
+      baris('Ketua', bagi(function (j) { return j.senarai.length ? [h('b', null, j.senarai[0].nama), h('small', { class: 'diam blok' }, j.senarai[0].posisi)] : '—'; })),
+      baris('Guru', bagi(function (j) { return nf(kira(j, 'GURU')); }), 'angka'),
+      baris('Staf sokongan', bagi(function (j) { return nf(kira(j, 'SOKONGAN')); }), 'angka'),
+      baris('Jawatan rasmi', bagi(function (j) { return nf(kira(j)); }), 'angka'),
+      ada.length > 1 ? baris('Ahli bertindih', bagi(function (j, i) { return lainMana[i] ? [nf(lainMana[i]), h('small', { class: 'diam blok' }, 'juga dalam jawatankuasa lain yang dibanding')] : '0'; }), 'angka') : null,
+      nampakMerit ? baris('Jumlah merit', bagi(function (j) { return nf(j.senarai.reduce(function (s, a) { return s + (Number(a.merit) || 0); }, 0)); }), 'angka') : null,
+      baris('Kelengkapan', bagi(function (j) { var x = info[j.jkId] || {}; return x.lengkap === false ? [lencana('Belum lengkap', 'amaran'), x.kurang && x.kurang.length ? h('small', { class: 'diam blok' }, 'Perlu: ' + x.kurang.map(function (y) { return String(y).replace(/\|/g, '/'); }).join(', ')) : null] : lencana('Lengkap', 'aktif'); })));
+
+    /* Senarai ahli, sebaris mengikut jawatan */
+    var lulus = function (a) {
+      var n = bilDi(tindih[a.orang]);
+      return (mod === 'semua' || (mod === 'sama' ? n > 1 : n === 1)) && (!cari || (a.nama + ' ' + a.kualifikasi).toLowerCase().indexOf(cari) >= 0);
+    };
+    var posisi = {};
+    ada.forEach(function (j) { j.senarai.forEach(function (a) { if (lulus(a)) posisi[a.posisi] = a.urutan; }); });
+    var senaraiPos = Object.keys(posisi).sort(function (a, b) { return posisi[a] - posisi[b] || a.localeCompare(b, 'ms'); });
+    var secAhli = h('section', { class: 'bdg-sek' }, h('h2', null, 'Senarai ahli mengikut jawatan'));
+    senaraiPos.forEach(function (p) {
+      secAhli.appendChild(baris(p, pil.map(function (j, i) {
+        if (!j) return kosongSel();
+        var x = j.senarai.filter(function (a) { return a.posisi === p && lulus(a); });
+        return x.length ? h('div', null, x.length > 2 ? h('small', { class: 'diam blok' }, x.length + ' orang') : null, x.map(function (a) { return selAhli(a, i, tindih, pil); })) : kosongSel();
+      })));
+    });
+    if (!senaraiPos.length) secAhli.appendChild(h('div', { class: 'kosong' }, cari ? 'Tiada ahli sepadan dengan carian.' : mod === 'sama' ? 'Tiada ahli yang sama dalam jawatankuasa yang dibanding.' : 'Tiada ahli untuk dipaparkan.'));
+    badan.appendChild(secAhli);
+
+    /* Ahli yang sama */
+    if (ada.length > 1) {
+      var sama = Object.keys(tindih).map(function (o) { return tindih[o]; }).filter(function (e) { return bilDi(e) > 1; })
+        .sort(function (a, b) { return bilDi(b) - bilDi(a) || a.nama.localeCompare(b.nama, 'ms'); });
+      var secSama = h('section', { class: 'bdg-sek' }, h('h2', null, 'Ahli yang sama (' + sama.length + ')'));
+      if (!sama.length) secSama.appendChild(h('div', { class: 'kosong' }, 'Tiada ahli yang sama dalam jawatankuasa yang dibanding.'));
+      sama.forEach(function (e) {
+        secSama.appendChild(baris(e.nama, pil.map(function (j, i) { return j && e.di[i] ? h('div', null, e.di[i].map(function (a) { return h('div', null, a.posisi, a.kualifikasi ? h('small', { class: 'diam' }, ' — ' + a.kualifikasi) : null); })) : kosongSel(); })));
+      });
+      badan.appendChild(secSama);
+    }
+    badan.appendChild(secRingkas);
+  }
+
+  async function excel() {
+    var X = await muatXLSX(), pil = pilihan().filter(Boolean), tindih = petaTindih(pil), wb = X.utils.book_new();
+    var b = [['PERBANDINGAN JAWATANKUASA TAHUN ' + S.tahun], [], ['Jawatan'].concat(pil.map(function (j) { return (j.kod ? j.kod + '  ' : '') + j.nama; }))], posisi = {};
+    pil.forEach(function (j) { j.senarai.forEach(function (a) { posisi[a.posisi] = a.urutan; }); });
+    Object.keys(posisi).sort(function (x, y) { return posisi[x] - posisi[y] || x.localeCompare(y, 'ms'); }).forEach(function (p) {
+      var sl = pil.map(function (j) { return j.senarai.filter(function (a) { return a.posisi === p; }); }), n = Math.max.apply(null, sl.map(function (x) { return x.length; }));
+      for (var i = 0; i < n; i++) b.push([i ? '' : p].concat(sl.map(function (x) { return x[i] ? x[i].nama + (x[i].kualifikasi ? ' (' + x[i].kualifikasi + ')' : '') : ''; })));
+    });
+    var ws = X.utils.aoa_to_sheet(b); ws['!cols'] = [{ wch: 24 }].concat(pil.map(function () { return { wch: 46 }; })); X.utils.book_append_sheet(wb, ws, 'Perbandingan');
+    var s = [['Nama'].concat(pil.map(function (j) { return j.kod || j.nama; }))];
+    Object.keys(tindih).forEach(function (o) { var e = tindih[o]; if (bilDi(e) > 1) s.push([e.nama].concat(pil.map(function (j, i) { return (e.di[i] || []).map(function (a) { return a.posisi; }).join(', '); }))); });
+    var ws2 = X.utils.aoa_to_sheet(s); ws2['!cols'] = [{ wch: 44 }].concat(pil.map(function () { return { wch: 26 }; })); X.utils.book_append_sheet(wb, ws2, 'Ahli yang sama');
+    X.writeFile(wb, 'Banding-JK-' + pil.map(function (j) { return j.kod; }).filter(Boolean).join('-') + '-' + S.tahun + '.xlsx'); toast('Fail Excel dimuat turun.', 'berjaya');
+  }
+
+  var btnCetak = h('button', { class: 'btn', onclick: function () { window.print(); } }, '🖨 Cetak / PDF'), btnExcel = h('button', { class: 'btn', onclick: ujiTindakan(excel) }, '📗 Excel');
+  var seg = h('div', { class: 'tkw-seg', role: 'group', 'aria-label': 'Tapis ahli' });
+  function lukisSeg() {
+    kosongkan(seg);
+    [['semua', 'Semua ahli'], ['sama', 'Ahli sama'], ['unik', 'Ahli berbeza']].forEach(function (x) {
+      seg.appendChild(h('button', { class: 'btn kecil' + (mod === x[0] ? ' aktif' : ''), 'aria-pressed': mod === x[0] ? 'true' : 'false', onclick: function () { mod = x[0]; lukisSeg(); lukis(); } }, x[1]));
+    });
+  }
+  var kotakCari = h('input', { type: 'text', placeholder: 'Cari nama ahli…', 'aria-label': 'Cari nama ahli' });
+  kotakCari.addEventListener('input', function () { cari = kotakCari.value.trim().toLowerCase(); lukis(); });
+  akar.appendChild(h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Banding Jawatankuasa ' + S.tahun), h('p', { class: 'tiada-cetak' }, 'Pilih sehingga ' + BANDING_MAKS + ' jawatankuasa untuk melihat senarai ahli sebelah-menyebelah.')),
+    h('div', { class: 'baris-alat tiada-cetak', style: 'margin:0' }, btnCetak, btnExcel, h('button', { class: 'btn', onclick: function () { S.banding = [null, null, null]; simpanBanding(); lukisKepala(); lukis(); } }, 'Kosongkan'))));
+  akar.appendChild(kepala);
+  akar.appendChild(h('div', { class: 'baris-alat tiada-cetak bdg-alat' }, seg, kotakCari, h('span', { class: 'bdg-petunjuk' }, h('i', { class: 't2' }), 'Dalam 2 jawatankuasa', h('i', { class: 't3' }), 'Dalam 3 jawatankuasa')));
+  akar.appendChild(badan);
+  lukisSeg(); lukisKepala(); lukis();
+  setTimeout(function () { var a = $('#atas'); if (a) kepala.style.top = a.offsetHeight + 'px'; }, 0);
+  return akar;
+}
+</script>
+
+  <script>
 /* ===== Menu & penghalaan ===== */
 var MENU = [
-  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PENGURUS' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
+  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PENGURUS' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' }, { id: 'bandingJK', ikon: '⇄', label: 'Banding Jawatankuasa', min: 'PELIHAT' },
   { id: 'laporan', ikon: '🖨', label: 'Laporan JK Induk', min: 'PELIHAT' }, { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PENGURUS' },
   { id: 'takwim', ikon: '📅', label: 'Takwim Sekolah', min: 'PELIHAT' },
   { sep: 'Surat Rasmi' }, { id: 'suratLantik', ikon: '✉', label: 'Surat Perlantikan AJK', min: 'PELIHAT' }, { id: 'suratMesyuarat', ikon: '📨', label: 'Surat Panggilan Mesyuarat', min: 'PELIHAT' },
@@ -2124,6 +2318,7 @@ var MENU = [
 ];
 var PAPARAN = {
   papan: [function () { return paparPapan(); }, 'Papan Pemuka'], jk: [function (p) { return p ? paparJKButiran(p) : paparJK(); }, 'Jawatankuasa'], staf: [function () { return paparStaf(); }, 'Staf & Guru'],
+  bandingJK: [function () { return paparBanding(); }, 'Banding Jawatankuasa'],
   laporan: [function () { return paparLaporan(); }, 'Laporan JK Induk'], takwim: [function () { return paparTakwim(); }, 'Takwim Sekolah'],
   suratLantik: [function () { return paparSuratLantik(); }, 'Surat Perlantikan AJK'], suratMesyuarat: [function () { return paparSuratMesyuarat(); }, 'Surat Panggilan Mesyuarat'],
   profil: [function (p) { return paparProfil(p); }, 'Profil Merit Staf'], analisis: [function () { return paparAnalisis(); }, 'Analisis Beban'], posisi: [function () { return paparPosisi(); }, 'Jawatan & Merit'],

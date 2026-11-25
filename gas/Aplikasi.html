@@ -1,7 +1,7 @@
 <script>
 /* ===== Menu & penghalaan ===== */
 var MENU = [
-  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PENGURUS' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' },
+  { id: 'papan', ikon: '📊', label: 'Papan Pemuka', min: 'PENGURUS' }, { id: 'jk', ikon: '🗂', label: 'Jawatankuasa', min: 'PELIHAT' }, { id: 'bandingJK', ikon: '⇄', label: 'Banding Jawatankuasa', min: 'PELIHAT' },
   { id: 'laporan', ikon: '🖨', label: 'Laporan JK Induk', min: 'PELIHAT' }, { id: 'staf', ikon: '👥', label: 'Staf & Guru', min: 'PELIHAT' }, { id: 'analisis', ikon: '⚖', label: 'Analisis Beban', min: 'PENGURUS' },
   { id: 'takwim', ikon: '📅', label: 'Takwim Sekolah', min: 'PELIHAT' },
   { sep: 'Surat Rasmi' }, { id: 'suratLantik', ikon: '✉', label: 'Surat Perlantikan AJK', min: 'PELIHAT' }, { id: 'suratMesyuarat', ikon: '📨', label: 'Surat Panggilan Mesyuarat', min: 'PELIHAT' },
@@ -10,6 +10,7 @@ var MENU = [
 ];
 var PAPARAN = {
   papan: [function () { return paparPapan(); }, 'Papan Pemuka'], jk: [function (p) { return p ? paparJKButiran(p) : paparJK(); }, 'Jawatankuasa'], staf: [function () { return paparStaf(); }, 'Staf & Guru'],
+  bandingJK: [function () { return paparBanding(); }, 'Banding Jawatankuasa'],
   laporan: [function () { return paparLaporan(); }, 'Laporan JK Induk'], takwim: [function () { return paparTakwim(); }, 'Takwim Sekolah'],
   suratLantik: [function () { return paparSuratLantik(); }, 'Surat Perlantikan AJK'], suratMesyuarat: [function () { return paparSuratMesyuarat(); }, 'Surat Panggilan Mesyuarat'],
   profil: [function (p) { return paparProfil(p); }, 'Profil Merit Staf'], analisis: [function () { return paparAnalisis(); }, 'Analisis Beban'], posisi: [function () { return paparPosisi(); }, 'Jawatan & Merit'],
