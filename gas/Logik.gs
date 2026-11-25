@@ -36,7 +36,7 @@ function kiraMerit(d, tahun) {
     var p = posisiMap[lId_(t.posisiId)];
     var m = meritPosisi(t.posisiId, tahun, posisiMap, meritMap);
     h.total += m; h.bil += 1;
-    h.butiran.push({ asgId: t.asgId, jkId: t.jkId, jkNama: jk.nama, posisiId: t.posisiId, posisiNama: p ? p.nama : '?', kualifikasi: t.kualifikasi || '', merit: m });
+    h.butiran.push({ asgId: t.asgId, jkId: t.jkId, jkKod: jk.kod || '', jkNama: jk.nama, posisiId: t.posisiId, posisiNama: p ? p.nama : '?', kualifikasi: t.kualifikasi || '', merit: m });
   });
   return hasil;
 }
