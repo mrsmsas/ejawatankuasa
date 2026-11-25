@@ -19,12 +19,51 @@ function namaPaparan(a) { return a.nama + (a.pemegang ? ' (' + a.pemegang + ')' 
 
 async function paparLaporan() {
   var d = await panggil('laporanInduk', { tahun: S.tahun }), kump = kumpulJK(d.jk), tajukDok = 'JAWATANKUASA KERJA ' + namaSekolahBesar() + ' TAHUN ' + d.tahun;
-  var f = { kat: pilihSelect(kump.map(function (g) { return { nilai: g.kategori, label: (g.huruf ? 'Bahagian ' + g.huruf + ' — ' : '') + g.kategori }; }), '', 'Semua bahagian'), merit: h('input', { type: 'checkbox' }) };
+  // Paparan mengikut jabatan: kumpul pelantikan setiap staf (jabatan staf diambil daripada senarai staf sistem).
+  function jabatanData() {
+    var stafMap = {}, peta = {}, kump = {};
+    (S.asas.staf || []).forEach(function (x) { stafMap[x.staffId] = x; });
+    d.jk.forEach(function (j) { j.ahli.forEach(function (a) {
+      var e = peta[a.staffId] || (peta[a.staffId] = { id: a.staffId, nama: a.nama, pemegang: a.pemegang, jk: [] });
+      e.jk.push({ kod: j.kod || '', nama: j.nama, jawatan: a.jawatan, merit: a.merit });
+    }); });
+    (S.asas.staf || []).forEach(function (x) { if (!peta[x.staffId] && x.status !== 'TIDAK AKTIF' && (x.kategori === 'GURU' || x.kategori === 'SOKONGAN')) peta[x.staffId] = { id: x.staffId, nama: x.nama, pemegang: '', jk: [] }; });
+    Object.keys(peta).forEach(function (id) {
+      var e = peta[id], x = stafMap[id] || {}; e.jawatanStaf = x.jawatan || ''; e.jabatan = x.jabatan || 'TIADA JABATAN';
+      e.total = e.jk.reduce(function (t, k) { return t + (Number(k.merit) || 0); }, 0); (kump[e.jabatan] = kump[e.jabatan] || []).push(e);
+    });
+    return Object.keys(kump).sort(function (a, b) { return a.localeCompare(b, 'ms'); }).map(function (n) {
+      var st = kump[n].sort(function (a, b) { return String(a.nama).localeCompare(String(b.nama), 'ms'); });
+      return { jabatan: n, staf: st, bil: st.reduce(function (t, e) { return t + e.jk.length; }, 0) };
+    });
+  }
+  var dataJab = jabatanData();
+  var f = { jenis: pilihSelect([{ nilai: 'jk', label: 'Mengikut jawatankuasa' }, { nilai: 'jab', label: 'Mengikut jabatan' }], 'jk'),
+    jab: pilihSelect(dataJab.map(function (g) { return { nilai: g.jabatan, label: g.jabatan + ' (' + g.staf.length + ' staf)' }; }), '', 'Semua jabatan'),
+    kat: pilihSelect(kump.map(function (g) { return { nilai: g.kategori, label: (g.huruf ? 'Bahagian ' + g.huruf + ' — ' : '') + g.kategori }; }), '', 'Semua bahagian'), merit: h('input', { type: 'checkbox' }) };
   var dok = h('div', { id: 'laporan' });
   var jumlahAhli = d.jk.reduce(function (s, j) { return s + j.ahli.length; }, 0);
 
   function terpilih() { return kump.filter(function (g) { return !f.kat.value || g.kategori === f.kat.value; }); }
+  function modJab() { return f.jenis.value === 'jab'; }
+  function lukisJabatan() {
+    kosongkan(dok);
+    dok.appendChild(h('div', { class: 'cetak-sahaja kepala-cetak' }, jenama().logo ? h('img', { src: jenama().logo, alt: '', class: 'logo-cetak', onerror: "this.style.display='none'" }) : null, h('h1', null, 'SENARAI PELANTIKAN JAWATANKUASA MENGIKUT JABATAN'), h('h1', null, namaSekolahBesar() + ' TAHUN ' + d.tahun)));
+    var pilih = dataJab.filter(function (g) { return !f.jab.value || g.jabatan === f.jab.value; }), m = f.merit.checked;
+    if (!pilih.length) { dok.appendChild(h('div', { class: 'kosong' }, 'Tiada staf untuk jabatan ini.')); return; }
+    pilih.forEach(function (g) {
+      var bahagian = h('section', { class: 'kumpulan' }, h('h2', { class: 'tajuk-bahagian' }, 'JABATAN ' + g.jabatan.toUpperCase()), h('p', { class: 'diam' }, nf(g.staf.length) + ' staf · ' + nf(g.bil) + ' pelantikan jawatankuasa'));
+      g.staf.forEach(function (e, i) {
+        bahagian.appendChild(h('div', { class: 'blok-jk' }, h('h3', null, (i + 1) + '.  ' + namaPaparan(e).toUpperCase() + (e.jawatanStaf ? '  —  ' + e.jawatanStaf : '') + '   [' + e.jk.length + ' JK' + (m ? ' · merit ' + nf(e.total) : '') + ']'),
+          e.jk.length ? h('table', { class: 'jadual-laporan' }, h('thead', null, h('tr', null, h('th', { style: 'width:48px' }, 'Bil'), h('th', { style: 'width:64px' }, 'Kod'), h('th', null, 'Jawatankuasa'), h('th', null, 'Jawatan'), m ? h('th', { class: 'nombor' }, 'Merit') : null)),
+            h('tbody', null, e.jk.map(function (k, n) { return h('tr', null, h('td', null, n + 1), h('td', null, k.kod), h('td', null, k.nama), h('td', null, k.jawatan), m ? h('td', { class: 'nombor' }, k.merit) : null); })))
+          : h('p', { class: 'diam' }, 'Tiada pelantikan jawatankuasa.')));
+      });
+      dok.appendChild(bahagian);
+    });
+  }
   function lukis() {
+    if (modJab()) return lukisJabatan();
     kosongkan(dok);
     dok.appendChild(h('div', { class: 'cetak-sahaja kepala-cetak' }, jenama().logo ? h('img', { src: jenama().logo, alt: '', class: 'logo-cetak', onerror: "this.style.display='none'" }) : null, h('h1', null, tajukDok)));
     var pilih = terpilih();
@@ -40,9 +79,24 @@ async function paparLaporan() {
       dok.appendChild(bahagian);
     });
   }
-  f.kat.addEventListener('change', lukis); f.merit.addEventListener('change', lukis);
+  var lblKat = h('label', null, 'Paparkan ', f.kat), lblJab = h('label', { style: 'display:none' }, 'Jabatan ', f.jab);
+  function sesuai() { lblKat.style.display = modJab() ? 'none' : ''; lblJab.style.display = modJab() ? '' : 'none'; lukis(); }
+  f.jenis.addEventListener('change', sesuai); f.jab.addEventListener('change', lukis); f.kat.addEventListener('change', lukis); f.merit.addEventListener('change', lukis);
+
+  async function excelJabatan() {
+    var X = await muatXLSX(), m = f.merit.checked, pilih = dataJab.filter(function (g) { return !f.jab.value || g.jabatan === f.jab.value; });
+    var baris = [['Jabatan', 'ID staf', 'Nama', 'Jawatan staf', 'Kod JK', 'Jawatankuasa', 'Jawatan dalam JK'].concat(m ? ['Merit'] : [])];
+    pilih.forEach(function (g) { g.staf.forEach(function (e) {
+      if (!e.jk.length) baris.push([g.jabatan, e.id, namaPaparan(e), e.jawatanStaf, '', 'Tiada pelantikan', ''].concat(m ? [''] : []));
+      e.jk.forEach(function (k) { baris.push([g.jabatan, e.id, namaPaparan(e), e.jawatanStaf, k.kod, k.nama, k.jawatan].concat(m ? [k.merit] : [])); });
+    }); });
+    var ws = X.utils.aoa_to_sheet(baris); ws['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 40 }, { wch: 22 }, { wch: 8 }, { wch: 50 }, { wch: 36 }, { wch: 7 }];
+    var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Mengikut Jabatan ' + d.tahun); X.writeFile(wb, 'JK-Mengikut-Jabatan-' + d.tahun + '.xlsx');
+    toast('Fail Excel dimuat turun.', 'berjaya');
+  }
 
   async function excel() {
+    if (modJab()) return excelJabatan();
     var X = await muatXLSX(), pilih = terpilih(), baris = [[tajukDok], []], gabung = [{ s: { r: 0, c: 0 }, e: { r: 0, c: f.merit.checked ? 3 : 2 } }], lebar = f.merit.checked ? 4 : 3;
     pilih.forEach(function (g) {
       baris.push([(g.huruf ? 'BAHAGIAN ' + g.huruf + ' — ' : '') + g.kategori.toUpperCase()]); gabung.push({ s: { r: baris.length - 1, c: 0 }, e: { r: baris.length - 1, c: lebar - 1 } });
@@ -64,10 +118,10 @@ async function paparLaporan() {
   return h('div', null,
     h('div', { class: 'tajuk-halaman tiada-cetak' }, h('div', null, h('h1', null, 'Laporan JK Induk ' + d.tahun), h('p', null, nf(d.jk.length) + ' jawatankuasa · ' + nf(jumlahAhli) + ' pelantikan. Susunan ahli sama seperti fail JK Induk asal.'))),
     h('div', { class: 'kad tiada-cetak', style: 'margin-bottom:1rem' }, h('div', { class: 'baris-alat' },
-      h('label', null, 'Paparkan ', f.kat), boleh('PENGURUS') ? h('label', null, f.merit, ' Sertakan lajur merit') : null,
+      h('label', null, 'Jenis laporan ', f.jenis), lblKat, lblJab, boleh('PENGURUS') ? h('label', null, f.merit, ' Sertakan lajur merit') : null,
       h('button', { class: 'btn utama', onclick: function () { window.print(); } }, '🖨 Cetak / Simpan PDF'),
       h('button', { class: 'btn', onclick: ujiTindakan(excel) }, '📗 Muat turun Excel (.xlsx)')),
-      h('p', { class: 'diam', style: 'margin:.3rem 0 0' }, 'Untuk PDF: tekan "Cetak / Simpan PDF", pilih destinasi "Save as PDF" (kertas A4). Setiap bahagian bermula pada halaman baharu.')),
+      h('p', { class: 'diam', style: 'margin:.3rem 0 0' }, 'Untuk PDF: tekan "Cetak / Simpan PDF", pilih destinasi "Save as PDF" (kertas A4). Setiap bahagian (atau jabatan) bermula pada halaman baharu.')),
     dok);
 }
 </script>
