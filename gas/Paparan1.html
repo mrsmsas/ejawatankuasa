@@ -205,17 +205,19 @@ async function dialogTugasan(jk, tugasan) {
 function debounce(fn, ms) { var t; return function () { clearTimeout(t); t = setTimeout(fn, ms); }; }
 
 /* ===== Staf ===== */
-S.tapisStaf = { kategori: '', status: '' };
+S.tapisStaf = { kategori: '', status: '', jabatan: '' };
 async function paparStaf() {
   var data = await panggil('senaraiStaf', { tahun: S.tahun }), t = S.tapisStaf, admin = boleh('PENTADBIR'), nampakMerit = boleh('PENGURUS');
+  var senaraiJabatan = Object.keys(data.reduce(function (m, r) { if (r.jabatan) m[r.jabatan] = 1; return m; }, {})).sort(function (a, b) { return a.localeCompare(b, 'ms'); });
+  if (t.jabatan && senaraiJabatan.indexOf(t.jabatan) < 0) t.jabatan = '';
   var jad = jadual({ data: data, saiz: 25, isihAsal: 'nama', arahAsal: 'asc', onKlik: function (r) { pergi('profil', r.staffId); },
-    tapis: function (r) { return (!t.kategori || r.kategori === t.kategori) && (!t.status || r.status === t.status); },
+    tapis: function (r) { return (!t.kategori || r.kategori === t.kategori) && (!t.status || r.status === t.status) && (!t.jabatan || r.jabatan === t.jabatan); },
     lajur: [{ kunci: 'staffId', label: 'ID' }, { kunci: 'nama', label: 'Nama' }, { kunci: 'jawatan', label: 'Jawatan' }, { kunci: 'jabatan', label: 'Jabatan' },
       { kunci: 'kategori', label: 'Kategori', papar: function (r) { return r.dianalisis ? r.kategori : lencana(r.kategori === 'EXOFFICIO' ? 'Ex-officio' : r.kategori === 'PEMEGANG' ? 'Pemegang tempat' : r.kategori, 'amaran'); } },
       { kunci: 'bil', label: 'Tugasan', nombor: true }, nampakMerit ? { kunci: 'total', label: 'Merit', nombor: true, papar: function (r) { return h('b', null, nf(r.total)); } } : null,
       nampakMerit ? { kunci: 'kedudukan', label: 'Kedudukan', nombor: true, papar: function (r) { return r.kedudukan || '—'; } } : null, nampakMerit ? { kunci: 'beban', label: 'Beban', papar: function (r) { return lencanaBeban(r.beban); } } : null,
       { kunci: 'status', label: 'Status', papar: function (r) { return lencana(r.status, r.status === 'AKTIF' ? 'aktif' : 'neutral'); } }].filter(Boolean),
-    alat: [sel('kategori', ['GURU', 'SOKONGAN', 'EXOFFICIO', 'PEMEGANG'], 'Semua kategori'), sel('status', ['AKTIF', 'TIDAK AKTIF'], 'Semua status'),
+    alat: [sel('kategori', ['GURU', 'SOKONGAN', 'EXOFFICIO', 'PEMEGANG'], 'Semua kategori'), sel('jabatan', senaraiJabatan, 'Semua jabatan'), sel('status', ['AKTIF', 'TIDAK AKTIF'], 'Semua status'),
       h('button', { class: 'btn kecil', onclick: function () { var r = jad.dataTapis(); if (nampakMerit) eksportCSV('laporan-merit-staf-' + S.tahun + '.csv', ['ID', 'Nama', 'Jawatan', 'Jabatan', 'Kategori', 'Bil tugasan', 'Jumlah merit', 'Kedudukan', 'Beban', 'Status'], r.map(function (x) { return [x.staffId, x.nama, x.jawatan, x.jabatan, x.kategori, x.bil, x.total, x.kedudukan || '', x.beban, x.status]; })); else eksportCSV('senarai-staf-' + S.tahun + '.csv', ['ID', 'Nama', 'Jawatan', 'Jabatan', 'Kategori', 'Bil tugasan', 'Status'], r.map(function (x) { return [x.staffId, x.nama, x.jawatan, x.jabatan, x.kategori, x.bil, x.status]; })); } }, '⬇ CSV'),
       h('button', { class: 'btn kecil', onclick: function () { window.print(); } }, '🖨 Cetak')] });
   function sel(k, pil, kosong) { var s = pilihSelect(pil, t[k], kosong); s.addEventListener('change', function () { t[k] = s.value; jad.segarkan(); }); return s; }
