@@ -28,7 +28,18 @@ function lukisMenu() {
 // Halaman yang dibenarkan untuk peranan semasa (profil staf ikut kebenaran Staf & Guru)
 function halamanDibenar(id) { var m = MENU.filter(function (x) { return x.id === (id === 'profil' ? 'staf' : id); })[0]; return !!m && boleh(m.min); }
 function halamanMula() { return boleh('PENGURUS') ? 'papan' : 'jk'; }
-function pergi(paparan, param) { S.paparan = paparan; S.param = param || null; render(); window.scrollTo(0, 0); }
+// Sejarah ringkas untuk butang 'Kembali': masuk ke halaman butiran (ada param) menyimpan halaman asal; menu/senarai biasa mengosongkannya.
+function pergi(paparan, param) {
+  if (!S.sejarah) S.sejarah = [];
+  if (param) { var atas = S.sejarah[S.sejarah.length - 1]; if (S.paparan && !(S.paparan === paparan && String(S.param) === String(param)) && !(atas && atas.p === S.paparan && String(atas.a) === String(S.param))) S.sejarah.push({ p: S.paparan, a: S.param }); if (S.sejarah.length > 20) S.sejarah.shift(); }
+  else S.sejarah = [];
+  S.paparan = paparan; S.param = param || null; render(); window.scrollTo(0, 0);
+}
+// Kembali ke halaman asal (penapis senarai seperti Jabatan kekal); jika tiada sejarah, ke halaman lalai.
+function kembali(lalai) {
+  var s = (S.sejarah || []).pop();
+  if (s && halamanDibenar(s.p)) { S.paparan = s.p; S.param = s.a || null; render(); window.scrollTo(0, 0); } else pergi(lalai);
+}
 var jenisRender = 0;
 async function render() {
   if (!halamanDibenar(S.paparan)) { S.paparan = halamanMula(); S.param = null; }

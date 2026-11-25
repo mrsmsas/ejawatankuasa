@@ -676,7 +676,7 @@ async function paparJKButiran(id) {
         toast((await panggil('padamTugasan', { asgId: r.asgId }, { penuh: true })).message, 'berjaya'); render(); })}, 'Buang')); } } : null].filter(Boolean) });
   var lg = d.lengkap;
   return h('div', null,
-    h('div', { class: 'tajuk-halaman' }, h('div', null, h('button', { class: 'btn kecil tiada-cetak', onclick: function () { pergi('jk'); } }, '‹ Senarai'),
+    h('div', { class: 'tajuk-halaman' }, h('div', null, h('button', { class: 'btn kecil tiada-cetak', onclick: function () { kembali('jk'); } }, '‹ Kembali'),
       h('h1', { style: 'margin-top:.5rem' }, jk.kod + ' · ' + jk.nama), h('p', null, 'Tahun ' + jk.tahun + ' · ' + (jk.kategori || 'Tanpa kategori') + ' · ', lencana(jk.status, jk.status === 'AKTIF' ? 'aktif' : 'neutral'))),
       h('div', { class: 'baris-alat tiada-cetak' }, urus ? h('button', { class: 'btn utama', onclick: function () { dialogTugasan(jk, null); } }, '＋ Tambah ahli') : null,
         urus ? h('button', { class: 'btn', onclick: function () { borangJK(jk); } }, 'Sunting') : null,
@@ -790,7 +790,7 @@ async function paparProfil(id) {
   var tgt = (p.sasaranMin !== '' && p.sasaranMin !== undefined) || (p.sasaranMax !== '' && p.sasaranMax !== undefined) ? (p.sasaranMin || '0') + ' – ' + (p.sasaranMax || '∞') : 'Tiada (guna ' + S.asas.tetapan.ambangRendah + '–' + S.asas.tetapan.ambangTinggi + '% daripada purata)';
   var maks = Math.max(p.total, p.purataKategori * 1.6, 1);
   return h('div', null,
-    h('div', { class: 'tajuk-halaman' }, h('div', null, h('button', { class: 'btn kecil tiada-cetak', onclick: function () { pergi('staf'); } }, '‹ Senarai staf'), h('h1', { style: 'margin-top:.5rem' }, s.nama), h('p', null, [s.jawatan, s.jabatan].filter(Boolean).join(' · ') + ' · ID ' + s.staffId)),
+    h('div', { class: 'tajuk-halaman' }, h('div', null, h('button', { class: 'btn kecil tiada-cetak', onclick: function () { kembali('staf'); } }, '‹ Kembali'), h('h1', { style: 'margin-top:.5rem' }, s.nama), h('p', null, [s.jawatan, s.jabatan].filter(Boolean).join(' · ') + ' · ID ' + s.staffId)),
       h('div', { class: 'baris-alat tiada-cetak' }, admin ? h('button', { class: 'btn', onclick: function () { borangStaf(s); } }, 'Sunting') : null,
         admin ? h('button', { class: 'btn bahaya', onclick: ujiTindakan(async function () { if (await sahkan('Padam rekod staf "' + s.nama + '"? Hanya dibenarkan jika tiada tugasan.', { bahaya: true, label: 'Padam' })) { toast((await panggil('padamStaf', { staffId: s.staffId }, { penuh: true })).message, 'berjaya'); await muatAsas(); pergi('staf'); } }) }, 'Padam') : null,
         h('button', { class: 'btn', onclick: function () { window.print(); } }, '🖨 Cetak laporan'),
@@ -812,7 +812,7 @@ async function paparProfil(id) {
 function paparProfilRingkas(p) {
   var s = p.staf;
   return h('div', null,
-    h('div', { class: 'tajuk-halaman' }, h('div', null, h('button', { class: 'btn kecil tiada-cetak', onclick: function () { pergi('staf'); } }, '‹ Senarai staf'), h('h1', { style: 'margin-top:.5rem' }, s.nama), h('p', null, [s.jawatan, s.jabatan].filter(Boolean).join(' · ') + ' · ID ' + s.staffId)),
+    h('div', { class: 'tajuk-halaman' }, h('div', null, h('button', { class: 'btn kecil tiada-cetak', onclick: function () { kembali('staf'); } }, '‹ Kembali'), h('h1', { style: 'margin-top:.5rem' }, s.nama), h('p', null, [s.jawatan, s.jabatan].filter(Boolean).join(' · ') + ' · ID ' + s.staffId)),
       h('div', { class: 'baris-alat tiada-cetak' }, h('button', { class: 'btn', onclick: function () { window.print(); } }, '🖨 Cetak'),
         h('button', { class: 'btn', onclick: function () { eksportCSV('pelantikan-' + s.staffId + '-' + p.tahun + '.csv', ['Jawatankuasa', 'Jawatan', 'Kualifikasi'], p.butiran.map(function (b) { return [b.jkNama, b.posisiNama, b.kualifikasi]; })); } }, '⬇ CSV'))),
     h('div', { class: 'kad' }, h('h2', null, 'Pelantikan Jawatankuasa ' + p.tahun + ' (' + p.bil + ')'),
@@ -2088,7 +2088,18 @@ function lukisMenu() {
 // Halaman yang dibenarkan untuk peranan semasa (profil staf ikut kebenaran Staf & Guru)
 function halamanDibenar(id) { var m = MENU.filter(function (x) { return x.id === (id === 'profil' ? 'staf' : id); })[0]; return !!m && boleh(m.min); }
 function halamanMula() { return boleh('PENGURUS') ? 'papan' : 'jk'; }
-function pergi(paparan, param) { S.paparan = paparan; S.param = param || null; render(); window.scrollTo(0, 0); }
+// Sejarah ringkas untuk butang 'Kembali': masuk ke halaman butiran (ada param) menyimpan halaman asal; menu/senarai biasa mengosongkannya.
+function pergi(paparan, param) {
+  if (!S.sejarah) S.sejarah = [];
+  if (param) { var atas = S.sejarah[S.sejarah.length - 1]; if (S.paparan && !(S.paparan === paparan && String(S.param) === String(param)) && !(atas && atas.p === S.paparan && String(atas.a) === String(S.param))) S.sejarah.push({ p: S.paparan, a: S.param }); if (S.sejarah.length > 20) S.sejarah.shift(); }
+  else S.sejarah = [];
+  S.paparan = paparan; S.param = param || null; render(); window.scrollTo(0, 0);
+}
+// Kembali ke halaman asal (penapis senarai seperti Jabatan kekal); jika tiada sejarah, ke halaman lalai.
+function kembali(lalai) {
+  var s = (S.sejarah || []).pop();
+  if (s && halamanDibenar(s.p)) { S.paparan = s.p; S.param = s.a || null; render(); window.scrollTo(0, 0); } else pergi(lalai);
+}
 var jenisRender = 0;
 async function render() {
   if (!halamanDibenar(S.paparan)) { S.paparan = halamanMula(); S.param = null; }
