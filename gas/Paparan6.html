@@ -6,7 +6,8 @@ function bacaBanding() { try { return JSON.parse(sessionStorage.getItem('jk_band
 function simpanBanding() { try { sessionStorage.setItem('jk_banding', JSON.stringify(S.banding)); } catch (e) {} }
 
 async function paparBanding() {
-  var hasil = await Promise.all([panggil('laporanInduk', { tahun: S.tahun }), panggil('senaraiJK', { tahun: S.tahun })]);
+  var hasil = await Promise.all([panggil('laporanInduk', { tahun: S.tahun }), panggil('senaraiJK', { tahun: S.tahun }), muatProgramJK(S.tahun)]), progBanding = {};
+  hasil[2].forEach(function (p) { (progBanding[p.jkId] = progBanding[p.jkId] || []).push(p); });
   var semua = hasil[0].jk, info = {}, peta = {}, nampakMerit = boleh('PENGURUS'), stafMap = {}, urutPosisi = {};
   hasil[1].forEach(function (j) { info[j.jkId] = j; });
   (S.asas.staf || []).forEach(function (s) { stafMap[s.staffId] = s; });
@@ -29,6 +30,12 @@ async function paparBanding() {
 
   var mod = 'semua', cari = '', akar = h('div', { class: 'bdg' }), kepala = h('div', { class: 'bdg-kepala tiada-cetak' }), badan = h('div');
   function pilihan() { return S.banding.map(function (p) { return p ? peta[p.jkId] : null; }); }
+  // Tarikh berlangsung setiap JK; tarikh yang bertindih dengan JK lain yang dibanding ditandakan.
+  function bertindihBanding(p, i, pil) { return pil.some(function (j, n) { return j && n !== i && (progBanding[j.jkId] || []).some(function (q) { return q.mula <= p.akhir && p.mula <= q.akhir; }); }); }
+  function tarikhBanding(j, i, pil) {
+    var ps = progBanding[j.jkId] || []; if (!ps.length) return '—';
+    return ps.map(function (p) { var bt = bertindihBanding(p, i, pil); return h('div', { style: 'margin-bottom:.25rem' }, h('b', null, jkJulat(p)), p.tajuk ? h('small', { class: 'diam blok' }, p.tajuk) : null, bt ? lencana('Bertindih', 'amaran') : null); });
+  }
   function tetap(i, jkId) { S.banding[i] = jkId ? { jkId: jkId, kod: peta[jkId].kod } : null; simpanBanding(); lukisKepala(); lukis(); }
 
   /* --- Bar pemilih (melekat di atas semasa skrol) --- */
@@ -87,6 +94,7 @@ async function paparBanding() {
       baris('Jawatan rasmi', bagi(function (j) { return nf(kira(j)); }), 'angka'),
       ada.length > 1 ? baris('Ahli bertindih', bagi(function (j, i) { return lainMana[i] ? [nf(lainMana[i]), h('small', { class: 'diam blok' }, 'juga dalam jawatankuasa lain yang dibanding')] : '0'; }), 'angka') : null,
       nampakMerit ? baris('Jumlah merit', bagi(function (j) { return nf(j.senarai.reduce(function (s, a) { return s + (Number(a.merit) || 0); }, 0)); }), 'angka') : null,
+      baris('Tarikh berlangsung', bagi(function (j, i) { return tarikhBanding(j, i, pil); })),
       baris('Kelengkapan', bagi(function (j) { var x = info[j.jkId] || {}; return x.lengkap === false ? [lencana('Belum lengkap', 'amaran'), x.kurang && x.kurang.length ? h('small', { class: 'diam blok' }, 'Perlu: ' + x.kurang.map(function (y) { return String(y).replace(/\|/g, '/'); }).join(', ')) : null] : lencana('Lengkap', 'aktif'); })));
 
     /* Senarai ahli, sebaris mengikut jawatan */
@@ -130,6 +138,8 @@ async function paparBanding() {
       var sl = pil.map(function (j) { return j.senarai.filter(function (a) { return a.posisi === p; }); }), n = Math.max.apply(null, sl.map(function (x) { return x.length; }));
       for (var i = 0; i < n; i++) b.push([i ? '' : p].concat(sl.map(function (x) { return x[i] ? x[i].nama + (x[i].kualifikasi ? ' (' + x[i].kualifikasi + ')' : '') : ''; })));
     });
+    var mT = Math.max.apply(null, pil.map(function (j) { return (progBanding[j.jkId] || []).length; })), tarikhTeks = function (j, k) { var p = (progBanding[j.jkId] || [])[k]; return p ? jkJulat(p) + (p.tajuk ? ' (' + p.tajuk + ')' : '') : ''; };
+    if (mT) { b.splice(3, 0, ['Tarikh berlangsung'].concat(pil.map(function (j) { return tarikhTeks(j, 0); }))); for (var k = 1; k < mT; k++) b.splice(3 + k, 0, [''].concat(pil.map(function (j) { return tarikhTeks(j, k); }))); b.splice(3 + mT, 0, []); }
     var ws = X.utils.aoa_to_sheet(b); ws['!cols'] = [{ wch: 24 }].concat(pil.map(function () { return { wch: 46 }; })); X.utils.book_append_sheet(wb, ws, 'Perbandingan');
     var s = [['Nama'].concat(pil.map(function (j) { return j.kod || j.nama; }))];
     Object.keys(tindih).forEach(function (o) { var e = tindih[o]; if (bilDi(e) > 1) s.push([e.nama].concat(pil.map(function (j, i) { return (e.di[i] || []).map(function (a) { return a.posisi; }).join(', '); }))); });
