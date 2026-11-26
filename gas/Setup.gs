@@ -22,13 +22,14 @@ function ciptaHelaian_() {
     // Lajur ID/teks sebagai teks supaya ID seperti 0123 tidak ditukar kepada nombor.
     SKEMA[nama].forEach(function (k, i) { if (TEKS_.indexOf(k) >= 0) sh.getRange(2, i + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@'); });
   });
+  batalCache_(); // helaian baharu mungkin telah dicache sebagai kosong
   return ss;
 }
 
 // Khusus pemasangan yang mempunyai data benih sendiri (gas/BenihData.gs). Sekolah baharu menggunakan menu eJawatankuasa.
 // Idempotent: helaian yang sudah ada isi akan dilangkau.
 function setupAwal() {
-  pemilikSahaja_();
+  pemilikSahaja_(); mulaPermintaan_(true);
   if (typeof BENIH === 'undefined') throw new Error('Gunakan menu eJawatankuasa ▸ Pasang sistem dalam Google Sheet.');
   var ss = ciptaHelaian_();
   var ada = function (n) { return ss.getSheetByName(n).getLastRow() > 1; };
@@ -61,7 +62,7 @@ function setupAwal() {
 
 // Tetapkan / tetap semula kata laluan seorang pengguna (jalankan dari editor jika terlupa).
 function tetapKataLaluan(emel, kata) {
-  pemilikSahaja_();
+  pemilikSahaja_(); mulaPermintaan_(true);
   var p = cariPengguna_(emel); if (!p) throw new Error('Pengguna tidak dijumpai: ' + emel);
   if (!kata || kata.length < 8) throw new Error('Kata laluan sekurang-kurangnya 8 aksara.');
   var garam = Utilities.getUuid(); kemas_('Pengguna', 'emel', p.emel, { garam: garam, hash: hash_(garam, kata) });

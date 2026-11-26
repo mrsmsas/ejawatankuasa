@@ -179,7 +179,7 @@ const masaJalan = `<script>
   ['setNumberFormat', 'setFontWeight', 'setBackground', 'setFontColor', 'setFontSize', 'setWrap'].forEach(function (m) { Julat.prototype[m] = function () { return this; }; });
   function Helaian(n, d) { this.n = n; this.d = d || []; }
   Helaian.prototype = { getName: function () { return this.n; }, getLastRow: function () { return this.d.length; }, getMaxRows: function () { return this.d.length + 50; }, setFrozenRows: function () {}, setColumnWidth: function () {},
-    clear: function () { this.d = []; kotor = true; return this; }, getRange: function (r, c, nr, nc) { return new Julat(this, r, c, nr, nc); }, deleteRow: function (r) { this.d.splice(r - 1, 1); kotor = true; } };
+    clear: function () { this.d = []; kotor = true; return this; }, getRange: function (r, c, nr, nc) { return new Julat(this, r, c, nr, nc); }, deleteRow: function (r) { this.d.splice(r - 1, 1); kotor = true; }, deleteRows: function (r, n) { this.d.splice(r - 1, n); kotor = true; } };
   var ss = { getSheetByName: function (n) { return helaian[n] || null; }, insertSheet: function (n) { helaian[n] = new Helaian(n); urutan.push(n); kotor = true; return helaian[n]; }, getSheets: function () { return urutan.map(function (n) { return helaian[n]; }); }, setActiveSheet: function () {} };
   var perkhidmatan = {
     SpreadsheetApp: { getActiveSpreadsheet: function () { return ss; }, openById: function () { return ss; } },

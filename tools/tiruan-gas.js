@@ -18,6 +18,7 @@ class Helaian {
   getLastRow() { return this.d.length; } getMaxRows() { return this.d.length + 50; } setFrozenRows() {} setColumnWidth() {} clear() { this.d = []; return this; }
   getRange(r, c, nr, nc) { return new Julat(this, r, c, nr, nc); }
   deleteRow(r) { this.d.splice(r - 1, 1); }
+  deleteRows(r, n) { this.d.splice(r - 1, n); }
 }
 
 // muatBenih: true = pemasangan MRSM SAS (BenihData + SekolahIni); false = sama seperti templat sekolah lain.
@@ -36,7 +37,8 @@ function buatPersekitaran({ muatBenih, folder }) {
     console: { log: console.log, error: console.error }, Logger: { log() {} },
     SpreadsheetApp: { getActiveSpreadsheet: () => ss },
     PropertiesService: { getScriptProperties: () => ({ getProperty: () => null, setProperty() {} }) },
-    CacheService: { getScriptCache: () => ({ get: k => peta.get(k) || null, put: (k, v) => peta.set(k, v), remove: k => peta.delete(k) }) },
+    CacheService: { getScriptCache: () => ({ get: k => peta.get(k) || null, put: (k, v) => peta.set(k, v), remove: k => peta.delete(k),
+      getAll: ks => Object.fromEntries(ks.filter(k => peta.has(k)).map(k => [k, peta.get(k)])), putAll: m => Object.keys(m).forEach(k => peta.set(k, m[k])) }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     ScriptApp: { getScriptId: () => 'ID_SKRIP_UJIAN', getService: () => ({ getUrl: () => kotak.__urlWeb }) },
     Session: { getActiveUser: () => ({ getEmail: () => kotak.__aktif }), getEffectiveUser: () => ({ getEmail: () => EMEL_PEMILIK }) },

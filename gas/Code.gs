@@ -58,17 +58,18 @@ function include(nama) { return HtmlService.createHtmlOutputFromFile(nama).getCo
 function api(permintaan) {
   try {
     var fn = permintaan && permintaan.fn, args = (permintaan && permintaan.args) || {};
+    var h = LALUAN_[fn];
+    mulaPermintaan_(false);
     var awam = { login: login_, sesi: sesi_, jenama: jenama_ };
     if (awam[fn]) return awam[fn](permintaan.token, args);
     var pengguna = pengesah_(permintaan.token);
     if (!pengguna) return gagal_('Sesi tamat. Sila log masuk semula.', 'TAMAT_SESI');
-    var h = LALUAN_[fn];
     if (!h) return gagal_('Fungsi tidak dikenali.');
     if (PERANAN[pengguna.peranan] < PERANAN[h.min]) return gagal_('Anda tidak dibenarkan melakukan tindakan ini.', 'TIADA_AKSES');
     if (h.tulis) {
       var kunci = LockService.getScriptLock();
-      if (!kunci.tryLock(20000)) return gagal_('Sistem sedang sibuk. Sila cuba sekejap lagi.');
-      try { return h.fn(pengguna, args); } finally { kunci.releaseLock(); }
+      if (!kunci.tryLock(20000)) return gagal_('Sistem sedang sibuk. Sila cuba sekejap lagi.', 'SIBUK'); // tiada data ditulis: klien boleh cuba semula
+      try { return h.fn(pengguna, args); } finally { segarCache_(); kunci.releaseLock(); }
     }
     return h.fn(pengguna, args);
   } catch (e) {
@@ -139,12 +140,81 @@ function tukarKata_(pg, a) {
 }
 
 // ---------- Akses helaian ----------
+// Prestasi: helaian dibaca sekali sahaja bagi setiap permintaan (MEMO_) dan dikongsi antara pengguna melalui
+// CacheService (CACHE_SAAT_). Setiap helaian ada "generasi" sendiri (g_<nama>); penulisan menukar generasi helaian itu
+// sahaja, dan selepas permintaan tulis selesai helaian yang diubah dibaca semula ke cache (write-through) supaya
+// paparan seterusnya kekal laju. Semua penulisan melalui sistem dikunci (LockService) dan dilakukan melalui fungsi di bawah,
+// jadi cache sentiasa tepat. Suntingan manual terus dalam Google Sheet kelihatan selepas paling lama CACHE_SAAT_ saat.
+var CACHE_SAAT_ = 600, CACHE_CEBIS_ = 30000, TIDAK_CACHE_ = { LogAudit: 1 };
+var MEMO_ = {}, DB_ = null, GEN_ = null, DIUBAH_ = {}, TANPA_CACHE_ = false, CACHE_ROSAK_ = false;
+function mulaPermintaan_(tanpaCache) { MEMO_ = {}; DB_ = null; GEN_ = null; DIUBAH_ = {}; TANPA_CACHE_ = !!tanpaCache; CACHE_ROSAK_ = false; }
 function db_() {
+  if (DB_) return DB_;
   var id = PropertiesService.getScriptProperties().getProperty('DB_ID');
-  return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
+  DB_ = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
+  return DB_;
+}
+function cacheData_() { if (CACHE_ROSAK_) return null; var c = CacheService.getScriptCache(); return typeof c.getAll === 'function' && typeof c.putAll === 'function' ? c : null; }
+function genBaharu_() { return Utilities.getUuid().slice(0, 8); }
+// Generasi semua helaian diambil dengan satu panggilan bagi setiap permintaan.
+function genCache_(c, nama) {
+  if (!GEN_) GEN_ = c.getAll(Object.keys(SKEMA).map(function (n) { return 'g_' + n; })) || {};
+  var g = GEN_['g_' + nama];
+  if (!g) { g = genBaharu_(); GEN_['g_' + nama] = g; c.put('g_' + nama, g, 21600); }
+  return g;
+}
+// Dipanggil selepas SETIAP penulisan ke helaian. Tanpa nama = batalkan semua helaian (cth. helaian baharu dicipta).
+function batalCache_(nama) {
+  if (nama && TIDAK_CACHE_[nama]) return;
+  var senarai = nama ? [nama] : Object.keys(SKEMA).filter(function (n) { return !TIDAK_CACHE_[n]; });
+  senarai.forEach(function (n) { delete MEMO_[n]; DIUBAH_[n] = 1; });
+  try {
+    var c = cacheData_(); if (!c) return;
+    if (!GEN_) GEN_ = {};
+    var m = {}; senarai.forEach(function (n) { GEN_['g_' + n] = m['g_' + n] = genBaharu_(); });
+    c.putAll(m, 21600);
+  } catch (e) { CACHE_ROSAK_ = true; console.error(e); }
+}
+// Write-through: dipanggil sebelum kunci tulis dilepaskan. Hanya helaian yang diubah dibaca semula.
+function segarCache_() {
+  var senarai = Object.keys(DIUBAH_); DIUBAH_ = {};
+  if (!senarai.length || TANPA_CACHE_ || !cacheData_()) return;
+  senarai.forEach(function (n) {
+    try { var teks = JSON.stringify(bacaHelaian_(n)); MEMO_[n] = teks; cacheSimpan_(n, teks); } catch (e) { console.error(e); }
+  });
+}
+function cacheDapat_(nama) {
+  try {
+    var c = cacheData_(); if (!c) return null;
+    var k = 'd_' + nama + '_' + genCache_(c, nama), n = c.get(k); if (n === null) return null;
+    var kunci = []; for (var i = 0; i < Number(n); i++) kunci.push(k + '_' + i);
+    var m = kunci.length ? c.getAll(kunci) : {}, cebis = [];
+    for (i = 0; i < kunci.length; i++) { if (m[kunci[i]] === undefined || m[kunci[i]] === null) return null; cebis.push(m[kunci[i]]); }
+    return cebis.join('');
+  } catch (e) { CACHE_ROSAK_ = true; console.error(e); return null; }
+}
+function cacheSimpan_(nama, teks) {
+  try {
+    var c = cacheData_(); if (!c || teks.length > 2000000) return;
+    var k = 'd_' + nama + '_' + genCache_(c, nama), m = {}, n = 0;
+    for (var i = 0; i < teks.length; i += CACHE_CEBIS_) m[k + '_' + (n++)] = teks.substring(i, i + CACHE_CEBIS_);
+    if (n) c.putAll(m, CACHE_SAAT_);
+    c.put(k, String(n), CACHE_SAAT_); // kunci kiraan disimpan terakhir: cebisan sentiasa lengkap jika kiraan wujud
+  } catch (e) { CACHE_ROSAK_ = true; console.error(e); }
 }
 function benar_(x) { return x === true || x === 'TRUE' || x === 'true'; }
+// Pulangkan salinan baharu setiap kali supaya pemanggil boleh mengubah objek tanpa mencemar memo/cache.
 function baca_(nama) {
+  if (TIDAK_CACHE_[nama]) return bacaHelaian_(nama);
+  var teks = MEMO_[nama];
+  if (teks === undefined) {
+    teks = TANPA_CACHE_ ? null : cacheDapat_(nama);
+    if (teks === null) { teks = JSON.stringify(bacaHelaian_(nama)); if (!TANPA_CACHE_) cacheSimpan_(nama, teks); }
+    MEMO_[nama] = teks;
+  }
+  return JSON.parse(teks);
+}
+function bacaHelaian_(nama) {
   var sh = db_().getSheetByName(nama); if (!sh) return [];
   var n = sh.getLastRow(); if (n < 2) return [];
   var kepala = SKEMA[nama], v = sh.getRange(2, 1, n - 1, kepala.length).getValues();
@@ -160,6 +230,7 @@ function tambah_(nama, objs) {
   if (!objs.length) return;
   var sh = db_().getSheetByName(nama), mula = Math.max(sh.getLastRow(), 1) + 1;
   sh.getRange(mula, 1, objs.length, SKEMA[nama].length).setValues(objs.map(function (o) { return barisKeLarik_(nama, o); }));
+  batalCache_(nama);
 }
 function cariBaris_(sh, nama, kunci, nilai) {
   var n = sh.getLastRow(); if (n < 2) return -1;
@@ -174,11 +245,25 @@ function kemas_(nama, kunci, nilai, perubahan) {
   SKEMA[nama].forEach(function (k, i) { o[k] = lama[i]; });
   Object.keys(perubahan).forEach(function (k) { o[k] = perubahan[k]; });
   r.setValues([barisKeLarik_(nama, o)]);
+  batalCache_(nama);
 }
 function padam_(nama, kunci, nilai) {
   var sh = db_().getSheetByName(nama), b = cariBaris_(sh, nama, kunci, nilai);
   if (b < 0) tolak_('Rekod tidak dijumpai.');
   sh.deleteRow(b);
+  batalCache_(nama);
+}
+// Padam semua baris yang lajur kuncinya = nilai. Lajur dibaca sekali; baris berturutan dipadam sekali gus.
+function padamBarisJika_(nama, kunci, nilai) {
+  var sh = db_().getSheetByName(nama); if (!sh) return;
+  var n = sh.getLastRow(); if (n < 2) return;
+  var kol = SKEMA[nama].indexOf(kunci) + 1, v = sh.getRange(2, kol, n - 1, 1).getValues(), ada = false;
+  for (var i = v.length - 1; i >= 0; i--) {
+    if (String(v[i][0]) !== String(nilai)) continue;
+    var j = i; while (j > 0 && String(v[j - 1][0]) === String(nilai)) j--;
+    sh.deleteRows(j + 2, i - j + 1); ada = true; i = j;
+  }
+  if (ada) batalCache_(nama);
 }
 function log_(pengguna, tindakan, entiti, id, sebelum, selepas) {
   try {
@@ -379,8 +464,7 @@ function padamJK_(pg, a) {
   var d = semuaData_(), jk = d.jawatankuasa.filter(function (x) { return x.jkId === a.jkId; })[0]; if (!jk) return gagal_('Tidak dijumpai.');
   var ts = d.tugasan.filter(function (x) { return x.jkId === a.jkId; });
   if (ts.length && !a.paksa) return gagal_('Jawatankuasa ini mempunyai ' + ts.length + ' tugasan. Sahkan untuk memadam bersama semua tugasan, atau nyahaktifkan sahaja.', 'ADA_TUGASAN');
-  var sh = db_().getSheetByName('Tugasan'), n = sh.getLastRow();
-  for (var i = n; i >= 2; i--) if (String(sh.getRange(i, 3).getValue()) === a.jkId) sh.deleteRow(i);
+  padamBarisJika_('Tugasan', 'jkId', a.jkId);
   padam_('Jawatankuasa', 'jkId', a.jkId);
   programPadamJK_(a.jkId);
   log_(pg.emel, 'PADAM', 'Jawatankuasa', a.jkId, { jk: jk, bilTugasan: ts.length }, '');
@@ -466,7 +550,7 @@ function simpanPosisi_(pg, a) {
 }
 function tetapMerit_(tahun, posisiId, merit, sedia) {
   var sh = db_().getSheetByName('TetapanMerit'), n = sh.getLastRow(), v = n > 1 ? sh.getRange(2, 1, n - 1, 2).getValues() : [];
-  for (var i = 0; i < v.length; i++) if (Number(v[i][0]) === Number(tahun) && String(v[i][1]) === String(posisiId)) { sh.getRange(i + 2, 3).setValue(merit); return; }
+  for (var i = 0; i < v.length; i++) if (Number(v[i][0]) === Number(tahun) && String(v[i][1]) === String(posisiId)) { sh.getRange(i + 2, 3).setValue(merit); batalCache_('TetapanMerit'); return; }
   tambah_('TetapanMerit', [{ tahun: tahun, posisiId: posisiId, merit: merit }]);
 }
 function simpanMerit_(pg, a) {
@@ -479,7 +563,7 @@ function padamPosisi_(pg, a) {
   var d = semuaData_(); if (d.tugasan.some(function (t) { return t.posisiId === a.posisiId; })) return gagal_('Jawatan ini sedang digunakan dalam tugasan. Nyahaktifkan sahaja.');
   var lama = d.posisi.filter(function (p) { return p.posisiId === a.posisiId; })[0]; if (!lama) return gagal_('Tidak dijumpai.');
   padam_('Posisi', 'posisiId', a.posisiId);
-  var sh = db_().getSheetByName('TetapanMerit'); for (var i = sh.getLastRow(); i >= 2; i--) if (String(sh.getRange(i, 2).getValue()) === a.posisiId) sh.deleteRow(i);
+  padamBarisJika_('TetapanMerit', 'posisiId', a.posisiId);
   log_(pg.emel, 'PADAM', 'Posisi', a.posisiId, lama, ''); return ok_(null, 'Jawatan dipadam.');
 }
 
@@ -555,6 +639,7 @@ function simpanTetapan_(pg, a) {
   Object.keys(diubah).forEach(function (k) {
     var b = cariBaris_(sh, 'Tetapan', 'kunci', k); if (b < 0) tambah_('Tetapan', [{ kunci: k, nilai: diubah[k] }]); else sh.getRange(b, 2).setValue(diubah[k]);
   });
+  batalCache_('Tetapan');
   var catat = JSON.parse(JSON.stringify(diubah)); if (catat.logo !== undefined) catat.logo = catat.logo ? '(logo dikemas kini)' : '(logo dibuang)';
   log_(pg.emel, 'UBAH_TETAPAN', 'Tetapan', '-', '', catat); return ok_(null, 'Tetapan disimpan.');
 }
@@ -729,12 +814,7 @@ function programJanaId_(senarai) {
   return maks + 1;
 }
 function programHelaian_() { if (!db_().getSheetByName('JKProgram')) ciptaHelaian_(); }
-function programPadamJK_(jkId) {
-  var sh = db_().getSheetByName('JKProgram'); if (!sh) return;
-  var n = sh.getLastRow(); if (n < 2) return;
-  var kol = SKEMA.JKProgram.indexOf('jkId') + 1, v = sh.getRange(2, kol, n - 1, 1).getValues();
-  for (var i = v.length - 1; i >= 0; i--) if (String(v[i][0]) === String(jkId)) sh.deleteRow(i + 2);
-}
+function programPadamJK_(jkId) { padamBarisJika_('JKProgram', 'jkId', jkId); }
 function programJKDapat_(pg, a) {
   var tahun = tahunAktif_(a), jk = {};
   baca_('Jawatankuasa').forEach(function (j) { if (Number(j.tahun) === tahun) jk[j.jkId] = j; });

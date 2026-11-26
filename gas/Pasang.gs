@@ -36,7 +36,7 @@ function menuSetSemulaKataLaluan() {
 
 // Dipanggil oleh wizard apabila dibuka.
 function maklumatPemasang() {
-  pemilikSahaja_();
+  pemilikSahaja_(); mulaPermintaan_(true);
   var dipasang = baca_('Pengguna').length > 0, t = tetapan_();
   var hasil = { dipasang: dipasang, emel: Session.getEffectiveUser().getEmail(), tahun: new Date().getFullYear(), editor: 'https://script.google.com/d/' + ScriptApp.getScriptId() + '/edit', logoMaks: LOGO_MAKS_ };
   if (dipasang) { hasil.namaSekolah = t.namaSekolah; hasil.bilStaf = baca_('Staf').length; hasil.bilJK = baca_('Jawatankuasa').length; hasil.bilPengguna = baca_('Pengguna').length; }
@@ -45,7 +45,7 @@ function maklumatPemasang() {
 }
 
 function pasangSistem(b) {
-  pemilikSahaja_();
+  pemilikSahaja_(); mulaPermintaan_(true);
   b = b || {};
   var kunci = LockService.getScriptLock();
   if (!kunci.tryLock(20000)) throw new Error('Pemasangan lain sedang berjalan. Cuba sekejap lagi.');
@@ -82,7 +82,7 @@ function pasangSistem(b) {
     ss.getSheets().forEach(function (sh) { if (/^(Sheet|Helaian)\d*$/.test(sh.getName()) && sh.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(sh); });
     tulisHalamanMula_(true);
     return maklumatPemasang();
-  } finally { kunci.releaseLock(); }
+  } finally { batalCache_(); kunci.releaseLock(); }
 }
 
 function tulisHalamanMula_(dipasang) {

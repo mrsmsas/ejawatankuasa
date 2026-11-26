@@ -73,12 +73,20 @@ function toast(mesej, jenis) {
 function beban(d) { S.beban = Math.max(0, S.beban + d); $('#memuat').classList.toggle('buka', S.beban > 0); }
 
 /* ===== Panggilan API ===== */
+// Fungsi baca sahaja: selamat dicuba semula jika sambungan gagal atau pelayan penuh (ramai pengguna serentak).
+// Penulisan TIDAK dicuba semula selepas sambungan gagal (mungkin sudah disimpan); hanya selepas kod SIBUK (pasti belum ditulis).
+var FN_BACA_ = /^(muatAsas|dashboard|senarai|butiran|profil|eksport|laporan|banding|cadangan|pratonton|semak|takwimDapat|takwimLampiranDapat|programJKDapat|bacaAudit|jenama|sesi)/;
+var CUBA_SEMULA_ = [1000, 2500, 5000];
 function panggil(fn, args, pilihan) {
   pilihan = pilihan || {};
+  var cubaan = 0;
+  var tunggu = function () { var ms = CUBA_SEMULA_[cubaan++]; return new Promise(function (ok) { setTimeout(ok, ms + Math.floor(Math.random() * 600)); }); };
   return new Promise(function (res, rej) {
     beban(1);
+    (function hantar() {
     google.script.run
       .withSuccessHandler(function (r) {
+        if (r && r.code === 'SIBUK' && cubaan < CUBA_SEMULA_.length) return tunggu().then(hantar);
         beban(-1);
         if (!r) { toast('Tiada jawapan daripada pelayan.', 'ralat'); return rej(new Error('kosong')); }
         if (r.success) return res(pilihan.penuh ? r : r.data);
@@ -86,8 +94,11 @@ function panggil(fn, args, pilihan) {
         if (!pilihan.senyap) toast(r.message, 'ralat');
         var e = new Error(r.message); e.kod = r.code; e.dikendali = true; rej(e);
       })
-      .withFailureHandler(function (e) { beban(-1); toast('Sambungan ke pelayan gagal. Semak internet dan cuba lagi.', 'ralat'); var x = new Error(String(e && e.message || e)); x.dikendali = true; rej(x); })
+      .withFailureHandler(function (e) {
+        if (FN_BACA_.test(fn) && cubaan < CUBA_SEMULA_.length) return tunggu().then(hantar);
+        beban(-1); toast('Sambungan ke pelayan gagal. Semak internet dan cuba lagi.', 'ralat'); var x = new Error(String(e && e.message || e)); x.dikendali = true; rej(x); })
       .api({ token: S.token, fn: fn, args: args || {} });
+    })();
   });
 }
 function ujiTindakan(fn) { return function () { var a = arguments; return Promise.resolve().then(function () { return fn.apply(null, a); }).catch(function (e) { if (!e || !e.dikendali) { console.error(e); toast('Ralat tidak dijangka: ' + (e && e.message), 'ralat'); } }); }; }
