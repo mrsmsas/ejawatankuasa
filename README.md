@@ -66,6 +66,14 @@ mrsmsas-jk-2027/
 - **Lampiran takwim (sub-modul):** jika fail Excel yang sama mengandungi helaian `4 ZON`, `CADANGAN TUAN RUMAH`, `MRSM IKUT NEGERI`, `KALENDAR AKADEMIK` dan `HARI PERSEKOLAHAN`, ia dibaca sekali gus ketika memuat naik takwim (atau melalui butang **⬆ Muat naik lampiran** tanpa menggantikan takwim utama) dan muncul sebagai tab di bawah tahun berkenaan (cth. 2027). Setiap tab boleh dicari, dicetak dan dimuat turun sebagai Excel. Tahun yang tiada lampiran tidak memaparkan tab. Lampiran diganti sepenuhnya apabila dimuat naik semula; padam takwim (System Admin) turut memadam lampirannya. Storan: helaian `TakwimLampiran` (satu baris setiap tahun + bahagian, dicipta automatik). Selepas mengemas kini `Code.gs`, **Deploy ▸ Manage deployments ▸ New version** supaya API baharu aktif.
 - Storan: helaian `Takwim`, satu baris setahun (data hari JSON dipecah ke `hari1..hari4`, setiap sel diawali `~` supaya tidak dianggap formula). Helaian dicipta automatik pada simpanan pertama — pemasangan sedia ada tidak perlu dipasang semula.
 
+## Tarikh berlangsung jawatankuasa
+
+- Setiap jawatankuasa boleh ada beberapa tarikh (satu hari atau julat). Editor/System Admin menambah di halaman butiran JK (**＋ Tambah tarikh**): pilih acara daripada takwim sekolah (carian, boleh pilih banyak) atau masukkan tarikh manual. Viewer hanya melihat.
+- Dipaparkan pada **Direktori Jawatankuasa** (lajur "Tarikh berlangsung" + penapis tarikh), **butiran JK**, dan **Takwim Sekolah**: hari yang ada JK bertanda `JK n` (tidak dicetak); klik tarikh untuk senarai JK (pautan ke JK). Editor boleh menambah banyak JK ke satu tarikh terus dari takwim.
+- Storan: helaian baharu `JKProgram` (dicipta automatik); takwim sedia ada tidak disentuh. Padam JK memadam tarikhnya. Salin JK/tahun tidak menyalin tarikh.
+- **Terbitkan `Code.gs` dahulu** (New version), kemudian `index.html`. Jika antara muka dahulu, halaman tetap berfungsi tetapi tarikh kosong.
+- Ujian: `node tools/ujian-program-jk.js`.
+
 ## Peranan
 
 | Peranan | Kebenaran |

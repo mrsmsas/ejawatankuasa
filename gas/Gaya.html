@@ -202,6 +202,7 @@ tr.klik{cursor:pointer}
 .tkw-senarai td{font-size:13px}
 .tkw-katbaris{display:flex;gap:8px;align-items:center;margin-bottom:6px}.tkw-katbaris input[type=text]{flex:1}
 .tkw-sub{display:flex;flex-wrap:wrap;gap:.35rem;margin:.55rem 0}.tkw-sub .btn.aktif{background:var(--hijau);border-color:var(--hijau);color:#fff}
+.tkw-jk{display:inline-block;margin-left:3px;padding:0 4px;border-radius:8px;background:#0f2c63;color:#fff;font-size:9px;font-weight:700;line-height:14px;vertical-align:middle}
 .tkw-h3{margin:16px 0 6px;font-size:14px}
 .tkw-jad{width:100%;font-size:12.5px}
 .tkw-jad th{background:#d9e2f3;color:#000;border:1px solid #777;padding:4px 6px;text-align:left;font-size:12px;vertical-align:bottom}
@@ -214,6 +215,7 @@ tr.klik{cursor:pointer}
 @page bdg{size:A4 landscape;margin:10mm}
 @page surat{size:A4;margin:22mm 12mm 10mm 30mm}
 @media print{
+  .tkw-jk{display:none}
   .tkw{border:0;padding:0}.tkw-skrol{overflow:visible}
   .tkw *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .tkw-v-grid{page:tkwA3}.tkw-v-grid .tkw-grid{min-width:0;font-size:8px}.tkw-v-grid .tkw-grid td.hk{height:auto}

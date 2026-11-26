@@ -14,9 +14,12 @@ var SKEMA = {
   Takwim: ['tahun', 'tajuk', 'bulan', 'kategori', 'nota', 'hari1', 'hari2', 'hari3', 'hari4', 'dikemaskini', 'oleh'],
   // Lampiran takwim (4 Zon, Cadangan Tuan Rumah, MRSM Ikut Negeri, Kalendar Akademik, Hari Persekolahan): satu baris bagi setiap tahun + modul.
   // id = tahun|kunci. Data modul (JSON) dipecah ke data1..data4 kerana had 50,000 aksara satu sel.
-  TakwimLampiran: ['id', 'tahun', 'kunci', 'data1', 'data2', 'data3', 'data4', 'dikemaskini', 'oleh']
+  TakwimLampiran: ['id', 'tahun', 'kunci', 'data1', 'data2', 'data3', 'data4', 'dikemaskini', 'oleh'],
+  // Tarikh program/majlis bagi setiap jawatankuasa (boleh banyak tarikh setiap JK). Helaian baharu; helaian lain tidak diubah.
+  // mula/akhir = yyyy-mm-dd (teks). sumber = TAKWIM (dipilih daripada takwim) atau MANUAL.
+  JKProgram: ['progId', 'tahun', 'jkId', 'mula', 'akhir', 'tajuk', 'catatan', 'sumber', 'dikemaskini', 'oleh']
 };
-var TEKS_ = ['staffId', 'asgId', 'jkId', 'posisiId', 'kod', 'telefon', 'emel', 'tarikhEfektif', 'tarikhLantik'];
+var TEKS_ = ['staffId', 'asgId', 'jkId', 'posisiId', 'kod', 'telefon', 'emel', 'tarikhEfektif', 'tarikhLantik', 'progId', 'mula', 'akhir'];
 var PERANAN = { PENTADBIR: 3, PENGURUS: 2, PELIHAT: 1 };
 var TETAPAN_ASAL = {
   tahunAktif: '', ambangTinggi: '130', ambangRendah: '50',
@@ -379,6 +382,7 @@ function padamJK_(pg, a) {
   var sh = db_().getSheetByName('Tugasan'), n = sh.getLastRow();
   for (var i = n; i >= 2; i--) if (String(sh.getRange(i, 3).getValue()) === a.jkId) sh.deleteRow(i);
   padam_('Jawatankuasa', 'jkId', a.jkId);
+  programPadamJK_(a.jkId);
   log_(pg.emel, 'PADAM', 'Jawatankuasa', a.jkId, { jk: jk, bilTugasan: ts.length }, '');
   return ok_(null, 'Jawatankuasa dipadam.');
 }
@@ -698,8 +702,91 @@ function takwimLampiranSimpan_(pg, a) {
   return ok_({ tahun: tahun, lampiran: kunci }, 'Lampiran takwim ' + tahun + ' disimpan (' + kunci.length + ' bahagian).');
 }
 
+// ---------- Tarikh program jawatankuasa ----------
+// Setiap jawatankuasa boleh ada beberapa tarikh (satu hari atau julat). Tarikh dipilih daripada takwim sekolah atau dimasukkan manual.
+// Data takwim tidak disentuh; hanya helaian JKProgram (dicipta automatik pada simpanan pertama).
+var PROGRAM_MAKS_JK_ = 60, PROGRAM_MAKS_SEKALI_ = 200, PROGRAM_MAKS_HARI_ = 60;
+function tarikhSah_(s) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return false;
+  var y = Number(m[1]), b = Number(m[2]), d = Number(m[3]), t = new Date(y, b - 1, d);
+  return y >= 2000 && y <= 2100 && t.getFullYear() === y && t.getMonth() === b - 1 && t.getDate() === d;
+}
+function bilHariAntara_(a, b) {
+  var x = a.split('-'), y = b.split('-');
+  return Math.round((new Date(Number(y[0]), Number(y[1]) - 1, Number(y[2])) - new Date(Number(x[0]), Number(x[1]) - 1, Number(x[2]))) / 86400000) + 1;
+}
+function programBersih_(p) {
+  p = p || {};
+  var mula = String(p.mula || '').trim(), akhir = String(p.akhir || '').trim() || mula;
+  if (!tarikhSah_(mula) || !tarikhSah_(akhir)) tolak_('Tarikh tidak sah. Gunakan format tahun-bulan-hari.');
+  var hari = bilHariAntara_(mula, akhir);
+  if (hari < 1) tolak_('Tarikh akhir tidak boleh sebelum tarikh mula.');
+  if (hari > PROGRAM_MAKS_HARI_) tolak_('Julat tarikh terlalu panjang (maksimum ' + PROGRAM_MAKS_HARI_ + ' hari). Pecahkan kepada beberapa tarikh.');
+  return { mula: mula, akhir: akhir, tajuk: lindungFormula_(bersih_(p.tajuk, 300)), catatan: lindungFormula_(bersih_(p.catatan, 300)), sumber: p.sumber === 'TAKWIM' ? 'TAKWIM' : 'MANUAL' };
+}
+function programJanaId_(senarai) {
+  var maks = 0; senarai.forEach(function (o) { var m = String(o.progId).match(/^PG(\d+)$/); if (m) maks = Math.max(maks, Number(m[1])); });
+  return maks + 1;
+}
+function programHelaian_() { if (!db_().getSheetByName('JKProgram')) ciptaHelaian_(); }
+function programPadamJK_(jkId) {
+  var sh = db_().getSheetByName('JKProgram'); if (!sh) return;
+  var n = sh.getLastRow(); if (n < 2) return;
+  var kol = SKEMA.JKProgram.indexOf('jkId') + 1, v = sh.getRange(2, kol, n - 1, 1).getValues();
+  for (var i = v.length - 1; i >= 0; i--) if (String(v[i][0]) === String(jkId)) sh.deleteRow(i + 2);
+}
+function programJKDapat_(pg, a) {
+  var tahun = tahunAktif_(a), jk = {};
+  baca_('Jawatankuasa').forEach(function (j) { if (Number(j.tahun) === tahun) jk[j.jkId] = j; });
+  var senarai = baca_('JKProgram').filter(function (p) { return jk[p.jkId]; }).map(function (p) {
+    var j = jk[p.jkId];
+    return { progId: p.progId, jkId: p.jkId, kod: j.kod, nama: j.nama, kategori: j.kategori, status: j.status, mula: p.mula, akhir: p.akhir || p.mula, tajuk: p.tajuk, catatan: p.catatan, sumber: p.sumber };
+  }).sort(function (x, y) { return String(x.mula).localeCompare(y.mula) || String(x.kod).localeCompare(String(y.kod), 'ms', { numeric: true }); });
+  return ok_({ tahun: tahun, program: senarai });
+}
+// Tambah: { jkIds:[..] atau jkId, senarai:[{mula,akhir,tajuk,catatan,sumber}] } -> setiap JK menerima setiap tarikh (yang sama dilangkau).
+// Sunting: { progId, program:{...} }.
+function programJKSimpan_(pg, a) {
+  var d = semuaData_(), semua = baca_('JKProgram'), tarikh = Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', 'yyyy-MM-dd HH:mm');
+  if (a.progId) {
+    var lama = semua.filter(function (p) { return p.progId === String(a.progId); })[0]; if (!lama) return gagal_('Tarikh program tidak dijumpai.');
+    var b = programBersih_(a.program);
+    if (semua.some(function (p) { return p.progId !== lama.progId && p.jkId === lama.jkId && p.mula === b.mula && p.akhir === b.akhir && String(p.tajuk) === b.tajuk; })) return gagal_('Tarikh yang sama sudah ada bagi jawatankuasa ini.');
+    var baru = { mula: b.mula, akhir: b.akhir, tajuk: b.tajuk, catatan: b.catatan, sumber: b.sumber, dikemaskini: tarikh, oleh: pg.emel };
+    kemas_('JKProgram', 'progId', lama.progId, baru); log_(pg.emel, 'UBAH_PROGRAM_JK', 'JKProgram', lama.progId, lama, baru);
+    return ok_({ progId: lama.progId }, 'Tarikh program dikemas kini.');
+  }
+  var ids = (Array.isArray(a.jkIds) && a.jkIds.length ? a.jkIds : [a.jkId]).map(function (x) { return String(x || ''); }).filter(Boolean);
+  var unik = {}; ids = ids.filter(function (x) { if (unik[x]) return false; unik[x] = 1; return true; });
+  var item = (Array.isArray(a.senarai) ? a.senarai : []).map(programBersih_);
+  if (!ids.length || !item.length) return gagal_('Pilih jawatankuasa dan sekurang-kurangnya satu tarikh.');
+  if (ids.length * item.length > PROGRAM_MAKS_SEKALI_) return gagal_('Terlalu banyak sekali gus (maksimum ' + PROGRAM_MAKS_SEKALI_ + ').');
+  var jkMap = {}; d.jawatankuasa.forEach(function (j) { jkMap[j.jkId] = j; });
+  ids.forEach(function (id) { if (!jkMap[id]) tolak_('Jawatankuasa tidak dijumpai.'); });
+  var baris = [], langkau = 0, no = programJanaId_(semua);
+  ids.forEach(function (id) {
+    var sedia = semua.filter(function (p) { return p.jkId === id; }), kira = sedia.length;
+    item.forEach(function (b) {
+      if (sedia.some(function (p) { return p.mula === b.mula && p.akhir === b.akhir && String(p.tajuk) === b.tajuk; })) { langkau++; return; }
+      if (++kira > PROGRAM_MAKS_JK_) tolak_('Satu jawatankuasa boleh mempunyai maksimum ' + PROGRAM_MAKS_JK_ + ' tarikh.');
+      baris.push({ progId: 'PG' + ('00000' + (no++)).slice(-5), tahun: Number(jkMap[id].tahun), jkId: id, mula: b.mula, akhir: b.akhir, tajuk: b.tajuk, catatan: b.catatan, sumber: b.sumber, dikemaskini: tarikh, oleh: pg.emel });
+      sedia = sedia.concat([{ mula: b.mula, akhir: b.akhir, tajuk: b.tajuk }]);
+    });
+  });
+  if (!baris.length) return gagal_('Tarikh yang dipilih sudah ada.');
+  programHelaian_(); tambah_('JKProgram', baris);
+  log_(pg.emel, 'TAMBAH_PROGRAM_JK', 'JKProgram', baris.map(function (x) { return x.progId; }).join(','), '', { bil: baris.length, jk: ids.length });
+  return ok_({ bil: baris.length, langkau: langkau }, baris.length + ' tarikh ditambah' + (langkau ? ' (' + langkau + ' sedia ada dilangkau).' : '.'));
+}
+function programJKPadam_(pg, a) {
+  var lama = baca_('JKProgram').filter(function (p) { return p.progId === String(a.progId); })[0]; if (!lama) return gagal_('Tarikh program tidak dijumpai.');
+  padam_('JKProgram', 'progId', lama.progId); log_(pg.emel, 'PADAM_PROGRAM_JK', 'JKProgram', lama.progId, lama, '');
+  return ok_(null, 'Tarikh program dipadam.');
+}
+
 var LALUAN_ = {
   logout: { min: 'PELIHAT', fn: logout_ },
+  programJKDapat: { min: 'PELIHAT', fn: programJKDapat_ }, programJKSimpan: { min: 'PENGURUS', fn: programJKSimpan_, tulis: true }, programJKPadam: { min: 'PENGURUS', fn: programJKPadam_, tulis: true },
   takwimDapat: { min: 'PELIHAT', fn: takwimDapat_ }, takwimSimpan: { min: 'PENGURUS', fn: takwimSimpan_, tulis: true },
   takwimPadam: { min: 'PENTADBIR', fn: takwimPadam_, tulis: true },
   takwimLampiranDapat: { min: 'PELIHAT', fn: takwimLampiranDapat_ }, takwimLampiranSimpan: { min: 'PENGURUS', fn: takwimLampiranSimpan_, tulis: true }, tukarKata: { min: 'PELIHAT', fn: tukarKata_ },

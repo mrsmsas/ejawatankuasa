@@ -88,14 +88,19 @@ async function paparPapan(k) {
 S.tapisJK = { kategori: '', status: '' };
 async function paparJK() {
   var data = await panggil('senaraiJK', { tahun: S.tahun }), t = S.tapisJK, nampakMerit = boleh('PENGURUS');
+  var progJK = await muatProgramJK(S.tahun), petaProg = {};
+  progJK.forEach(function (p) { (petaProg[p.jkId] = petaProg[p.jkId] || []).push(p); });
+  data.forEach(function (r) { r.program = petaProg[r.jkId] || []; r.tarikhTeks = r.program.map(jkJulat).join('; '); });
+  var inpTarikh = h('input', { type: 'date', value: t.tarikh || '', title: 'Papar jawatankuasa yang berlangsung pada tarikh ini' });
+  inpTarikh.addEventListener('change', function () { t.tarikh = inpTarikh.value; jad.segarkan(); });
   var jad = jadual({ data: data, saiz: 25, isihAsal: 'kod', arahAsal: 'asc', onKlik: function (r) { pergi('jk', r.jkId); }, kosong: 'Tiada jawatankuasa untuk tahun ini.',
-    tapis: function (r) { return (!t.kategori || r.kategori === t.kategori) && (!t.status || (t.status === 'TIDAK LENGKAP' ? !r.lengkap : r.status === t.status)); },
-    lajur: [{ kunci: 'kod', label: 'Kod' }, { kunci: 'nama', label: 'Jawatankuasa' }, { kunci: 'kategori', label: 'Kategori' }, { kunci: 'pemimpin', label: 'Pemimpin utama', isih: false },
+    tapis: function (r) { return (!t.kategori || r.kategori === t.kategori) && (!t.status || (t.status === 'TIDAK LENGKAP' ? !r.lengkap : r.status === t.status)) && (!t.tarikh || r.program.some(function (p) { return p.mula <= t.tarikh && t.tarikh <= p.akhir; })); },
+    lajur: [{ kunci: 'kod', label: 'Kod' }, { kunci: 'nama', label: 'Jawatankuasa' }, { kunci: 'kategori', label: 'Kategori' }, { kunci: 'pemimpin', label: 'Pemimpin utama', isih: false }, { kunci: 'tarikhTeks', label: 'Tarikh berlangsung', isih: false, papar: function (r) { return r.program.length ? h('span', { style: 'white-space:pre-line' }, r.program.map(jkJulat).join('\n')) : h('span', { class: 'diam' }, '—'); } },
       { kunci: 'bil', label: 'Ahli', nombor: true }, nampakMerit ? { kunci: 'merit', label: 'Merit JK', nombor: true } : null,
       { kunci: 'status', label: 'Status', papar: function (r) { return h('span', null, lencana(r.status, r.status === 'AKTIF' ? 'aktif' : 'neutral'), ' ', r.status === 'AKTIF' && !r.lengkap ? lencana('Tidak lengkap', 'amaran') : null); } }].filter(Boolean),
-    alat: [pilihTapisJ('Kategori', 'kategori', S.asas.kategoriJK, 'Semua kategori'), pilihTapisJ('Status', 'status', ['AKTIF', 'TIDAK AKTIF', 'TIDAK LENGKAP'], 'Semua status'),
+    alat: [pilihTapisJ('Kategori', 'kategori', S.asas.kategoriJK, 'Semua kategori'), pilihTapisJ('Status', 'status', ['AKTIF', 'TIDAK AKTIF', 'TIDAK LENGKAP'], 'Semua status'), h('label', { class: 'diam tiada-cetak' }, 'Tarikh ', inpTarikh),
       h('button', { class: 'btn kecil', onclick: function () { window.print(); } }, '🖨 Cetak'),
-      h('button', { class: 'btn kecil', onclick: function () { var r = jad.dataTapis(); if (nampakMerit) eksportCSV('senarai-jawatankuasa-' + S.tahun + '.csv', ['Kod', 'Jawatankuasa', 'Kategori', 'Pemimpin', 'Bil ahli', 'Merit JK', 'Status'], r.map(function (x) { return [x.kod, x.nama, x.kategori, x.pemimpin, x.bil, x.merit, x.status]; })); else eksportCSV('senarai-jawatankuasa-' + S.tahun + '.csv', ['Kod', 'Jawatankuasa', 'Kategori', 'Pemimpin', 'Bil ahli', 'Status'], r.map(function (x) { return [x.kod, x.nama, x.kategori, x.pemimpin, x.bil, x.status]; })); } }, '⬇ CSV')] });
+      h('button', { class: 'btn kecil', onclick: function () { var r = jad.dataTapis(); if (nampakMerit) eksportCSV('senarai-jawatankuasa-' + S.tahun + '.csv', ['Kod', 'Jawatankuasa', 'Kategori', 'Pemimpin', 'Tarikh berlangsung', 'Bil ahli', 'Merit JK', 'Status'], r.map(function (x) { return [x.kod, x.nama, x.kategori, x.pemimpin, x.tarikhTeks, x.bil, x.merit, x.status]; })); else eksportCSV('senarai-jawatankuasa-' + S.tahun + '.csv', ['Kod', 'Jawatankuasa', 'Kategori', 'Pemimpin', 'Tarikh berlangsung', 'Bil ahli', 'Status'], r.map(function (x) { return [x.kod, x.nama, x.kategori, x.pemimpin, x.tarikhTeks, x.bil, x.status]; })); } }, '⬇ CSV')] });
   function pilihTapisJ(label, kunci, pil, kosong) { var s = pilihSelect(pil, t[kunci], kosong); s.addEventListener('change', function () { t[kunci] = s.value; jad.segarkan(); }); return s; }
   return h('div', null, h('div', { class: 'tajuk-halaman' }, h('div', null, h('h1', null, 'Direktori Jawatankuasa ' + S.tahun), h('p', null, nf(data.length) + ' jawatankuasa. Klik baris untuk melihat butiran' + (nampakMerit ? ' dan mengurus ahli.' : ' ahli.'))),
     boleh('PENGURUS') ? h('button', { class: 'btn utama tiada-cetak', onclick: function () { borangJK(null); } }, '＋ Jawatankuasa Baharu') : null), h('div', { class: 'kad' }, jad));
@@ -117,6 +122,7 @@ function borangJK(jk) {
 
 async function paparJKButiran(id) {
   var d = await panggil('butiranJK', { jkId: id }), jk = d.jk, urus = boleh('PENGURUS'), nampakMerit = urus;
+  var progJK = (await muatProgramJK(jk.tahun)).filter(function (p) { return p.jkId === jk.jkId; });
   d.ahli = urutAhliJK(d.ahli);
   var jad = jadual({ data: d.ahli, saiz: 50, cari: true, isihAsal: nampakMerit ? 'merit' : null, kosong: 'Belum ada ahli dilantik.', lajur: [
     { kunci: 'nama', label: 'Nama', papar: function (r) { return h('a', { href: '#', onclick: function (e) { e.preventDefault(); pergi('profil', r.staffId); } }, r.nama); } },
@@ -140,8 +146,10 @@ async function paparJKButiran(id) {
         h('button', { class: 'btn', onclick: function () { window.print(); } }, '🖨 Cetak'),
         h('button', { class: 'btn', onclick: function () { if (nampakMerit) eksportCSV(jk.kod + '-ahli-' + jk.tahun + '.csv', ['Nama', 'Jawatan', 'Kualifikasi', 'Merit', 'Kategori', 'Status'], d.ahli.map(function (r) { return [r.nama, r.posisi, r.kualifikasi, r.merit, r.kategori, r.status]; })); else eksportCSV(jk.kod + '-ahli-' + jk.tahun + '.csv', ['Nama', 'Jawatan', 'Kualifikasi', 'Kategori', 'Status'], d.ahli.map(function (r) { return [r.nama, r.posisi, r.kualifikasi, r.kategori, r.status]; })); } }, '⬇ CSV'))),
     jk.keterangan ? h('p', null, jk.keterangan) : null,
+    progJK.length ? h('p', null, h('b', null, '📅 Tarikh berlangsung: '), progJK.map(jkJulat).join(' · ')) : null,
     h('div', { class: 'grid g-kpi', style: 'margin-bottom:1rem' }, h('div', { class: 'kad kpi' }, h('div', { class: 'nilai' }, d.bil), h('div', { class: 'label' }, 'Ahli aktif')), nampakMerit ? h('div', { class: 'kad kpi' }, h('div', { class: 'nilai' }, nf(d.jumlahMerit)), h('div', { class: 'label' }, 'Jumlah merit jawatankuasa')) : null,
       h('div', { class: 'kad kpi ' + (lg.lengkap ? '' : 'amaran') }, h('div', { class: 'nilai' }, lg.lengkap ? 'Lengkap' : 'Belum lengkap'), h('div', { class: 'label' }, lg.lengkap ? 'Pemimpin wujud' : [lg.kurang.length ? 'Perlu: ' + lg.kurang.map(function (x) { return x.replace(/\|/g, '/'); }).join(', ') : '', lg.pemegangTempat ? 'Ada pemegang tempat' : ''].filter(Boolean).join(' · ')))),
+    kadProgramJK(jk, progJK, urus),
     h('div', { class: 'kad' }, h('h2', null, 'Ahli Jawatankuasa'), jad));
 }
 async function padamJKUI(jk) {
@@ -272,5 +280,62 @@ function paparProfilRingkas(p) {
         h('button', { class: 'btn', onclick: function () { eksportCSV('pelantikan-' + s.staffId + '-' + p.tahun + '.csv', ['Jawatankuasa', 'Jawatan', 'Kualifikasi'], p.butiran.map(function (b) { return [b.jkNama, b.posisiNama, b.kualifikasi]; })); } }, '⬇ CSV'))),
     h('div', { class: 'kad' }, h('h2', null, 'Pelantikan Jawatankuasa ' + p.tahun + ' (' + p.bil + ')'),
       p.butiran.length ? jadual({ data: p.butiran, saiz: 50, cari: false, onKlik: function (b) { pergi('jk', b.jkId); }, lajur: [{ kunci: 'jkNama', label: 'Jawatankuasa' }, { kunci: 'posisiNama', label: 'Jawatan', papar: function (b) { return b.posisiNama + (b.kualifikasi ? ' — ' + b.kualifikasi : ''); } }] }) : h('div', { class: 'kosong' }, 'Tiada pelantikan aktif pada tahun ini.')));
+}
+
+/* ---------- Tarikh berlangsung jawatankuasa ----------
+   Tarikh disimpan dalam helaian JKProgram; takwim sekolah hanya dibaca (tidak diubah). */
+async function muatProgramJK(tahun) {
+  try { var r = await panggil('programJKDapat', { tahun: tahun }, { senyap: true }); return r.program || []; } catch (e) { return []; } // pelayan lama tanpa API ini: halaman kekal berfungsi
+}
+function jkJulat(p) { return p.akhir && p.akhir !== p.mula ? tkTarikh(p.mula) + ' – ' + tkTarikh(p.akhir) : tkTarikh(p.mula); }
+function kadProgramJK(jk, prog, urus) {
+  var jad = prog.length ? jadual({ data: prog, saiz: 50, isihAsal: 'mula', arahAsal: 'asc', kosong: '', lajur: [
+    { kunci: 'mula', label: 'Tarikh', papar: function (r) { return h('span', { style: 'white-space:nowrap' }, jkJulat(r)); } },
+    { kunci: 'hari', label: 'Hari', isih: false, papar: function (r) { return tkHariDari(r.mula) + (r.akhir !== r.mula ? ' – ' + tkHariDari(r.akhir) : ''); } },
+    { kunci: 'tajuk', label: 'Program / catatan', papar: function (r) { return h('span', null, r.tajuk || '—', r.catatan ? h('small', { class: 'diam' }, ' — ' + r.catatan) : null); } },
+    { kunci: 'sumber', label: 'Sumber', papar: function (r) { return lencana(r.sumber === 'TAKWIM' ? 'Takwim' : 'Manual', 'neutral'); } },
+    urus ? { kunci: 'progId', label: 'Tindakan', isih: false, papar: function (r) { return h('span', { class: 'tiada-cetak', style: 'white-space:nowrap' },
+      h('button', { class: 'btn kecil', onclick: function () { dialogSuntingProgramJK(r); } }, 'Sunting'), ' ',
+      h('button', { class: 'btn kecil bahaya', onclick: ujiTindakan(async function () {
+        if (!(await sahkan('Padam tarikh ' + jkJulat(r) + ' daripada ' + jk.kod + '?', { tajuk: 'Padam tarikh?', bahaya: true, label: 'Ya, padam' }))) return;
+        toast((await panggil('programJKPadam', { progId: r.progId }, { penuh: true })).message, 'berjaya'); render();
+      }) }, 'Padam')); } } : null].filter(Boolean) }) : h('div', { class: 'kosong' }, 'Tarikh berlangsung belum ditetapkan.');
+  return h('div', { class: 'kad', style: 'margin-bottom:1rem' }, h('div', { class: 'baris-alat', style: 'justify-content:space-between' }, h('h2', { style: 'margin:0' }, '📅 Tarikh Berlangsung'),
+    urus ? h('button', { class: 'btn utama tiada-cetak', onclick: ujiTindakan(function () { return dialogTambahTarikhJK(jk, prog); }) }, '＋ Tambah tarikh') : null), jad);
+}
+async function dialogTambahTarikhJK(jk, sedia) {
+  var res = null; try { res = await panggil('takwimDapat', { tahun: jk.tahun }, { senyap: true }); } catch (e) {}
+  var d = res && res.takwim, acara = d ? tkSenaraiAcara(d) : [], tanda = {}, kunci = function (m, a, t) { return m + '|' + a + '|' + t; };
+  sedia.forEach(function (p) { tanda[kunci(p.mula, p.akhir, p.tajuk)] = 1; });
+  var q = h('input', { type: 'search', placeholder: 'Cari acara dalam takwim…' }), senarai = h('div', { style: 'max-height:260px;overflow:auto;border:1px solid var(--garis,#ccc);border-radius:8px;padding:.25rem' }), pilih = {};
+  function lukis() {
+    kosongkan(senarai); var n = 0;
+    acara.forEach(function (e, i) {
+      var tajuk = e.teks.replace(/\n/g, ' / '); if (q.value && tajuk.toLowerCase().indexOf(q.value.toLowerCase()) < 0 && tkTarikh(e.mula).toLowerCase().indexOf(q.value.toLowerCase()) < 0) return;
+      var ada = !!tanda[kunci(e.mula, e.akhir, tajuk)], cb = h('input', { type: 'checkbox', checked: ada || !!pilih[i], disabled: ada });
+      cb.addEventListener('change', function () { if (cb.checked) pilih[i] = 1; else delete pilih[i]; });
+      senarai.appendChild(h('label', { style: 'display:flex;gap:.5rem;align-items:flex-start;padding:.25rem .35rem' }, cb, h('span', null, h('b', null, jkJulat({ mula: e.mula, akhir: e.akhir })), ' ', tajuk, ada ? h('small', { class: 'diam' }, ' (sudah ditambah)') : null))); n++;
+    });
+    if (!n) senarai.appendChild(h('div', { class: 'diam', style: 'padding:.5rem' }, d ? 'Tiada acara sepadan.' : 'Takwim ' + jk.tahun + ' belum ada. Gunakan tarikh manual di bawah.'));
+  }
+  q.addEventListener('input', lukis); lukis();
+  var mula = h('input', { type: 'date' }), akhir = h('input', { type: 'date' }), tajuk = h('input', { type: 'text', maxlength: 300, placeholder: 'Nama program / majlis' });
+  modal({ tajuk: 'Tambah tarikh — ' + jk.kod, lebar: true, isi: h('div', null,
+    h('p', { class: 'diam' }, 'Pilih satu atau lebih acara daripada takwim sekolah, dan/atau masukkan tarikh sendiri.'),
+    d ? h('div', null, q, senarai) : senarai,
+    h('h3', { style: 'margin:.9rem 0 .3rem' }, 'Tarikh manual (pilihan)'), medan('Tarikh mula', mula), medan('Tarikh akhir (kosongkan jika satu hari)', akhir), medan('Program / catatan', tajuk)),
+    butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () {
+      var item = Object.keys(pilih).map(function (i) { var e = acara[i]; return { mula: e.mula, akhir: e.akhir, tajuk: e.teks.replace(/\n/g, ' / '), sumber: 'TAKWIM' }; });
+      if (mula.value) item.push({ mula: mula.value, akhir: akhir.value || mula.value, tajuk: tajuk.value, sumber: 'MANUAL' });
+      if (!item.length) { toast('Pilih sekurang-kurangnya satu tarikh.', 'ralat'); return false; }
+      toast((await panggil('programJKSimpan', { jkId: jk.jkId, senarai: item }, { penuh: true })).message, 'berjaya'); render();
+    }) }] });
+}
+function dialogSuntingProgramJK(p) {
+  var mula = h('input', { type: 'date', value: p.mula }), akhir = h('input', { type: 'date', value: p.akhir }), tajuk = h('input', { type: 'text', maxlength: 300, value: p.tajuk || '' }), cat = h('input', { type: 'text', maxlength: 300, value: p.catatan || '' });
+  modal({ tajuk: 'Sunting tarikh — ' + p.kod, isi: h('div', null, medan('Tarikh mula', mula), medan('Tarikh akhir', akhir), medan('Program', tajuk), medan('Catatan', cat)),
+    butang: [{ label: 'Batal' }, { label: 'Simpan', kelas: 'utama', onClick: ujiTindakan(async function () {
+      toast((await panggil('programJKSimpan', { progId: p.progId, program: { mula: mula.value, akhir: akhir.value || mula.value, tajuk: tajuk.value, catatan: cat.value, sumber: p.sumber } }, { penuh: true })).message, 'berjaya'); render();
+    }) }] });
 }
 </script>
